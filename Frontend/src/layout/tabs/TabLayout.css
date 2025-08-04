@@ -1,0 +1,109 @@
+/* TabLayout Styles */
+.tab-layout {
+  background: #fff;
+  border-radius: 4px;
+}
+
+.nk-tabs {
+  border-bottom: 1px solid #e5e9f2;
+  background: #f5f6fa;
+  border-radius: 4px 4px 0 0;
+  padding: 0 1.5rem;
+}
+
+.nav-tabs-s2 {
+  border: none;
+  background: transparent;
+}
+
+.nav-tabs-s2 .nav-item {
+  margin-bottom: 0;
+}
+
+.nav-tabs-s2 .nav-link {
+  border: none;
+  background: transparent;
+  color: #8094ae;
+  font-weight: 500;
+  padding: 1rem 1.25rem;
+  border-radius: 0;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.nav-tabs-s2 .nav-link:hover {
+  color: #364a63;
+  background: rgba(116, 82, 255, 0.05);
+}
+
+.nav-tabs-s2 .nav-link.active {
+  color: #7452ff;
+  background: #fff;
+  border-bottom: 2px solid #7452ff;
+}
+
+.nav-tabs-s2 .nav-link.disabled {
+  color: #b6c6e3;
+  cursor: not-allowed;
+}
+
+.nav-tabs-s2 .nav-link.disabled:hover {
+  background: transparent;
+}
+
+/* Tab content wrapper */
+.tab-content-wrapper {
+  padding: 1.5rem;
+  min-height: 200px;
+}
+
+/* Badge styles */
+.badge-outline {
+  background: transparent;
+  border: 1px solid currentColor;
+  color: inherit;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .nk-tabs {
+    padding: 0 1rem;
+  }
+  
+  .nav-tabs-s2 .nav-link {
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+  }
+  
+  .tab-content-wrapper {
+    padding: 1rem;
+  }
+}
+
+/* Dark theme support */
+.is-dark .tab-layout {
+  background: #1e2a35;
+}
+
+.is-dark .nk-tabs {
+  background: #16202a;
+  border-bottom-color: #2a3441;
+}
+
+.is-dark .nav-tabs-s2 .nav-link {
+  color: #8094ae;
+}
+
+.is-dark .nav-tabs-s2 .nav-link:hover {
+  color: #fff;
+  background: rgba(116, 82, 255, 0.1);
+}
+
+.is-dark .nav-tabs-s2 .nav-link.active {
+  color: #7452ff;
+  background: #1e2a35;
+}
+
+.is-dark .tab-content-wrapper {
+  background: #1e2a35;
+} 

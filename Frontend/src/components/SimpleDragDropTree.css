@@ -1,0 +1,973 @@
+/* Simple Drag Drop Tree Styles */
+.simple-drag-drop-tree {
+  position: relative;
+  width: 100%;
+}
+
+/* Modern Tree Controls */
+.tree-controls {
+  background: 
+    linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.95) 100%),
+    radial-gradient(circle at 20% 80%, rgba(59, 130, 246, 0.05) 0%, transparent 50%);
+  border-radius: 16px;
+  padding: 16px 20px;
+  border: 2px solid rgba(59, 130, 246, 0.1);
+  margin-bottom: 20px;
+  backdrop-filter: blur(10px);
+  box-shadow: 
+    0 8px 25px rgba(0, 0, 0, 0.08),
+    0 3px 6px rgba(0, 0, 0, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+/* Modern Loading Overlay */
+.moving-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.98) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  border-radius: 16px;
+  backdrop-filter: blur(15px);
+}
+
+.moving-indicator {
+  background: 
+    linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.98) 100%);
+  padding: 20px 28px;
+  border-radius: 16px;
+  box-shadow: 
+    0 20px 40px rgba(59, 130, 246, 0.15),
+    0 8px 16px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  display: flex;
+  align-items: center;
+  color: #3b82f6;
+  font-weight: 600;
+  border: 2px solid rgba(59, 130, 246, 0.2);
+  backdrop-filter: blur(10px);
+  animation: modernPulseIndicator 1.5s ease-in-out infinite;
+}
+
+@keyframes modernPulseIndicator {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 
+      0 20px 40px rgba(59, 130, 246, 0.15),
+      0 8px 16px rgba(0, 0, 0, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  }
+  50% {
+    transform: scale(1.02);
+    box-shadow: 
+      0 25px 50px rgba(59, 130, 246, 0.2),
+      0 12px 24px rgba(0, 0, 0, 0.12),
+      inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  }
+}
+
+/* Tree Content */
+.tree-content {
+  position: relative;
+  width: 100%;
+}
+
+/* Folder Items */
+.folder-item {
+  position: relative;
+  margin-bottom: 0.75rem;
+  clear: both;
+  width: 100%;
+}
+
+.droppable-folder {
+  transition: all 0.2s ease;
+  border-radius: 0.5rem;
+  position: relative;
+  z-index: 1;
+}
+
+.droppable-folder.drop-target {
+  background: 
+    linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(79, 70, 229, 0.08) 100%);
+  transform: scale(1.02);
+  z-index: 10;
+}
+
+.droppable-folder.drop-target::after {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  right: -4px;
+  bottom: -4px;
+  border: 3px dashed rgba(59, 130, 246, 0.6);
+  border-radius: 20px;
+  pointer-events: none;
+  animation: modernPulseDrop 1.2s ease-in-out infinite;
+  z-index: 11;
+  backdrop-filter: blur(5px);
+}
+
+@keyframes modernPulseDrop {
+  0%, 100% {
+    border-color: rgba(59, 130, 246, 0.6);
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.3);
+  }
+  50% {
+    border-color: rgba(79, 70, 229, 0.8);
+    box-shadow: 0 0 0 8px rgba(59, 130, 246, 0);
+  }
+}
+
+.folder-card {
+  border: 2px solid rgba(59, 130, 246, 0.1);
+  border-radius: 16px;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  position: relative;
+  z-index: 2;
+  background: 
+    linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.98) 100%),
+    radial-gradient(circle at 20% 80%, rgba(59, 130, 246, 0.03) 0%, transparent 50%);
+  width: 100%;
+  margin: 0;
+  backdrop-filter: blur(10px);
+  box-shadow: 
+    0 6px 20px rgba(0, 0, 0, 0.06),
+    0 2px 4px rgba(0, 0, 0, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  overflow: hidden;
+}
+
+.folder-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: linear-gradient(180deg, #3b82f6 0%, #2563eb 50%, #1d4ed8 100%);
+  border-radius: 2px 0 0 2px;
+}
+
+.folder-card:hover {
+  border-color: rgba(59, 130, 246, 0.3);
+  box-shadow: 
+    0 16px 32px rgba(59, 130, 246, 0.12),
+    0 6px 12px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  transform: translateY(-4px) scale(1.01);
+  z-index: 3;
+}
+
+.folder-card:hover::before {
+  background: linear-gradient(180deg, #2563eb 0%, #1d4ed8 50%, #1e40af 100%);
+  box-shadow: 0 0 16px rgba(59, 130, 246, 0.4);
+}
+
+.folder-name {
+  font-weight: 600;
+  color: #364a63;
+}
+
+/* Folder Content Area */
+.folder-content {
+  position: relative;
+  margin-top: 0.5rem;
+  margin-left: 1.5rem;
+  padding-left: 1rem;
+  border-left: 2px solid #f1f3f4;
+  animation: slideDown 0.25s ease-out;
+  clear: both;
+}
+
+/* Modern Draggable Forms */
+.draggable-form {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  margin-bottom: 16px;
+  z-index: 1;
+  clear: both;
+  width: 100%;
+  cursor: grab;
+}
+
+.draggable-form:active {
+  cursor: grabbing;
+}
+
+.draggable-form.dragging {
+  transform: rotate(3deg) scale(1.08);
+  z-index: 1500;
+  animation: modernDragFloat 0.6s ease-in-out infinite alternate;
+}
+
+@keyframes modernDragFloat {
+  0% {
+    transform: rotate(3deg) scale(1.08) translateY(0px);
+    box-shadow: 0 15px 30px rgba(40, 167, 69, 0.3);
+  }
+  100% {
+    transform: rotate(3deg) scale(1.08) translateY(-4px);
+    box-shadow: 0 20px 40px rgba(40, 167, 69, 0.4);
+  }
+}
+
+.form-card {
+  border: 2px solid rgba(40, 167, 69, 0.1);
+  border-radius: 16px;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: move;
+  background: 
+    linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 255, 249, 0.98) 100%),
+    radial-gradient(circle at 20% 80%, rgba(40, 167, 69, 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(34, 197, 94, 0.05) 0%, transparent 50%);
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  margin: 0;
+  backdrop-filter: blur(10px);
+  box-shadow: 
+    0 8px 25px rgba(0, 0, 0, 0.08),
+    0 3px 6px rgba(0, 0, 0, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  overflow: hidden;
+  min-height: 140px;
+  display: flex;
+  flex-direction: column;
+}
+
+.form-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: linear-gradient(180deg, #10b981 0%, #059669 50%, #047857 100%);
+  border-radius: 2px 0 0 2px;
+}
+
+.form-card:hover {
+  border-color: rgba(40, 167, 69, 0.3);
+  box-shadow: 
+    0 20px 40px rgba(40, 167, 69, 0.15),
+    0 8px 16px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  transform: translateY(-6px) scale(1.02);
+  z-index: 3;
+}
+
+.form-card:hover::before {
+  background: linear-gradient(180deg, #059669 0%, #047857 50%, #065f46 100%);
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
+}
+
+.draggable-form.dragging .form-card {
+  background: 
+    linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.1) 100%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 255, 249, 0.95) 100%);
+  border-color: rgba(40, 167, 69, 0.4);
+  box-shadow: 
+    0 25px 50px rgba(40, 167, 69, 0.25),
+    0 12px 24px rgba(0, 0, 0, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  z-index: 1500;
+}
+
+/* Large Prominent Action Buttons */
+.draggable-form .btn {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 12px;
+  font-weight: 800;
+  font-size: 1rem;
+  padding: 14px 28px;
+  position: relative;
+  z-index: 10;
+  backdrop-filter: blur(10px);
+  border: none;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  min-width: 120px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  letter-spacing: 0.5px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-transform: uppercase;
+}
+
+.draggable-form .btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.2) 50%, transparent 70%);
+  transform: translateX(-100%);
+  transition: transform 0.6s ease;
+  z-index: 1;
+}
+
+.draggable-form .btn:hover::before {
+  transform: translateX(100%);
+}
+
+.draggable-form .btn-primary {
+  background: 
+    linear-gradient(135deg, #4f46e5 0%, #3b82f6 30%, #2563eb 70%, #1d4ed8 100%);
+  color: white;
+  box-shadow: 
+    0 8px 25px rgba(79, 70, 229, 0.5),
+    0 4px 8px rgba(0, 0, 0, 0.15),
+    inset 0 2px 0 rgba(255, 255, 255, 0.3);
+  border: 3px solid rgba(255, 255, 255, 0.25);
+}
+
+.draggable-form .btn-outline-secondary {
+  background: 
+    linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.99) 100%);
+  color: #374151;
+  box-shadow: 
+    0 8px 25px rgba(55, 65, 81, 0.2),
+    0 4px 8px rgba(0, 0, 0, 0.08),
+    inset 0 2px 0 rgba(255, 255, 255, 0.9);
+  border: 3px solid rgba(55, 65, 81, 0.25);
+}
+
+.draggable-form .btn:hover {
+  transform: translateY(-4px) scale(1.05);
+}
+
+.draggable-form .btn-primary:hover {
+  background: 
+    linear-gradient(135deg, #3730a3 0%, #2563eb 30%, #1d4ed8 70%, #1e40af 100%);
+  box-shadow: 
+    0 16px 35px rgba(79, 70, 229, 0.6),
+    0 8px 16px rgba(0, 0, 0, 0.2),
+    inset 0 2px 0 rgba(255, 255, 255, 0.4);
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+.draggable-form .btn-outline-secondary:hover {
+  background: 
+    linear-gradient(135deg, rgba(79, 70, 229, 0.1) 0%, rgba(59, 130, 246, 0.1) 100%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.99) 0%, rgba(248, 250, 252, 1) 100%);
+  color: #4f46e5;
+  box-shadow: 
+    0 16px 35px rgba(79, 70, 229, 0.3),
+    0 8px 16px rgba(0, 0, 0, 0.12),
+    inset 0 2px 0 rgba(255, 255, 255, 0.95);
+  border-color: rgba(79, 70, 229, 0.4);
+}
+
+/* Modern Form Card Header */
+.draggable-form .fw-bold {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1f2937;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+  letter-spacing: 0.3px;
+}
+
+/* Large Button Icons */
+.draggable-form .btn .ni {
+  font-size: 1.2rem;
+  margin-right: 6px;
+  position: relative;
+  z-index: 2;
+  font-weight: bold;
+}
+
+.draggable-form .btn .ni-play {
+  color: rgba(255, 255, 255, 0.95);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.draggable-form .btn .ni-edit {
+  color: #374151;
+  transition: color 0.3s ease;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+}
+
+.draggable-form .btn-outline-secondary:hover .ni-edit {
+  color: #4f46e5;
+  text-shadow: 0 1px 2px rgba(79, 70, 229, 0.2);
+}
+
+/* Enhanced Card Layout */
+.draggable-form .card-body {
+  position: relative;
+  z-index: 1;
+  padding: 0;
+  overflow: hidden;
+}
+
+/* Card Header Section */
+.draggable-form .d-flex.flex-column {
+  height: 100%;
+}
+
+.draggable-form .d-flex.align-items-center {
+  padding: 16px 16px 12px 16px;
+  background: 
+    linear-gradient(135deg, rgba(255, 255, 255, 0.6) 0%, rgba(248, 250, 252, 0.8) 100%);
+  border-bottom: 1px solid rgba(16, 185, 129, 0.1);
+  position: relative;
+}
+
+.draggable-form .d-flex.align-items-center::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, rgba(16, 185, 129, 0.3) 50%, transparent 100%);
+}
+
+/* Form Title Section */
+.draggable-form .fw-bold {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #1e293b;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.9);
+  letter-spacing: 0.2px;
+  line-height: 1.3;
+}
+
+/* Enhanced Icon */
+.draggable-form .ni-file-docs {
+  font-size: 1.3rem;
+  color: #059669 !important;
+  text-shadow: 0 1px 3px rgba(255, 255, 255, 0.8);
+  margin-right: 12px !important;
+  background: linear-gradient(135deg, rgba(5, 150, 105, 0.1) 0%, rgba(16, 185, 129, 0.1) 100%);
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(5, 150, 105, 0.2);
+}
+
+/* Enhanced Badge */
+.draggable-form .badge {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  color: white;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  box-shadow: 
+    0 3px 8px rgba(5, 150, 105, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Large Button Container */
+.draggable-form .d-flex.gap-1 {
+  padding: 18px 20px 20px 20px;
+  background: 
+    linear-gradient(135deg, rgba(248, 250, 252, 0.5) 0%, rgba(255, 255, 255, 0.7) 100%);
+  gap: 20px !important;
+  justify-content: center;
+  margin-top: auto;
+  border-top: 2px solid rgba(16, 185, 129, 0.1);
+  min-height: 84px;
+  align-items: center;
+}
+
+/* Button Wrapper for Better Alignment */
+.draggable-form .d-flex.gap-1::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, rgba(16, 185, 129, 0.15) 50%, transparent 100%);
+}
+
+/* Modern Loading and Interaction States */
+.draggable-form:active {
+  transform: scale(0.98);
+}
+
+.draggable-form .btn:active {
+  transform: translateY(-1px) scale(0.95);
+}
+
+/* Enhanced Button Text */
+.draggable-form .btn span,
+.draggable-form .btn {
+  position: relative;
+  z-index: 2;
+}
+
+/* Loading state for buttons (optional enhancement) */
+.draggable-form .btn:active {
+  transition: all 0.1s ease;
+}
+
+/* Improved Focus States */
+.draggable-form .btn:focus-visible {
+  outline: 3px solid rgba(79, 70, 229, 0.5);
+  outline-offset: 2px;
+  box-shadow: 
+    0 0 0 4px rgba(79, 70, 229, 0.1),
+    0 6px 20px rgba(79, 70, 229, 0.4),
+    0 2px 4px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+/* Button Container Improvements */
+.draggable-form .d-flex.gap-1 {
+  position: relative;
+}
+
+/* Add subtle gradient overlay to button area */
+.draggable-form .d-flex.gap-1::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.02) 0%, rgba(5, 150, 105, 0.02) 100%);
+  pointer-events: none;
+  border-radius: 0 0 14px 14px;
+}
+
+/* Enhanced Visual Feedback */
+.draggable-form .form-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, transparent 0%, rgba(255, 255, 255, 0.1) 50%, transparent 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.draggable-form:hover .form-card::after {
+  opacity: 1;
+  animation: modernShimmer 2s infinite;
+}
+
+@keyframes modernShimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Responsive Design for Modern DraggableForm */
+@media (max-width: 768px) {
+  .draggable-form {
+    margin-bottom: 12px;
+  }
+  
+  .form-card {
+    border-radius: 12px;
+  }
+  
+  .draggable-form .d-flex.align-items-center {
+    padding: 12px 14px 10px 14px;
+  }
+  
+  .draggable-form .fw-bold {
+    font-size: 0.95rem;
+    font-weight: 700;
+  }
+  
+  .draggable-form .btn {
+    font-size: 0.9rem;
+    padding: 12px 20px;
+    border-radius: 10px;
+    min-width: 100px;
+    height: 42px;
+    gap: 8px !important;
+  }
+  
+  .draggable-form .d-flex.gap-1 {
+    gap: 16px !important;
+    padding: 16px 16px 18px 16px;
+    min-height: 76px;
+  }
+  
+  .form-card {
+    min-height: 120px;
+  }
+  
+  .draggable-form .badge {
+    font-size: 0.65rem;
+    padding: 4px 8px;
+  }
+  
+  .draggable-form .ni-file-docs {
+    font-size: 1.1rem;
+    padding: 6px;
+    margin-right: 10px !important;
+  }
+  
+  .draggable-form .btn .ni {
+    font-size: 1.1rem;
+  }
+  
+  .draggable-form .btn:hover {
+    transform: translateY(-3px) scale(1.03);
+  }
+}
+
+@media (max-width: 480px) {
+  .draggable-form .d-flex.align-items-center {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 8px;
+  }
+  
+  .draggable-form .badge {
+    align-self: flex-end;
+  }
+  
+  .draggable-form .fw-bold {
+    width: 100%;
+  }
+  
+  .draggable-form .btn {
+    min-width: 90px;
+    font-size: 0.85rem;
+    padding: 10px 16px;
+    height: 40px;
+    gap: 6px !important;
+    border-radius: 8px;
+  }
+  
+  .draggable-form .d-flex.gap-1 {
+    gap: 14px !important;
+    justify-content: center;
+    padding: 14px 12px 16px 12px;
+    min-height: 68px;
+  }
+  
+  .draggable-form .btn .ni {
+    font-size: 1rem !important;
+  }
+  
+  .form-card {
+    min-height: 110px;
+  }
+}
+
+/* Enhanced Animation Performance */
+.draggable-form,
+.draggable-form .form-card,
+.draggable-form .btn {
+  will-change: transform;
+}
+
+/* Accessibility Improvements */
+.draggable-form:focus-within .form-card {
+  outline: 2px solid rgba(59, 130, 246, 0.5);
+  outline-offset: 2px;
+}
+
+.draggable-form .btn:focus {
+  outline: 2px solid rgba(59, 130, 246, 0.5);
+  outline-offset: 2px;
+}
+
+/* Modern Performance Optimizations */
+.simple-drag-drop-tree {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* Enhanced Mobile Drag Experience */
+@media (hover: none) and (pointer: coarse) {
+  .draggable-form .form-card:hover {
+    transform: none;
+  }
+  
+  .draggable-form:active .form-card {
+    transform: scale(0.98);
+    transition: transform 0.1s ease;
+  }
+  
+  .draggable-form .btn:hover {
+    transform: none;
+  }
+  
+  .draggable-form .btn:active {
+    transform: scale(0.95);
+  }
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .draggable-form,
+  .draggable-form .form-card,
+  .draggable-form .btn,
+  .folder-card {
+    transition: none;
+    animation: none;
+  }
+  
+  .draggable-form.dragging {
+    animation: none;
+  }
+  
+  .moving-indicator {
+    animation: none;
+  }
+  
+  .droppable-folder.drop-target::after {
+    animation: none;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .form-card,
+  .folder-card {
+    border-color: #000000;
+    border-width: 3px;
+  }
+  
+  .draggable-form .btn-primary {
+    background: #0000FF;
+    color: #FFFFFF;
+  }
+  
+  .draggable-form .btn-outline-secondary {
+    background: #FFFFFF;
+    color: #000000;
+    border-color: #000000;
+  }
+}
+
+/* Level-based styling with proper spacing */
+.folder-item.level-0 {
+  margin-left: 0;
+}
+
+.folder-item.level-1 {
+  margin-left: 1.5rem;
+}
+
+.folder-item.level-2 {
+  margin-left: 3rem;
+}
+
+.folder-item.level-3 {
+  margin-left: 4.5rem;
+}
+
+.folder-item.level-0 .folder-card {
+  border-left: 4px solid #007bff;
+  background: linear-gradient(135deg, #f8fbff 0%, #ffffff 100%);
+}
+
+.folder-item.level-1 .folder-card {
+  border-left: 4px solid #28a745;
+  background: linear-gradient(135deg, #f8fff9 0%, #ffffff 100%);
+}
+
+.folder-item.level-2 .folder-card {
+  border-left: 4px solid #ffc107;
+  background: linear-gradient(135deg, #fffef8 0%, #ffffff 100%);
+}
+
+.folder-item.level-3 .folder-card {
+  border-left: 4px solid #dc3545;
+  background: linear-gradient(135deg, #fffafa 0%, #ffffff 100%);
+}
+
+/* Remove problematic connecting lines that cause overlaps */
+.folder-item::before {
+  display: none;
+}
+
+.folder-content::before {
+  display: none;
+}
+
+/* Simple visual hierarchy instead */
+.folder-item.level-1 .folder-card {
+  margin-left: 0.5rem;
+}
+
+.folder-item.level-2 .folder-card {
+  margin-left: 1rem;
+}
+
+.folder-item.level-3 .folder-card {
+  margin-left: 1.5rem;
+}
+
+/* Animations */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    max-height: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    max-height: 2000px;
+    transform: translateY(0);
+  }
+}
+
+/* Badges */
+.badge {
+  font-size: 0.7rem;
+  font-weight: 500;
+  z-index: 5;
+  position: relative;
+}
+
+/* Button improvements */
+.btn-link {
+  color: #9aa4ac !important;
+  text-decoration: none;
+  transition: color 0.2s ease;
+  z-index: 5;
+  position: relative;
+}
+
+.btn-link:hover {
+  color: #007bff !important;
+}
+
+.btn-link:disabled {
+  color: #ced4da !important;
+}
+
+/* Card body spacing fixes */
+.folder-card .card-body,
+.form-card .card-body {
+  padding: 0.75rem 1rem;
+  position: relative;
+  z-index: 1;
+}
+
+/* Ensure proper flex behavior */
+.folder-card .d-flex,
+.form-card .d-flex {
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: nowrap;
+}
+
+.folder-card .flex-grow-1,
+.form-card .flex-grow-1 {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .folder-item {
+    margin-left: 0 !important;
+    margin-bottom: 0.5rem;
+  }
+  
+  .folder-item.level-1,
+  .folder-item.level-2,
+  .folder-item.level-3 {
+    margin-left: 0 !important;
+  }
+
+  .folder-item.level-1 .folder-card {
+    margin-left: 0.75rem;
+  }
+
+  .folder-item.level-2 .folder-card {
+    margin-left: 1.5rem;
+  }
+
+  .folder-item.level-3 .folder-card {
+    margin-left: 2.25rem;
+  }
+
+  .folder-content {
+    margin-left: 0.75rem;
+    padding-left: 0.5rem;
+  }
+
+  .tree-controls {
+    padding: 0.5rem 0.75rem;
+  }
+
+  .tree-controls .d-flex {
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: stretch;
+  }
+
+  /* Simplify on mobile */
+  .folder-card .d-flex,
+  .form-card .d-flex {
+    flex-wrap: wrap;
+    gap: 0.25rem;
+  }
+}
+
+/* Fix for very small text overlapping */
+@media (max-width: 576px) {
+  .folder-name,
+  .form-card .flex-grow-1 {
+    font-size: 0.875rem;
+  }
+
+  .badge {
+    font-size: 0.65rem;
+    padding: 0.2rem 0.4rem;
+  }
+
+  .folder-card .card-body,
+  .form-card .card-body {
+    padding: 0.5rem 0.75rem;
+  }
+}
+
+/* Ensure all elements have proper positioning context */
+.simple-drag-drop-tree * {
+  box-sizing: border-box;
+}
+
+/* Clear floats and ensure proper stacking */
+.tree-content::after {
+  content: "";
+  display: table;
+  clear: both;
+} 

@@ -1,0 +1,490 @@
+.tabs-layout {
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 20px;
+  background: 
+    linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.98) 100%),
+    radial-gradient(circle at 20% 80%, rgba(102, 126, 234, 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(139, 92, 246, 0.05) 0%, transparent 50%);
+  margin-bottom: 2rem;
+  box-shadow: 
+    0 20px 40px rgba(0, 0, 0, 0.1),
+    0 8px 16px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  overflow: hidden;
+  backdrop-filter: blur(15px);
+  position: relative;
+}
+
+.tabs-layout::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+  opacity: 0.8;
+}
+
+.tab-headers {
+  display: flex;
+  position: relative;
+  background: 
+    linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(139, 92, 246, 0.08) 100%),
+    linear-gradient(45deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.95) 100%);
+  border-bottom: 2px solid rgba(102, 126, 234, 0.2);
+  padding: 12px;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(102, 126, 234, 0.3) rgba(248, 250, 252, 0.5);
+  max-width: 100%;
+  scroll-behavior: smooth;
+  backdrop-filter: blur(10px);
+}
+
+.tab-headers::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 20px;
+  background: linear-gradient(90deg, transparent 0%, rgba(248, 250, 252, 0.8) 100%);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.tab-headers:hover::after {
+  opacity: 1;
+}
+
+.tab-headers::-webkit-scrollbar {
+  height: 8px;
+}
+
+.tab-headers::-webkit-scrollbar-track {
+  background: rgba(248, 250, 252, 0.5);
+  border-radius: 6px;
+  border: 1px solid rgba(102, 126, 234, 0.1);
+}
+
+.tab-headers::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 2px 6px rgba(102, 126, 234, 0.3);
+}
+
+.tab-headers::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+  box-shadow: 0 4px 10px rgba(102, 126, 234, 0.4);
+}
+
+.tab-header {
+  display: flex;
+  align-items: center;
+  padding: 14px 20px;
+  border-radius: 12px;
+  cursor: pointer;
+  background: 
+    linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(248, 250, 252, 0.9) 100%);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  min-width: 140px;
+  max-width: 220px;
+  flex-shrink: 0;
+  border: 2px solid rgba(102, 126, 234, 0.1);
+  backdrop-filter: blur(15px);
+  box-shadow: 
+    0 4px 12px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  overflow: hidden;
+}
+
+.tab-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.tab-header:hover {
+  background: 
+    linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.98) 100%);
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 
+    0 12px 24px rgba(102, 126, 234, 0.15),
+    0 6px 12px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  border-color: rgba(102, 126, 234, 0.2);
+}
+
+.tab-header:hover::before {
+  opacity: 0.6;
+}
+
+.tab-header.active {
+  background: 
+    linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%),
+    linear-gradient(45deg, rgba(255, 255, 255, 0.1) 0%, transparent 100%);
+  color: white;
+  transform: translateY(-4px) scale(1.03);
+  box-shadow: 
+    0 20px 40px rgba(102, 126, 234, 0.3),
+    0 8px 16px rgba(118, 75, 162, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.3);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.tab-header.active::before {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.tab-name-input {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 14px;
+  font-weight: 600;
+  color: inherit;
+  min-width: 60px;
+  max-width: 140px;
+  padding: 4px 6px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.tab-header.active .tab-name-input {
+  color: white;
+}
+
+.tab-name-input:focus {
+  background: rgba(255, 255, 255, 0.95);
+  border: 2px solid #667eea;
+  color: #1f2937;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.delete-tab-btn {
+  background: 
+    linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(220, 38, 38, 0.1) 100%);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  margin-left: 10px;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  flex-shrink: 0;
+  backdrop-filter: blur(10px);
+  box-shadow: 
+    0 2px 6px rgba(239, 68, 68, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.tab-header.active .delete-tab-btn {
+  background: 
+    linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.1) 100%);
+  color: rgba(255, 255, 255, 0.9);
+  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 
+    0 2px 6px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.delete-tab-btn:hover {
+  background: 
+    linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  transform: scale(1.15) rotate(90deg);
+  box-shadow: 
+    0 6px 16px rgba(239, 68, 68, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  border-color: #ef4444;
+}
+
+.add-tab-btn {
+  background: 
+    linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%),
+    linear-gradient(45deg, rgba(255, 255, 255, 0.1) 0%, transparent 100%);
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  padding: 12px 18px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 700;
+  border-radius: 12px;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  flex-shrink: 0;
+  min-width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 8px;
+  box-shadow: 
+    0 8px 20px rgba(16, 185, 129, 0.25),
+    0 4px 8px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.add-tab-btn:hover {
+  background: 
+    linear-gradient(135deg, #059669 0%, #047857 50%, #065f46 100%),
+    linear-gradient(45deg, rgba(255, 255, 255, 0.15) 0%, transparent 100%);
+  transform: translateY(-3px) scale(1.08);
+  box-shadow: 
+    0 16px 32px rgba(16, 185, 129, 0.35),
+    0 8px 16px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.add-tab-icon {
+  margin-right: 6px;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.add-tab-text {
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Hide text on smaller screens */
+@media (max-width: 768px) {
+  .add-tab-text {
+    display: none;
+  }
+  
+  .add-tab-icon {
+    margin-right: 0;
+  }
+}
+
+.tab-content {
+  padding: 0;
+  background: 
+    linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.99) 100%);
+  border-radius: 0 0 20px 20px;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+  box-shadow: 
+    inset 0 2px 4px rgba(102, 126, 234, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.tab-pane {
+  padding: 24px;
+  min-height: 250px;
+  background: linear-gradient(135deg, #f9fafb 0%, #ffffff 100%);
+  position: relative;
+}
+
+.tab-pane.active {
+  display: block;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { 
+    opacity: 0; 
+    transform: translateY(10px); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0); 
+  }
+}
+
+.tab-component {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* Canvas inside tabs styling */
+.tab-component .canvas-drop-zone {
+  min-height: 150px;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.tab-component .canvas-placeholder {
+  color: #9ca3af;
+  font-style: italic;
+  text-align: center;
+  padding: 60px 20px;
+  border: 2px dashed #d1d5db;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.tab-component .canvas-placeholder::before {
+  content: "📋";
+  display: block;
+  font-size: 48px;
+  margin-bottom: 12px;
+  opacity: 0.3;
+}
+
+.tab-component .canvas-placeholder:hover {
+  border-color: #667eea;
+  background: linear-gradient(135deg, #f8faff 0%, #f0f4ff 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px -8px rgba(102, 126, 234, 0.2);
+}
+
+/* Field cards inside tabs */
+.tab-component .canvas-field {
+  margin-bottom: 16px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  position: relative;
+  background: #ffffff;
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  min-height: 60px;
+}
+
+.tab-component .canvas-field:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.1);
+  border-color: #667eea;
+}
+
+/* Ensure delete buttons are visible and clickable inside tabs */
+.tab-component .delete-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid #e5e7eb;
+  border-radius: 50%;
+  padding: 6px;
+  color: #ef4444;
+  font-size: 14px;
+  line-height: 1;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+}
+
+.tab-component .delete-btn:hover {
+  background: #ef4444;
+  color: white;
+  transform: scale(1.1);
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+}
+
+/* Ensure tab content doesn't interfere with interactions */
+.tab-content {
+  position: relative;
+  z-index: 1;
+}
+
+.tab-pane {
+  position: relative;
+  z-index: 1;
+}
+
+/* Nested tabs styling */
+.tab-component .tabs-layout {
+  margin: 16px 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border: 1px solid #d1d5db;
+}
+
+.tab-component .tabs-layout .tab-headers {
+  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+  border-bottom: 1px solid #d1d5db;
+}
+
+.tab-component .tabs-layout .tab-header {
+  background: rgba(255, 255, 255, 0.5);
+  min-width: 100px;
+  max-width: 160px;
+}
+
+.tab-component .tabs-layout .tab-header.active {
+  background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+}
+
+.tab-component .tabs-layout .add-tab-btn {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  min-width: 36px;
+  height: 36px;
+}
+
+/* Ensure nested interactions work properly */
+.tab-component .tabs-layout .tab-pane {
+  background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+  border: none;
+}
+
+/* Responsive design for smaller screens */
+@media (max-width: 768px) {
+  .tab-headers {
+    padding: 6px;
+    gap: 2px;
+  }
+  
+  .tab-header {
+    min-width: 100px;
+    max-width: 150px;
+    padding: 8px 12px;
+  }
+  
+  .tab-name-input {
+    max-width: 100px;
+    font-size: 13px;
+  }
+  
+  .add-tab-btn {
+    min-width: 36px;
+    height: 36px;
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+  
+  .tab-pane {
+    padding: 16px;
+    min-height: 200px;
+  }
+
+  /* Nested tabs on mobile */
+  .tab-component .tabs-layout .tab-header {
+    min-width: 80px;
+    max-width: 120px;
+    padding: 6px 10px;
+  }
+} 

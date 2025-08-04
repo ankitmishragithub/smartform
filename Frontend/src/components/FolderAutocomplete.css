@@ -1,0 +1,188 @@
+.folder-autocomplete {
+  position: relative;
+  width: 100%;
+}
+
+.folder-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #e9ecef;
+  border-top: none;
+  border-radius: 0 0 0.375rem 0.375rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  max-height: 250px;
+  overflow-y: auto;
+  z-index: 1000;
+}
+
+.folder-option {
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  border-bottom: 1px solid #f8f9fa;
+}
+
+.folder-option:last-child {
+  border-bottom: none;
+}
+
+.folder-option:hover {
+  background-color: #f8f9fa;
+}
+
+.folder-option-content {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  min-height: 3rem;
+}
+
+.folder-icon-container {
+  display: flex;
+  align-items: center;
+  font-family: monospace;
+  color: #6c757d;
+  white-space: pre;
+  margin-right: 0.5rem;
+}
+
+.folder-text-container {
+  flex-grow: 1;
+  margin-right: 0.5rem;
+}
+
+.folder-option-nested {
+  background-color: #f8f9fc;
+}
+
+.folder-option-nested:hover {
+  background-color: #e9ecf7;
+}
+
+.folder-option-suggested {
+  background-color: #fff8e1;
+  border-left: 3px solid #ffc107;
+}
+
+.folder-option-suggested:hover {
+  background-color: #fff3c4;
+}
+
+.folder-option-new {
+  background-color: #e3f2fd;
+  border-left: 3px solid #2196f3;
+}
+
+.folder-option-new:hover {
+  background-color: #bbdefb;
+}
+
+.folder-option-empty {
+  cursor: default;
+  color: #6c757d;
+  font-style: italic;
+}
+
+.folder-option-empty:hover {
+  background-color: transparent;
+}
+
+.option-text {
+  font-weight: 500;
+  color: #333;
+  display: block;
+}
+
+.option-parent {
+  font-size: 0.75rem;
+  color: #6c757d;
+  display: block;
+  margin-top: 0.2rem;
+}
+
+.option-action {
+  color: #6c757d;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  align-self: flex-start;
+  margin-top: 0.2rem;
+}
+
+.option-create {
+  color: #2196f3;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.option-create:hover {
+  text-decoration: underline;
+}
+
+.folder-help {
+  padding: 0.5rem 1rem;
+  background-color: #f8f9fa;
+  border-top: 1px solid #e9ecef;
+  text-align: center;
+}
+
+.folder-help small {
+  color: #6c757d;
+  font-style: italic;
+}
+
+/* Custom scrollbar for dropdown */
+.folder-dropdown::-webkit-scrollbar {
+  width: 6px;
+}
+
+.folder-dropdown::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.folder-dropdown::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.folder-dropdown::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Focus styles */
+.folder-autocomplete input:focus + .folder-dropdown {
+  border-color: #80bdff;
+}
+
+/* Animation */
+.folder-dropdown {
+  animation: slideDown 0.15s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .folder-dropdown {
+    max-height: 200px;
+  }
+  
+  .folder-option-content {
+    padding: 0.5rem 0.75rem;
+    min-height: 2.5rem;
+  }
+  
+  .folder-icon-container {
+    margin-right: 0.25rem;
+  }
+} 

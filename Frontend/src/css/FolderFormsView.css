@@ -1,0 +1,637 @@
+/* ========================================
+   🎨 MODERN FOLDER FORMS VIEW STYLING
+   Premium Glass Morphism & Advanced Design
+======================================== */
+
+/* Main Container Enhancement */
+.folder-forms-container {
+  background: 
+    linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.05) 50%, rgba(64, 224, 208, 0.08) 100%),
+    radial-gradient(circle at 20% 80%, rgba(59, 130, 246, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(139, 92, 246, 0.08) 0%, transparent 50%);
+  min-height: 100vh;
+  padding: 2rem 0;
+  position: relative;
+}
+
+.folder-forms-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 30% 40%, rgba(59, 130, 246, 0.03) 0%, transparent 60%),
+    radial-gradient(circle at 70% 60%, rgba(236, 72, 153, 0.03) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.folder-forms-container > .container {
+  position: relative;
+  z-index: 1;
+}
+
+/* Premium Breadcrumb Styling */
+.folder-forms-breadcrumb {
+  background: 
+    linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.95) 100%);
+  backdrop-filter: blur(20px);
+  border: 2px solid rgba(59, 130, 246, 0.15);
+  border-radius: 20px;
+  padding: 16px 24px;
+  box-shadow: 
+    0 8px 24px rgba(59, 130, 246, 0.1),
+    0 4px 8px rgba(0, 0, 0, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  margin-bottom: 2rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.folder-forms-breadcrumb::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #3b82f6 0%, #8b5cf6 50%, #f59e0b 100%);
+  border-radius: 3px 3px 0 0;
+}
+
+.folder-forms-breadcrumb .breadcrumb {
+  margin: 0;
+  background: none;
+  padding: 0;
+}
+
+.folder-forms-breadcrumb .breadcrumb-item {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.folder-forms-breadcrumb .breadcrumb-item.active {
+  color: #1e40af;
+  font-weight: 700;
+}
+
+.folder-forms-breadcrumb .btn-link {
+  color: #3b82f6 !important;
+  text-decoration: none !important;
+  font-weight: 600 !important;
+  padding: 0 !important;
+  transition: all 0.3s ease;
+}
+
+.folder-forms-breadcrumb .btn-link:hover {
+  color: #1d4ed8 !important;
+  transform: translateY(-1px);
+}
+
+/* Ultra-Modern Header Section */
+.folder-forms-header {
+  background: 
+    linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(240, 248, 255, 0.9) 100%);
+  backdrop-filter: blur(25px);
+  border: 2px solid rgba(59, 130, 246, 0.2);
+  border-radius: 24px;
+  padding: 32px 40px;
+  margin-bottom: 2rem;
+  box-shadow: 
+    0 20px 40px rgba(59, 130, 246, 0.15),
+    0 8px 16px rgba(0, 0, 0, 0.08),
+    inset 0 2px 0 rgba(255, 255, 255, 0.9);
+  position: relative;
+  overflow: hidden;
+}
+
+.folder-forms-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #3b82f6 0%, #8b5cf6 25%, #ec4899 50%, #f59e0b 75%, #10b981 100%);
+}
+
+.folder-forms-header h2 {
+  font-weight: 800;
+  font-size: 2.2rem;
+  background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #8b5cf6 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 8px;
+  letter-spacing: 0.5px;
+  text-shadow: none;
+}
+
+.folder-forms-header .ni-folder {
+  background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+  color: white;
+  padding: 12px;
+  border-radius: 12px;
+  margin-right: 16px;
+  font-size: 1.5rem;
+  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
+  -webkit-text-fill-color: white;
+}
+
+.folder-forms-header .text-muted {
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: #64748b !important;
+  margin-bottom: 0;
+}
+
+.folder-forms-header .header-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+/* Enhanced Action Buttons */
+.folder-forms-btn {
+  border-radius: 14px !important;
+  padding: 12px 24px !important;
+  font-weight: 700 !important;
+  font-size: 0.95rem !important;
+  text-transform: none !important;
+  letter-spacing: 0.3px !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  border: 2px solid transparent !important;
+  backdrop-filter: blur(10px) !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+.folder-forms-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.6s;
+}
+
+.folder-forms-btn:hover::before {
+  left: 100%;
+}
+
+.folder-forms-btn-primary {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+  color: white !important;
+  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4) !important;
+}
+
+.folder-forms-btn-primary:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+  transform: translateY(-2px) scale(1.05) !important;
+  box-shadow: 0 12px 28px rgba(59, 130, 246, 0.5) !important;
+}
+
+.folder-forms-btn-outline {
+  background: rgba(255, 255, 255, 0.8) !important;
+  color: #3b82f6 !important;
+  border-color: rgba(59, 130, 246, 0.3) !important;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15) !important;
+}
+
+.folder-forms-btn-outline:hover {
+  background: rgba(59, 130, 246, 0.1) !important;
+  border-color: rgba(59, 130, 246, 0.5) !important;
+  transform: translateY(-2px) scale(1.05) !important;
+  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.25) !important;
+}
+
+/* Premium Search Input */
+.folder-forms-search {
+  position: relative;
+  margin-bottom: 2rem;
+  max-width: 500px;
+}
+
+.folder-forms-search::before {
+  content: '🔍';
+  position: absolute;
+  left: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.3rem;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.folder-forms-search .form-control {
+  background: 
+    linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.98) 100%);
+  border: 2px solid rgba(59, 130, 246, 0.2);
+  border-radius: 18px;
+  padding: 18px 24px 18px 56px;
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: #1f2937;
+  backdrop-filter: blur(15px);
+  box-shadow: 
+    0 8px 24px rgba(59, 130, 246, 0.1),
+    inset 0 2px 0 rgba(255, 255, 255, 0.9);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+}
+
+.folder-forms-search .form-control:focus {
+  border-color: rgba(59, 130, 246, 0.5);
+  background: 
+    linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(240, 248, 255, 0.95) 100%);
+  box-shadow: 
+    0 12px 32px rgba(59, 130, 246, 0.2),
+    0 0 0 4px rgba(59, 130, 246, 0.1),
+    inset 0 2px 0 rgba(255, 255, 255, 0.95);
+  transform: translateY(-2px) scale(1.02);
+  outline: none;
+}
+
+.folder-forms-search .form-control::placeholder {
+  color: rgba(107, 114, 128, 0.7);
+  font-weight: 500;
+  font-style: italic;
+}
+
+/* Enhanced Form Cards */
+.folder-forms-card {
+  background: 
+    linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.98) 100%);
+  backdrop-filter: blur(20px);
+  border: 2px solid rgba(16, 185, 129, 0.15);
+  border-radius: 20px;
+  box-shadow: 
+    0 12px 32px rgba(16, 185, 129, 0.1),
+    0 4px 12px rgba(0, 0, 0, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  height: 100%;
+}
+
+.folder-forms-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 5px;
+  height: 100%;
+  background: linear-gradient(180deg, #10b981 0%, #059669 50%, #047857 100%);
+  border-radius: 0 3px 3px 0;
+}
+
+.folder-forms-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, transparent 0%, rgba(255, 255, 255, 0.1) 50%, transparent 100%);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+}
+
+.folder-forms-card:hover {
+  transform: translateY(-8px) scale(1.02);
+  border-color: rgba(16, 185, 129, 0.3);
+  box-shadow: 
+    0 24px 60px rgba(16, 185, 129, 0.2),
+    0 12px 24px rgba(0, 0, 0, 0.1),
+    inset 0 2px 0 rgba(255, 255, 255, 0.95);
+}
+
+.folder-forms-card:hover::after {
+  opacity: 1;
+}
+
+.folder-forms-card .card-body {
+  padding: 28px;
+  position: relative;
+  z-index: 2;
+}
+
+.folder-forms-card .card-title {
+  font-weight: 700;
+  font-size: 1.3rem;
+  color: #1f2937;
+  margin-bottom: 12px;
+  line-height: 1.4;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+}
+
+.folder-forms-card .badge {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.folder-forms-card .text-muted {
+  color: #6b7280 !important;
+  font-weight: 500;
+  font-size: 0.95rem;
+  margin-bottom: 20px;
+}
+
+/* Card Action Buttons */
+.folder-forms-card-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.folder-forms-card .btn-sm {
+  border-radius: 10px;
+  padding: 8px 16px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 2px solid transparent;
+}
+
+.folder-forms-card .btn-primary {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  border-color: transparent;
+  color: white;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.folder-forms-card .btn-primary:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  transform: translateY(-1px) scale(1.05);
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+}
+
+.folder-forms-card .btn-outline-secondary {
+  background: rgba(255, 255, 255, 0.8);
+  border-color: rgba(107, 114, 128, 0.3);
+  color: #374151;
+  backdrop-filter: blur(10px);
+}
+
+.folder-forms-card .btn-outline-secondary:hover {
+  background: rgba(107, 114, 128, 0.1);
+  border-color: rgba(107, 114, 128, 0.5);
+  transform: translateY(-1px) scale(1.05);
+}
+
+.folder-forms-card .btn-outline-danger {
+  background: rgba(255, 255, 255, 0.8);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #dc2626;
+  backdrop-filter: blur(10px);
+}
+
+.folder-forms-card .btn-outline-danger:hover {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.5);
+  transform: translateY(-1px) scale(1.05);
+}
+
+/* Empty State Styling */
+.folder-forms-empty {
+  background: 
+    linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.95) 100%);
+  backdrop-filter: blur(20px);
+  border: 2px dashed rgba(139, 92, 246, 0.3);
+  border-radius: 24px;
+  padding: 60px 40px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.folder-forms-empty::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #8b5cf6 0%, #ec4899 50%, #f59e0b 100%);
+  border-radius: 4px 4px 0 0;
+}
+
+.folder-forms-empty h4 {
+  font-weight: 700;
+  font-size: 1.8rem;
+  color: #4c1d95;
+  margin-bottom: 16px;
+}
+
+.folder-forms-empty .text-muted {
+  font-size: 1.1rem;
+  color: #6b7280 !important;
+  margin-bottom: 24px;
+  font-weight: 500;
+}
+
+.folder-forms-empty .btn-primary {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  border: none;
+  border-radius: 14px;
+  padding: 14px 28px;
+  font-weight: 700;
+  font-size: 1rem;
+  box-shadow: 0 8px 24px rgba(139, 92, 246, 0.4);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.folder-forms-empty .btn-primary:hover {
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 12px 32px rgba(139, 92, 246, 0.5);
+}
+
+/* Loading State Enhancement */
+.folder-forms-loading {
+  background: 
+    linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.95) 100%);
+  backdrop-filter: blur(20px);
+  border: 2px solid rgba(59, 130, 246, 0.15);
+  border-radius: 24px;
+  padding: 80px 40px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.folder-forms-loading::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #3b82f6 0%, #8b5cf6 50%, #f59e0b 100%);
+  border-radius: 4px 4px 0 0;
+}
+
+.folder-forms-loading .spinner-border {
+  width: 4rem;
+  height: 4rem;
+  border-width: 0.4rem;
+  border-color: rgba(59, 130, 246, 0.3);
+  border-top-color: #3b82f6;
+}
+
+.folder-forms-loading p {
+  font-size: 1.2rem;
+  color: #4b5563;
+  font-weight: 600;
+  margin-top: 24px;
+}
+
+/* Error State Enhancement */
+.folder-forms-error {
+  background: 
+    linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(254, 242, 242, 0.95) 100%);
+  backdrop-filter: blur(20px);
+  border: 2px solid rgba(239, 68, 68, 0.2);
+  border-radius: 24px;
+  padding: 40px;
+  position: relative;
+  overflow: hidden;
+}
+
+.folder-forms-error::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #ef4444 0%, #dc2626 100%);
+  border-radius: 4px 4px 0 0;
+}
+
+.folder-forms-error h4 {
+  color: #dc2626;
+  font-weight: 700;
+}
+
+.folder-forms-error .btn-primary {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  border: none;
+  border-radius: 12px;
+  padding: 12px 24px;
+  font-weight: 600;
+  box-shadow: 0 6px 16px rgba(239, 68, 68, 0.3);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .folder-forms-header {
+    padding: 24px 28px;
+    border-radius: 20px;
+  }
+  
+  .folder-forms-header h2 {
+    font-size: 1.8rem;
+  }
+  
+  .folder-forms-header .header-actions {
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 16px;
+  }
+  
+  .folder-forms-btn {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .folder-forms-search {
+    max-width: 100%;
+  }
+  
+  .folder-forms-card .card-body {
+    padding: 20px;
+  }
+  
+  .folder-forms-card-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .folder-forms-card .btn-sm {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .folder-forms-breadcrumb {
+    padding: 12px 16px;
+    border-radius: 16px;
+  }
+  
+  .folder-forms-header {
+    padding: 20px 24px;
+  }
+  
+  .folder-forms-search .form-control {
+    padding: 16px 20px 16px 48px;
+    font-size: 1rem;
+  }
+  
+  .folder-forms-empty,
+  .folder-forms-loading {
+    padding: 40px 24px;
+  }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .folder-forms-card,
+  .folder-forms-btn,
+  .folder-forms-search .form-control,
+  .folder-forms-card .btn-sm {
+    transition: none !important;
+    animation: none !important;
+  }
+  
+  .folder-forms-card:hover {
+    transform: none !important;
+  }
+}
+
+@media (prefers-contrast: high) {
+  .folder-forms-card,
+  .folder-forms-header,
+  .folder-forms-breadcrumb {
+    border-width: 3px !important;
+    border-color: #000 !important;
+  }
+  
+  .folder-forms-btn-primary {
+    background: #000 !important;
+    color: #fff !important;
+  }
+}
+
+/* Performance Optimizations */
+.folder-forms-card,
+.folder-forms-btn,
+.folder-forms-search .form-control {
+  will-change: transform;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+} 

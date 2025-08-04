@@ -1,0 +1,6 @@
+.builder-container { display: flex; height: 100vh; }
+.palette { width: 200px; background: #f7f7f7; padding: 10px; }
+.palette-item { padding: 8px; margin: 4px 0; background: white; border: 1px solid #ccc; cursor: grab; }
+.canvas { flex: 1; background: #fff; border: 2px dashed #ccc; margin: 10px; position: relative; }
+.canvas-field { padding: 8px; margin: 4px; background: #e0f7fa; border: 1px solid #00796b; cursor: pointer; }
+.settings-panel { width: 300px; background: #fafafa; padding: 10px; overflow-y: auto; }
