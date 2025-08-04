@@ -10,7 +10,7 @@ const path = require('path');
 const formRoutes = require('./routes/forms');
 const responseRoutes = require('./routes/responses');
 // const initDatabase = require('./initDatabase');
-const fallbackData = require('./fallbackData');
+//const fallbackData = require('./fallbackData');
 
 async function start() {
   // Use environment variable or default to local MongoDB
@@ -31,9 +31,9 @@ async function start() {
     console.log('Note: Data will not persist between server restarts');
   }
 
-  // Store database mode for routes to use
-  global.usingMongoDB = usingMongoDB;
-  global.fallbackData = fallbackData;
+  // // Store database mode for routes to use
+  // global.usingMongoDB = usingMongoDB;
+  // global.fallbackData = fallbackData;
 
   // Middleware
   app.use(express.json());

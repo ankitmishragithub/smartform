@@ -1,58 +1,41 @@
+// routes/forms.js
 const express = require('express');
 const Form = require('../models/Form');
 const router = express.Router();
 
-// Helper function to extract folderName from schemaJson
+// Helper to extract folder name (fallback to "Default")
 function getFolderNameFromSchema(schemaJson) {
-  const folderField = schemaJson?.find(field => field.type === 'folderName');
-  return folderField?.label || 'Default';
+  if (!Array.isArray(schemaJson)) return 'Default';
+  const folderField = schemaJson.find(f => f.type === 'folderName');
+  return (folderField?.label || 'Default').trim() || 'Default';
 }
 
-// Helper function to extract all folder names from forms (including parent paths)
+// Compute all folder names including parent segments
 async function getAllFolderNames() {
-  let forms;
-  if (global.usingMongoDB) {
-    forms = await Form.find({}, 'schemaJson');
-  } else {
-    forms = global.fallbackData.getAllForms();
-  }
-  
+  const forms = await Form.find({}, 'schemaJson').lean();
   const allPaths = new Set();
-  
+
   forms.forEach(form => {
     const folderName = getFolderNameFromSchema(form.schemaJson);
-    if (folderName && folderName !== 'Default') {
-      // Add the full path
-      allPaths.add(folderName);
-      
-      // Add all parent paths for nested folders
-      const parts = folderName.split('/');
-      for (let i = 1; i < parts.length; i++) {
-        const parentPath = parts.slice(0, i).join('/');
-        if (parentPath.trim()) {
-          allPaths.add(parentPath);
-        }
-      }
+    if (!folderName || folderName === 'Default') return;
+    allPaths.add(folderName);
+    const parts = folderName.split('/');
+    for (let i = 1; i < parts.length; i++) {
+      const parentPath = parts.slice(0, i).join('/');
+      if (parentPath.trim()) allPaths.add(parentPath);
     }
   });
-  
-  return [...allPaths].sort(); // Return sorted array
+
+  return [...allPaths].sort();
 }
 
 // Create new form
 router.post('/', async (req, res) => {
   try {
-  const { schemaJson } = req.body;
-    console.log('Received form data:', { schemaJson: !!schemaJson });
-    
+    const { schemaJson } = req.body;
     if (!schemaJson) return res.status(400).json({ error: 'schemaJson is required' });
-    
-    const folderName = getFolderNameFromSchema(schemaJson);
-    console.log('Extracted folderName:', folderName);
-    
-  const form = await Form.create({ schemaJson });
-    console.log('Form created successfully:', form._id);
-  res.status(201).json(form);
+    const form = await Form.create({ schemaJson });
+    res.status(201).json(form);
   } catch (err) {
     console.error('Error creating form:', err);
     res.status(500).json({ error: 'Server error' });
@@ -62,20 +45,13 @@ router.post('/', async (req, res) => {
 // List all forms
 router.get('/', async (req, res) => {
   try {
-    let forms;
-    if (global.usingMongoDB) {
-      forms = await Form.find().sort({ createdAt: -1 });
-    } else {
-      forms = global.fallbackData.getAllForms();
-    }
+    const forms = await Form.find().sort({ createdAt: -1 });
     res.json(forms);
   } catch (err) {
     console.error('Error fetching forms:', err);
     res.status(500).json({ error: 'Server error' });
   }
 });
-
-// IMPORTANT: Specific routes must come BEFORE generic /:id route
 
 // List all unique folder names
 router.get('/folders', async (req, res) => {
@@ -92,63 +68,44 @@ router.get('/folders', async (req, res) => {
 router.get('/folder/:folderName', async (req, res) => {
   try {
     const targetFolder = decodeURIComponent(req.params.folderName).trim().toLowerCase();
-    console.log('[API] Fetching forms for folder:', targetFolder);
-    let forms;
-    if (global.usingMongoDB) {
-      forms = await Form.find().sort({ createdAt: -1 });
-    } else {
-      forms = global.fallbackData.getAllForms();
-    }
-    // Filter forms by folderName extracted from schema (case-insensitive, trimmed)
-    const filteredForms = forms.filter(form => {
-      const folderName = getFolderNameFromSchema(form.schemaJson).trim().toLowerCase();
+    const forms = await Form.find().sort({ createdAt: -1 }).lean();
+    const filtered = forms.filter(form => {
+      const folderName = getFolderNameFromSchema(form.schemaJson).toLowerCase();
       return folderName === targetFolder;
     });
-    console.log(`[API] Found ${filteredForms.length} forms in folder '${targetFolder}'`);
-    if (filteredForms.length === 0) {
+    if (filtered.length === 0) {
       return res.status(404).json({ error: `No forms found in folder '${targetFolder}'` });
     }
-    res.json(filteredForms);
+    res.json(filtered);
   } catch (err) {
     console.error('Error fetching forms by folder:', err);
     res.status(500).json({ error: 'Server error' });
   }
 });
 
-// Get a single form by ID (this must come AFTER specific routes)
+// Get single form by ID
 router.get('/:id', async (req, res) => {
   try {
     const form = await Form.findById(req.params.id);
     if (!form) return res.status(404).json({ error: 'Form not found' });
     res.json(form);
   } catch (err) {
-    console.error(err);
+    console.error('Error fetching form:', err);
     res.status(500).json({ error: 'Server error' });
   }
 });
 
-// UPDATE form by ID (for editing)
+// Update form
 router.put('/:id', async (req, res) => {
   try {
     const { schemaJson } = req.body;
-    console.log('Updating form:', req.params.id, { schemaJson: !!schemaJson });
-    
     if (!schemaJson) return res.status(400).json({ error: 'schemaJson is required' });
-    
-    const folderName = getFolderNameFromSchema(schemaJson);
-    console.log('Extracted folderName:', folderName);
-    
     const updatedForm = await Form.findByIdAndUpdate(
       req.params.id,
       { schemaJson },
-      { new: true } // returns updated doc
+      { new: true }
     );
-
-    if (!updatedForm) {
-      return res.status(404).json({ error: 'Form not found' });
-    }
-
-    console.log('Form updated successfully:', updatedForm._id);
+    if (!updatedForm) return res.status(404).json({ error: 'Form not found' });
     res.json(updatedForm);
   } catch (err) {
     console.error('Error updating form:', err);
@@ -156,14 +113,14 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// Delete a form
+// Delete form
 router.delete('/:id', async (req, res) => {
   try {
     const deleted = await Form.findByIdAndDelete(req.params.id);
     if (!deleted) return res.status(404).json({ error: 'Form not found' });
     res.json({ success: true, message: 'Form deleted successfully' });
   } catch (err) {
-    console.error(err);
+    console.error('Error deleting form:', err);
     res.status(500).json({ error: 'Server error' });
   }
 });
