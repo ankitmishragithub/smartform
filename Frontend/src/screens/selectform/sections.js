@@ -38,7 +38,8 @@ export const SECTIONS = [
       { type: "table", label: "📋 Table Grid", icon: "📋", description: "Organized in rows/columns", defaultRows: 2, defaultCols: 2 },
       { type: "tabs", label: "📂 Tab Container", icon: "📂", description: "Organize in tabs", defaultTabs: 2 },
       { type: "spreadsheet", label: "📊 Spreadsheet", icon: "📊", description: "Dynamic spreadsheet with multiple sheets", defaultSheets: 1, defaultRows: 5, defaultCols: 5 },
+      { type: "jspreadsheet", label: "📈 jSpreadsheet", icon: "📈", description: "Advanced jSpreadsheet ", defaultRows: 3, defaultCols: 4 },
       { type: "well", label: "📦 Well Container", icon: "📦", description: "Bordered content area" },
     ],
   },
-];
+];  
