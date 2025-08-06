@@ -16,10 +16,39 @@ function SpreadsheetFormFillComponent({ field, value, onChange }) {
   // Initialize editable data when component mounts or field changes
   useEffect(() => {
     const sheets = field.sheets || [];
+    console.log("sheets: ",sheets)
     const currentSheet = sheets[currentActiveSheet] || { data: [], headers: [], rows: 0, cols: 0, mergedCells: [] };
     
     const newEditableData = {};
     const editableCells = new Set(); // Track which cells are editable
+    
+    // First, identify time columns
+    const timeColumns = new Set();
+    const maxRowsToCheck = Math.min(3, currentSheet.data?.length || 0);
+    
+    if (currentSheet.data && currentSheet.data[0]) {
+      for (let colIndex = 0; colIndex < currentSheet.data[0].length; colIndex++) {
+        let headerContent = '';
+        for (let checkRow = 0; checkRow < maxRowsToCheck; checkRow++) {
+          const checkCell = currentSheet.data[checkRow] && currentSheet.data[checkRow][colIndex];
+          if (checkCell) {
+            const cellContent = typeof checkCell === 'object' ? (checkCell.content || '') : checkCell;
+            if (cellContent && cellContent.trim() !== '') {
+              headerContent = cellContent;
+              break;
+            }
+          }
+        }
+        
+        const hasTime = headerContent.toLowerCase().includes('time');
+        const hasTimedot = headerContent.toLowerCase().includes('time.');
+        const isTimeColumn = hasTime || hasTimedot;
+        
+        if (isTimeColumn) {
+          timeColumns.add(colIndex);
+        }
+      }
+    }
     
     if (currentSheet.data) {
       currentSheet.data.forEach((row, rowIndex) => {
@@ -32,10 +61,21 @@ function SpreadsheetFormFillComponent({ field, value, onChange }) {
           } else {
             content = cell || '';
           }
-          // Smart detection: Only empty cells are editable
-          if (!content || content.trim() === '') {
-            newEditableData[cellKey] = '';
-            editableCells.add(cellKey);
+          
+          // For time columns: make first data row (row 1) non-editable, others editable if empty
+          const isTimeColumn = timeColumns.has(colIndex);
+          const isFirstDataRow = rowIndex === 1;
+          
+          if (isTimeColumn && isFirstDataRow) {
+            // First row below time header - not editable, reserved for time display
+            newEditableData[cellKey] = content || '';
+            // Don't add to editableCells - this makes it non-editable
+          } else {
+            // Normal logic: Only empty cells are editable
+            if (!content || content.trim() === '') {
+              newEditableData[cellKey] = '';
+              editableCells.add(cellKey);
+            }
           }
         });
       });
@@ -48,33 +88,82 @@ function SpreadsheetFormFillComponent({ field, value, onChange }) {
   const handleCellChange = (rowIndex, colIndex, newValue) => {
     const cellKey = `${rowIndex}-${colIndex}`;
     
+    const sheets = field.sheets || [];
+    const currentSheet = sheets[currentActiveSheet] || { data: [], headers: [], rows: 0, cols: 0, mergedCells: [] };
+    
+    // Check if current column is a time column and auto-capture time in first row
+    let headerContent = '';
+    const maxRowsToCheck = Math.min(3, currentSheet.data?.length || 0);
+    
+    for (let checkRow = 0; checkRow < maxRowsToCheck; checkRow++) {
+      const checkCell = currentSheet.data && currentSheet.data[checkRow] && currentSheet.data[checkRow][colIndex];
+      if (checkCell) {
+        const cellContent = typeof checkCell === 'object' ? (checkCell.content || '') : checkCell;
+        if (cellContent && cellContent.trim() !== '') {
+          headerContent = cellContent;
+          break;
+        }
+      }
+    }
+    
+    const hasTime = headerContent.toLowerCase().includes('time');
+    const hasTimedot = headerContent.toLowerCase().includes('time.');
+    const isTimeColumn = hasTime || hasTimedot;
+    const isFirstDataRow = rowIndex === 1;
+    
+    // Prepare updates
+    const updates = { [cellKey]: newValue };
+    
+    // If user entered data in a time column (but not in first row), auto-capture current time in first row
+    if (isTimeColumn && !isFirstDataRow && newValue && newValue.trim() !== '') {
+      const firstRowTimeKey = `1-${colIndex}`;
+      const currentTimeValue = editableData[firstRowTimeKey] || '';
+      
+      // Only auto-timestamp if first row of time column is empty
+      if (!currentTimeValue || currentTimeValue.trim() === '') {
+        const now = new Date();
+        const currentTime = now.toLocaleTimeString('en-US', { 
+          hour12: false, // 24-hour format
+          hour: '2-digit', 
+          minute: '2-digit' 
+        });
+        updates[firstRowTimeKey] = currentTime;
+      }
+    }
+    
     // Update local state immediately for responsive UI
     setEditableData(prev => ({
       ...prev,
-      [cellKey]: newValue
+      ...updates
     }));
     
     // Update the parent form value
-    const sheets = field.sheets || [];
     const updatedSheets = [...sheets];
-    const currentSheet = updatedSheets[currentActiveSheet];
+    const activeSheet = updatedSheets[currentActiveSheet];
     
-    if (currentSheet && currentSheet.data) {
-      const updatedData = [...currentSheet.data];
-      if (updatedData[rowIndex]) {
-        updatedData[rowIndex] = [...updatedData[rowIndex]];
-        // Update cell content, preserving formatting if it exists
-        if (typeof updatedData[rowIndex][colIndex] === 'object' && updatedData[rowIndex][colIndex] !== null) {
-          updatedData[rowIndex][colIndex] = {
-            ...updatedData[rowIndex][colIndex],
-            content: newValue
-          };
-        } else {
-          updatedData[rowIndex][colIndex] = newValue;
+    if (activeSheet && activeSheet.data) {
+      const updatedData = [...activeSheet.data];
+      
+      // Apply all updates (original cell + auto-timestamp if applicable)
+      Object.entries(updates).forEach(([key, value]) => {
+        const [updateRowIndex, updateColIndex] = key.split('-').map(Number);
+        
+        if (updatedData[updateRowIndex]) {
+          updatedData[updateRowIndex] = [...updatedData[updateRowIndex]];
+          // Update cell content, preserving formatting if it exists
+          if (typeof updatedData[updateRowIndex][updateColIndex] === 'object' && updatedData[updateRowIndex][updateColIndex] !== null) {
+            updatedData[updateRowIndex][updateColIndex] = {
+              ...updatedData[updateRowIndex][updateColIndex],
+              content: value
+            };
+          } else {
+            updatedData[updateRowIndex][updateColIndex] = value;
+          }
         }
-      }
-      currentSheet.data = updatedData;
-      updatedSheets[currentActiveSheet] = currentSheet;
+      });
+      
+      activeSheet.data = updatedData;
+      updatedSheets[currentActiveSheet] = activeSheet;
       
       // Update the field data
       const updatedField = {
@@ -86,9 +175,53 @@ function SpreadsheetFormFillComponent({ field, value, onChange }) {
     }
   };
 
+  // Function to autofill current time (only for Time columns)
+  const handleAutofillTime = (rowIndex, colIndex, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const now = new Date();
+    const currentTime = now.toLocaleTimeString('en-US', { 
+      hour12: false, // 24-hour format
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
+    
+    handleCellChange(rowIndex, colIndex, currentTime);
+  };
+
   const handleCellKeyDown = (e, rowIndex, colIndex) => {
     const sheets = field.sheets || [];
     const currentSheet = sheets[currentActiveSheet] || { data: [], headers: [], rows: 0, cols: 0, mergedCells: [] };
+    
+    // Check if this is a Time column for Ctrl+T shortcut (check multiple rows for headers)
+    let headerContent = '';
+    const maxRowsToCheck = Math.min(3, currentSheet.data?.length || 0); // Check first 3 rows
+    
+    for (let checkRow = 0; checkRow < maxRowsToCheck; checkRow++) {
+      const checkCell = currentSheet.data && currentSheet.data[checkRow] && currentSheet.data[checkRow][colIndex];
+      if (checkCell) {
+        const cellContent = typeof checkCell === 'object' ? (checkCell.content || '') : checkCell;
+        if (cellContent && cellContent.trim() !== '') {
+          headerContent = cellContent;
+          break; // Found non-empty content, use it as header
+        }
+      }
+    }
+    const hasTime = headerContent.toLowerCase().includes('time');
+    const isTimeColumn = hasTime;
+    const isFirstDataRow = rowIndex === 1; // Only show for row immediately below header
+    
+    // For "time" only columns: restrict to first data row
+    // For "start"/"end" columns: allow entire column
+    const shouldShowTimeButton = isTimeColumn && ( isFirstDataRow);
+    
+    // Ctrl+T to autofill current time
+    if (shouldShowTimeButton && e.ctrlKey && e.key.toLowerCase() === 't') {
+      e.preventDefault();
+      handleAutofillTime(rowIndex, colIndex, e);
+      return;
+    }
     
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -554,7 +687,7 @@ function SpreadsheetFormFillComponent({ field, value, onChange }) {
                 {/* Row Number - HIDDEN FOR FORM FILL */}
                 {/* 
                 <td>
-                                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                       <span>{rowIndex + 1}</span>
                       {addedRows.has(rowIndex) && (
                         <button
@@ -594,6 +727,35 @@ function SpreadsheetFormFillComponent({ field, value, onChange }) {
 
                   const displayValue = isEditable ? (editableData[cellKey] || '') : content;
                   
+                  // Check if this column contains "Time" in the header (check multiple rows for headers)
+                  const sheets = field.sheets || [];
+                  const activeSheet = sheets[currentActiveSheet] || { data: [], headers: [], rows: 0, cols: 0, mergedCells: [] };
+                  
+                  let headerContent = '';
+                  const maxRowsToCheck = Math.min(3, activeSheet.data?.length || 0); // Check first 3 rows
+                  
+                  for (let checkRow = 0; checkRow < maxRowsToCheck; checkRow++) {
+                    const checkCell = activeSheet.data && activeSheet.data[checkRow] && activeSheet.data[checkRow][colIndex];
+                    if (checkCell) {
+                      const cellContent = typeof checkCell === 'object' ? (checkCell.content || '') : checkCell;
+                      if (cellContent && cellContent.trim() !== '') {
+                        headerContent = cellContent;
+                        break; // Found non-empty content, use it as header
+                      }
+                    }
+                  }
+                  const hasTime = headerContent.toLowerCase().includes('time');
+                  const hasTimedot = headerContent.toLowerCase().includes('time.');
+
+                  // const hasStart = headerContent.toLowerCase().includes('start');
+                  // const hasEnd = headerContent.toLowerCase().includes('end');
+                  const isTimeColumn = hasTime ||hasTimedot;
+                  const isFirstDataRow = rowIndex === 1; // Only show for row immediately below header
+                  
+                  // For "time" only columns: restrict to first data row
+                  // For "start"/"end" columns: allow entire column
+                  const shouldShowTimeButton = isTimeColumn && ( isFirstDataRow || hasTimedot);
+                  
                   return (
                     <td 
                       key={colIndex} 
@@ -605,39 +767,106 @@ function SpreadsheetFormFillComponent({ field, value, onChange }) {
                       }}
                     >
                       {isEditable ? (
-                        <input
-                          type="text"
-                          value={displayValue}
-                          onChange={(e) => handleCellChange(rowIndex, colIndex, e.target.value)}
-                          onKeyDown={(e) => handleCellKeyDown(e, rowIndex, colIndex)}
-                          onClick={handleCellClick}
-                          data-cell={`${rowIndex}-${colIndex}`}
-                          style={{
-                            width: "100%",
-                            height: "100%",
-                            border: "none",
-                            background: "transparent",
-                            outline: "none",
-                            fontSize: styles.fontSize || "14px",
-                            fontFamily: styles.fontFamily || "inherit",
-                            fontWeight: styles.fontWeight || "normal",
-                            fontStyle: styles.fontStyle || "normal",
-                            color: styles.color || "inherit",
-                            textAlign: styles.textAlign || "left",
-                            padding: "8px",
-                            margin: "0",
-                            position: "absolute",
-                            top: "0",
-                            left: "0",
-                            right: "0",
-                            bottom: "0",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            zIndex: 10,
-                            boxSizing: "border-box"
-                          }}
-                          className="form-fill-spreadsheet-input"
-                        />
+                        shouldShowTimeButton ? (
+                          <div style={{ position: "relative", width: "100%", height: "100%" }}>
+                            <input
+                              type="text"
+                              value={displayValue}
+                              onChange={(e) => handleCellChange(rowIndex, colIndex, e.target.value)}
+                              onKeyDown={(e) => handleCellKeyDown(e, rowIndex, colIndex)}
+                              onClick={handleCellClick}
+                              data-cell={`${rowIndex}-${colIndex}`}
+                              style={{
+                                width: "100%",
+                                height: "100%",
+                                border: "none",
+                                background: "transparent",
+                                outline: "none",
+                                fontSize: styles.fontSize || "14px",
+                                fontFamily: styles.fontFamily || "inherit",
+                                fontWeight: styles.fontWeight || "normal",
+                                fontStyle: styles.fontStyle || "normal",
+                                color: styles.color || "inherit",
+                                textAlign: styles.textAlign || "left",
+                                padding: "8px 28px 8px 8px",
+                                margin: "0",
+                                position: "absolute",
+                                top: "0",
+                                left: "0",
+                                right: "0",
+                                bottom: "0",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                zIndex: 10,
+                                boxSizing: "border-box"
+                              }}
+                              className="form-fill-spreadsheet-input"
+                            />
+                            <button
+                              type="button"
+                              onClick={(e) => handleAutofillTime(rowIndex, colIndex, e)}
+                              title="Insert current time"
+                              style={{
+                                position: "absolute",
+                                right: "2px",
+                                top: "50%",
+                                transform: "translateY(-50%)",
+                                width: "20px",
+                                height: "20px",
+                                border: "none",
+                                background: "#6366f1",
+                                color: "white",
+                                borderRadius: "3px",
+                                cursor: "pointer",
+                                fontSize: "10px",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                zIndex: 20,
+                                opacity: "0.8",
+                                transition: "opacity 0.2s"
+                              }}
+                              onMouseEnter={(e) => e.target.style.opacity = "1"}
+                              onMouseLeave={(e) => e.target.style.opacity = "0.8"}
+                            >
+                              🕐
+                            </button>
+                          </div>
+                        ) : (
+                          <input
+                            type="text"
+                            value={displayValue}
+                            onChange={(e) => handleCellChange(rowIndex, colIndex, e.target.value)}
+                            onKeyDown={(e) => handleCellKeyDown(e, rowIndex, colIndex)}
+                            onClick={handleCellClick}
+                            data-cell={`${rowIndex}-${colIndex}`}
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              border: "none",
+                              background: "transparent",
+                              outline: "none",
+                              fontSize: styles.fontSize || "14px",
+                              fontFamily: styles.fontFamily || "inherit",
+                              fontWeight: styles.fontWeight || "normal",
+                              fontStyle: styles.fontStyle || "normal",
+                              color: styles.color || "inherit",
+                              textAlign: styles.textAlign || "left",
+                              padding: "8px",
+                              margin: "0",
+                              position: "absolute",
+                              top: "0",
+                              left: "0",
+                              right: "0",
+                              bottom: "0",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              zIndex: 10,
+                              boxSizing: "border-box"
+                            }}
+                            className="form-fill-spreadsheet-input"
+                          />
+                        )
                       ) : (
                         <span style={{ 
                           ...styles,
@@ -1557,6 +1786,7 @@ export default function FormFillPage(props) {
       return (
         <div key={node.id} className="form-group mb-3">
           {renderInput(node)}
+
         </div>
       );
     }
@@ -1579,7 +1809,7 @@ export default function FormFillPage(props) {
         </div>
       ) : (
         <div className="modal-content">
-          <h3>{formName}</h3>
+          <h5>{formName}</h5>
           <form>
             {/* Form Fields */}
             <div style={{ marginBottom: "20px" }}>

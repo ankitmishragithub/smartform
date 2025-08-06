@@ -291,6 +291,7 @@ export default function ResponseReports() {
 const exportToPDF = () => {
   setIsExporting(true);
   try {
+    const selectedForm = selectedForms.length === 1 ? selectedForms[0] : 'all';
     const filters = {
       selectedForm,
       statusFilter,

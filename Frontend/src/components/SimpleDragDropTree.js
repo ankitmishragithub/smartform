@@ -39,7 +39,7 @@ const DraggableForm = ({ form, folderPath, onMoveForm }) => {
           <div className="d-flex flex-column">
             <div className="d-flex align-items-center mb-2">
               <i className="ni ni-file-docs me-2 text-success"></i>
-              <span className="flex-grow-1 fw-bold">{form.heading}</span>
+              <span className="flex-grow-1 fw-bold">{form.name}</span>
               <Badge color="secondary" size="sm">Form</Badge>
             </div>
             
