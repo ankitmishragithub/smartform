@@ -5,6 +5,7 @@ import TabsLayout from "./TabsLayout";
 import FieldCard from "./FieldCard";
 import AgGridSheet from "./AgGridSheet";
 import SpreadsheetComponent from "../../components/SpreadsheetComponent";
+import JSpreadsheetComponent from "../../components/JSpreadsheetComponent";
 
 export default function CanvasNode({
   node,
@@ -132,6 +133,18 @@ export default function CanvasNode({
               }
               onUpdateField(node.id, updatedField);
             }} 
+          />
+        </div>
+      );
+    case "jspreadsheet":
+      return (
+        <div className="canvas-field jspreadsheet-field">
+          <JSpreadsheetComponent 
+            field={node} 
+            onChange={(updatedField) => {
+              onUpdateField(node.id, updatedField);
+            }}
+            isFormFill={false}
           />
         </div>
       );

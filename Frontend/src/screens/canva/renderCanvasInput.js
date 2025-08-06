@@ -51,6 +51,8 @@ export default function renderCanvasInput(f) {
       "datagrid",
       "editgrid",
       "datamap",
+      "spreadsheet",
+      "jspreadsheet",
     ].includes(f.type)
   ) {
     return <div className="placeholder-block">{f.label} Block</div>;

@@ -4,6 +4,7 @@ import PropTypes from "prop-types";
 import {Button} from "reactstrap"
 import "../../css/Livepreview.css";
 import api from '../../api/api';
+import JSpreadsheetComponent from "../../components/JSpreadsheetComponent";
 
 
 // Separate component to handle tabs to avoid hooks issues
@@ -1502,6 +1503,22 @@ export default function LivePreview({ fields, values, onChange, folderName }) {
 
     return (
       <SpreadsheetPreviewComponent key={node.id} node={node} values={values} handlePreviewChange={handlePreviewChange} />
+    );
+  }
+
+  // jSpreadsheet layout
+  if (node.type === "jspreadsheet") {
+    return (
+      <div key={node.id} style={{ marginBottom: "1rem" }}>
+        <JSpreadsheetComponent 
+          field={node} 
+          value={values[node.id]}
+          onChange={(updatedField) => {
+            handlePreviewChange(node.id, updatedField);
+          }}
+          isFormFill={true}
+        />
+      </div>
     );
   }
 

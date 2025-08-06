@@ -65,7 +65,14 @@ function PaletteItem({ field, onAdd }) {
       const numCols = parseInt(cols, 10);
       if ([numSheets, numRows, numCols].every((n) => !isNaN(n) && n > 0))
         onAdd({ ...field, defaultSheets: numSheets, defaultRows: numRows, defaultCols: numCols });
-    } else {
+          } else if (field.type === "jspreadsheet") {
+        const rows = prompt("Enter number of rows:", String(field.defaultRows || 3));
+        const numRows = parseInt(rows, 10);
+        const cols = prompt("Enter number of columns:", String(field.defaultCols || 4));
+        const numCols = parseInt(cols, 10);
+        if ([numRows, numCols].every((n) => !isNaN(n) && n > 0))
+          onAdd({ ...field, defaultRows: numRows, defaultCols: numCols });
+      } else {
       onAdd(field);
     }
   };
