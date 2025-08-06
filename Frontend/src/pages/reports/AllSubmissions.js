@@ -264,6 +264,38 @@ export default function AllSubmissions() {
     return stringAnswer || 'N/A';
   };
 
+  // Helper function to check if a cell is merged
+  const isCellMerged = (rowIndex, colIndex, mergedCells = []) => {
+    return mergedCells?.some(merge => 
+      merge.startRow <= rowIndex && 
+      merge.endRow >= rowIndex && 
+      merge.startCol <= colIndex && 
+      merge.endCol >= colIndex
+    ) || false;
+  };
+
+  // Helper function to get merge info
+  const getMergeInfo = (rowIndex, colIndex, mergedCells = []) => {
+    const merge = mergedCells?.find(merge => 
+      merge.startRow <= rowIndex && 
+      merge.endRow >= rowIndex && 
+      merge.startCol <= colIndex && 
+      merge.endCol >= colIndex
+    );
+    
+    if (!merge) return { isStartCell: false, isContinuation: false };
+    
+    const isStartCell = rowIndex === merge.startRow && colIndex === merge.startCol;
+    const isContinuation = !isStartCell;
+    
+    return { 
+      isStartCell, 
+      isContinuation,
+      rowSpan: merge.endRow - merge.startRow + 1,
+      colSpan: merge.endCol - merge.startCol + 1
+    };
+  };
+
   const filterResponses = () => {
     let filtered = responses;
 
@@ -314,7 +346,7 @@ export default function AllSubmissions() {
   function getFormLabel(formId) {
     const form = getFormObject(formId);
     if (!form) return "Unknown";
-    const folder = form.schemaJson.find(e => e.type === "folderName")?.label;
+    const folder = form.schemaJson.find(e => e.type === "heading")?.label;
     const heading = form.schemaJson.find(e => e.type === "heading")?.label;
     return folder ? folder : heading ? heading : "Untitled Form";
   }
@@ -1095,8 +1127,8 @@ export default function AllSubmissions() {
                    }}>
                      <thead>
                        <tr style={{ backgroundColor: "#f8f9fa" }}>
-                         <th style={{ padding: "8px", border: "1px solid #e5e7eb", fontWeight: "600", minWidth: "40px" }}></th>
-                         {spreadsheetData[activeSheetIndex].headers && spreadsheetData[activeSheetIndex].headers.map((header, colIndex) => (
+                         {/* <th style={{ padding: "8px", border: "1px solid #e5e7eb", fontWeight: "600", minWidth: "40px" }}></th> */}
+                         {/* {spreadsheetData[activeSheetIndex].headers && spreadsheetData[activeSheetIndex].headers.map((header, colIndex) => (
                            <th key={colIndex} style={{
                              padding: "8px",
                              border: "1px solid #e5e7eb",
@@ -1106,13 +1138,13 @@ export default function AllSubmissions() {
                            }}>
                              {header || `Column ${colIndex + 1}`}
                            </th>
-                         ))}
+                         ))} */}
                        </tr>
                      </thead>
                      <tbody>
                        {spreadsheetData[activeSheetIndex].data && spreadsheetData[activeSheetIndex].data.map((row, rowIndex) => (
                          <tr key={rowIndex}>
-                           <td style={{
+                           {/* <td style={{
                              padding: "8px",
                              border: "1px solid #e5e7eb",
                              backgroundColor: "#f8f9fa",
@@ -1120,8 +1152,15 @@ export default function AllSubmissions() {
                              textAlign: "center"
                            }}>
                              {rowIndex + 1}
-                           </td>
+                           </td> */}
                            {row && row.map((cell, colIndex) => {
+                             const mergeInfo = getMergeInfo(rowIndex, colIndex, spreadsheetData[activeSheetIndex].mergedCells);
+                             
+                             // Skip rendering continuation cells in merged ranges
+                             if (mergeInfo.isContinuation) {
+                               return null;
+                             }
+                             
                              // Handle both old string format and new object format with formatting
                              let cellContent = "";
                              let cellStyle = {
@@ -1154,8 +1193,17 @@ export default function AllSubmissions() {
                                }
                              }
                              
+                             const isMerged = isCellMerged(rowIndex, colIndex, spreadsheetData[activeSheetIndex].mergedCells);
+                             
                              return (
-                               <td key={colIndex} style={cellStyle}>
+                               <td 
+                                 key={colIndex} 
+                                 rowSpan={mergeInfo.rowSpan || 1}
+                                 colSpan={mergeInfo.colSpan || 1}
+                                 style={{
+                                   ...cellStyle,
+                                   backgroundColor: isMerged ? "rgba(102, 126, 234, 0.1)" : cellStyle.backgroundColor
+                                 }}>
                                  {cellContent || ""}
                                </td>
                              );

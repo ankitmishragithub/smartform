@@ -1819,7 +1819,7 @@ export default function FormFillPage(props) {
         </div>
       ) : (
         <div className="modal-content">
-          <h3>{formName}</h3>
+          <h5>{formName}</h5>
           <form>
             {/* Form Fields */}
             <div style={{ marginBottom: "20px" }}>
