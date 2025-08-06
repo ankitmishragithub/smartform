@@ -42,4 +42,4 @@ export const SECTIONS = [
       { type: "well", label: "📦 Well Container", icon: "📦", description: "Bordered content area" },
     ],
   },
-];
+];  
