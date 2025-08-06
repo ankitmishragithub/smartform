@@ -25,12 +25,12 @@ function SpreadsheetFormFillComponent({ field, value, onChange }) {
     
     // First, identify time columns
     const timeColumns = new Set();
-    const maxRowsToCheck = Math.min(3, currentSheet.data?.length || 0);
     
     if (currentSheet.data && currentSheet.data[0]) {
       for (let colIndex = 0; colIndex < currentSheet.data[0].length; colIndex++) {
         let headerContent = '';
-        for (let checkRow = 0; checkRow < maxRowsToCheck; checkRow++) {
+        // Check all rows for time detection
+        for (let checkRow = 0; checkRow < currentSheet.data.length; checkRow++) {
           const checkCell = currentSheet.data[checkRow] && currentSheet.data[checkRow][colIndex];
           if (checkCell) {
             const cellContent = typeof checkCell === 'object' ? (checkCell.content || '') : checkCell;

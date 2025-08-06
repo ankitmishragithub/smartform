@@ -2234,32 +2234,7 @@ const JSpreadsheetComponent = ({ field, value, onChange, isFormFill = false }) =
         </table>
       </div>
       
-              <div style={{
-          padding: '8px',
-          fontSize: '10px',
-          color: '#666',
-          textAlign: 'center',
-          fontStyle: 'italic',
-          backgroundColor: '#f9f9f9',
-          borderTop: '1px solid #ddd',
-          lineHeight: '1.4'
-        }}>
-          {isFormFill ? (
-            <>
-              💡 <strong>Fill out the spreadsheet:</strong> Click any cell to enter data • Use dropdowns and checkboxes where available • Press Tab or Enter to navigate
-            </>
-          ) : (
-            <>
-              💡 <strong>Enhanced jSpreadsheet CE:</strong><br/>
-              • <strong>Select:</strong> Click cell, drag range, click row/col headers, Ctrl+A for all<br/>
-              • <strong>Edit:</strong> Type in cells, formulas (=A1+B1), Delete/Backspace to clear<br/>
-              • <strong>Copy/Paste:</strong> Ctrl+C/V (shows dotted border), Cut (Ctrl+X), Drag fill handle (auto-increment: 1,2,3...)<br/>
-              • <strong>Rows/Cols:</strong> Add/Delete via buttons or right-click menu<br/>
-              • <strong>Format:</strong> Use toolbar (Bold, Colors, Fonts) • Merge cells • Dropdowns • Checkboxes • Resize rows/columns • Undo/Redo (Ctrl+Z/Y)<br/>
-              • <strong>File:</strong> Export CSV (Ctrl+S), Import CSV • Right-click for context menu
-            </>
-          )}
-        </div>
+          
     </div>
   );
 };

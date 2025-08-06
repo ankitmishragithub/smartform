@@ -6,10 +6,453 @@ import {
   Container, Row, Col, Card, CardBody, CardTitle,
   Button, Alert, Table, Input, InputGroup, InputGroupText, 
   Spinner, Badge, ButtonGroup, Dropdown, DropdownToggle, DropdownMenu, DropdownItem,
-  Modal, ModalHeader, ModalBody, ModalFooter, Nav, NavItem, NavLink
+  Modal, ModalHeader, ModalBody, ModalFooter, Nav, NavItem, NavLink, Label
 } from 'reactstrap';
 import api from '../../api/api';
 import './response-reports.css';
+
+// Form Display Component (Read-only version of FormFill)
+const FormDisplayComponent = ({ form, response }) => {
+  // Helper function to check if a cell is merged
+  const isCellMerged = (rowIndex, colIndex, mergedCells = []) => {
+    return mergedCells?.some(merge => 
+      merge.startRow <= rowIndex && 
+      merge.endRow >= rowIndex && 
+      merge.startCol <= colIndex && 
+      merge.endCol >= colIndex
+    ) || false;
+  };
+
+  // Helper function to get merge info
+  const getMergeInfo = (rowIndex, colIndex, mergedCells = []) => {
+    const merge = mergedCells?.find(merge => 
+      merge.startRow <= rowIndex && 
+      merge.endRow >= rowIndex && 
+      merge.startCol <= colIndex && 
+      merge.endCol >= colIndex
+    );
+    
+    if (!merge) return { isStartCell: false, isContinuation: false };
+    
+    const isStartCell = rowIndex === merge.startRow && colIndex === merge.startCol;
+    const isContinuation = !isStartCell;
+    
+    return { 
+      isStartCell, 
+      isContinuation,
+      rowSpan: merge.endRow - merge.startRow + 1,
+      colSpan: merge.endCol - merge.startCol + 1
+    };
+  };
+
+  const renderFormNode = (node) => {
+    if (node.type === "heading") {
+      return (
+        <h2
+          key={node.id}
+          style={{
+            textAlign: "center",
+            marginBottom: "1.5rem",
+            fontWeight: "700",
+            color: "#2c3e50"
+          }}
+        >
+          {node.label || "Untitled Form"}
+        </h2>
+      );
+    }
+    
+    if (node.type === "htmlelement") {
+      return (
+        <div
+          key={node.id}
+          dangerouslySetInnerHTML={{ __html: node.rawHTML || node.rawhtml || '<div>Custom HTML Content</div>' }}
+          style={{
+            border: '1px solid #ddd',
+            borderRadius: '8px',
+            padding: '10px',
+            backgroundColor: '#f8f9fa',
+            marginBottom: '1rem'
+          }}
+        />
+      );
+    }
+
+    if (node.type === "content") {
+      return (
+        <div
+          key={node.id}
+          data-type="content"
+          dangerouslySetInnerHTML={{ __html: node.richText || node.richtext || '<p>Content block</p>' }}
+          style={{
+            padding: '10px',
+            marginBottom: '0.5rem'
+          }}
+        />
+      );
+    }
+
+    if (node.type === "well") {
+      const styleObj = (node.style || "")
+        .split(";")
+        .filter(Boolean)
+        .reduce((acc, decl) => {
+          const [prop, val] = decl.split(":");
+          if (!prop || !val) return acc;
+          const key = prop.trim().replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+          acc[key] = val.trim();
+          return acc;
+        }, {});
+
+      return (
+        <div
+          key={node.id}
+          style={{
+            padding: "1rem",
+            border: "1px solid #ddd",
+            borderRadius: "8px",
+            marginBottom: "1rem",
+            backgroundColor: "#f8f9fa",
+            ...styleObj
+          }}
+        >
+          {node.children?.map(child => renderFormNode(child))}
+        </div>
+      );
+    }
+
+    if (node.type === "panel") {
+      return (
+        <div key={node.id} className="form-fill-panel">
+          {node.label && (
+            <div className="form-fill-panel-header">
+              {node.label}
+            </div>
+          )}
+          <div className="form-fill-panel-body">
+            {node.children?.map(child => renderFormNode(child))}
+          </div>
+        </div>
+      );
+    }
+
+    if (node.type === "fieldset") {
+      return (
+        <fieldset key={node.id} className="form-fill-fieldset">
+          {node.label && (
+            <legend>
+              {node.label}
+            </legend>
+          )}
+          {node.children?.map(child => renderFormNode(child))}
+        </fieldset>
+      );
+    }
+
+    if (node.type === "columns") {
+      return (
+        <div key={node.id} className="form-fill-columns">
+          {node.children.map((colChildren, ci) => (
+            <div key={ci} className="form-fill-column">
+              {colChildren.map((child) => renderFormNode(child))}
+            </div>
+          ))}
+        </div>
+      );
+    }
+    
+    if (node.type === "table") {
+      return (
+        <div
+          key={node.id}
+          className="form-fill-table"
+          style={{ gridTemplateColumns: `repeat(${node.cols}, 1fr)` }}
+        >
+          {node.children.map((rowArr, r) =>
+            rowArr.map((cellArr, c) => (
+              <div
+                key={`${node.id}-r${r}c${c}`}
+                className="form-fill-table-cell"
+              >
+                {cellArr.map((child) => renderFormNode(child))}
+              </div>
+            ))
+          )}
+        </div>
+      );
+    }
+
+    if (node.type === "tabs") {
+      return <TabsDisplayComponent key={node.id} node={node} renderFormNode={renderFormNode} />;
+    }
+
+    // For container types that don't need special rendering
+    if (["container", "datagrid", "editgrid", "datamap"].includes(node.type)) {
+      return (
+        <div key={node.id} style={{ marginBottom: "1rem" }}>
+          {node.label && (
+            <h6 style={{ marginBottom: "10px", color: "#495057" }}>
+              {node.label}
+            </h6>
+          )}
+          {node.children?.map(child => renderFormNode(child))}
+        </div>
+      );
+    }
+
+    // For nested form types
+    if (["file"].includes(node.type)) {
+      return (
+        <div key={node.id} style={{
+          border: "1px solid #ddd",
+          borderRadius: "8px",
+          padding: "15px",
+          backgroundColor: "#f8f9fa",
+          marginBottom: "1rem",
+          textAlign: "center"
+        }}>
+          <p style={{ color: "#6c757d", margin: "0" }}>
+            {node.label || `${node.type} component`}
+          </p>
+        </div>
+      );
+    }
+
+    // Handle folder name as a header
+    if (node.type === "folderName") {
+      return (
+        <div key={node.id} style={{
+          marginBottom: "1rem",
+          padding: "0.5rem 0",
+          borderBottom: "2px solid #e9ecef"
+        }}>
+          <h5 style={{
+            color: "#495057",
+            margin: "0",
+            fontWeight: "600"
+          }}>
+            <i className="ni ni-folder text-primary me-2"></i>
+            {node.label || "Untitled Folder"}
+          </h5>
+        </div>
+      );
+    }
+
+    // Skip heading nodes (they're handled separately)
+    if (node.type === "heading") {
+      return null;
+    }
+
+    // Default case: render as form field
+    const fid = `field-${node.id}`;
+    if (node.type === "checkbox") {
+      return (
+        <div key={node.id} className="form-group mb-3">
+          {renderReadOnlyInput(node, response.answers[node.id])}
+        </div>
+      );
+    }
+    if (node.type === "spreadsheet") {
+      return (
+        <div key={node.id} className="form-group mb-3">
+          {renderReadOnlySpreadsheet(node, response.answers[node.id])}
+        </div>
+      );
+    }
+
+    return (
+      <div key={node.id} className="form-group mb-3">
+        {renderReadOnlyInput(node, response.answers[node.id])}
+      </div>
+    );
+  };
+
+  const renderReadOnlyInput = (field, value) => {
+    return (
+      <div>
+        <Label className="form-label fw-bold text-dark mb-2">
+          {field.label}
+          {field.required && <span className="text-danger ms-1">*</span>}
+        </Label>
+        <div className="form-control-plaintext" style={{
+          padding: "0.75rem",
+          backgroundColor: "#f8f9fa",
+          borderRadius: "6px",
+          border: "1px solid #e9ecef",
+          minHeight: "2.5rem",
+          display: "flex",
+          alignItems: "center"
+        }}>
+          {value !== undefined && value !== null && value !== '' ? (
+            typeof value === 'boolean' ? (
+              <Badge color={value ? 'success' : 'secondary'}>
+                {value ? 'Yes' : 'No'}
+              </Badge>
+            ) : (
+              <span style={{ color: "#495057" }}>{String(value)}</span>
+            )
+          ) : (
+            <span style={{ color: "#6c757d", fontStyle: "italic" }}>No response</span>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const renderReadOnlySpreadsheet = (field, value) => {
+    if (!value || !value.sheets) {
+      return (
+        <div>
+          <Label className="form-label fw-bold text-dark mb-2">
+            {field.label}
+          </Label>
+          <div className="form-control-plaintext" style={{
+            padding: "0.75rem",
+            backgroundColor: "#f8f9fa",
+            borderRadius: "6px",
+            border: "1px solid #e9ecef",
+            minHeight: "2.5rem",
+            display: "flex",
+            alignItems: "center"
+          }}>
+            <span style={{ color: "#6c757d", fontStyle: "italic" }}>No spreadsheet data</span>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div>
+        <Label className="form-label fw-bold text-dark mb-2">
+          {field.label}
+        </Label>
+        <div style={{
+          border: "1px solid #e5e7eb",
+          borderRadius: "8px",
+          overflow: "auto",
+          backgroundColor: "white"
+        }}>
+          <table style={{
+            width: "100%",
+            borderCollapse: "collapse",
+            fontSize: "14px"
+          }}>
+            <thead>
+              <tr style={{ backgroundColor: "#f8f9fa" }}>
+                {value.sheets[0]?.headers && value.sheets[0].headers.map((header, colIndex) => (
+                  <th key={colIndex} style={{
+                    padding: "8px",
+                    border: "1px solid #e5e7eb",
+                    fontWeight: "600",
+                    textAlign: "left",
+                    minWidth: "120px"
+                  }}>
+                   
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {value.sheets[0]?.data && value.sheets[0].data.map((row, rowIndex) => (
+                <tr key={rowIndex}>
+                  {row && row.map((cell, colIndex) => {
+                    const mergeInfo = getMergeInfo(rowIndex, colIndex, value.sheets[0].mergedCells);
+                    
+                    // Skip rendering continuation cells in merged ranges
+                    if (mergeInfo.isContinuation) {
+                      return null;
+                    }
+                    
+                    // Get cell content and formatting like in FormFill
+                    const getCellDisplay = (cell) => {
+                      if (typeof cell === 'object' && cell !== null) {
+                        return {
+                          content: cell.content || '',
+                          styles: cell.formatting || {}
+                        };
+                      }
+                      return {
+                        content: cell || '',
+                        styles: {}
+                      };
+                    };
+                    
+                    const { content, styles } = getCellDisplay(cell);
+                    const isMerged = isCellMerged(rowIndex, colIndex, value.sheets[0].mergedCells);
+                    
+                    return (
+                      <td 
+                        key={colIndex} 
+                        rowSpan={mergeInfo.rowSpan || 1}
+                        colSpan={mergeInfo.colSpan || 1}
+                        style={{
+                          padding: "8px",
+                          border: "1px solid #e5e7eb",
+                          minHeight: "40px",
+                          backgroundColor: isMerged ? "rgba(102, 126, 234, 0.1)" : (styles.backgroundColor || "transparent"),
+                          ...styles
+                        }}>
+                        {content || ""}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="form-display-container">
+      {form.schemaJson.map(node => renderFormNode(node))}
+    </div>
+  );
+};
+
+// Tabs Display Component (Read-only version)
+const TabsDisplayComponent = ({ node, renderFormNode }) => {
+  const [activeTab, setActiveTab] = React.useState(0);
+
+  const handleTabClick = (index, event) => {
+    event.preventDefault();
+    setActiveTab(index);
+  };
+
+  return (
+    <div className="tabs-component">
+      <div className="tabs-header" style={{
+        display: "flex",
+        borderBottom: "2px solid #e9ecef",
+        marginBottom: "1rem"
+      }}>
+        {node.tabs.map((tab, index) => (
+          <button
+            key={index}
+            onClick={(e) => handleTabClick(index, e)}
+            style={{
+              padding: "10px 20px",
+              border: "none",
+              backgroundColor: "transparent",
+              borderBottom: activeTab === index ? "2px solid #007bff" : "2px solid transparent",
+              color: activeTab === index ? "#007bff" : "#6c757d",
+              fontWeight: activeTab === index ? "600" : "400",
+              cursor: "pointer",
+              transition: "all 0.2s ease"
+            }}
+          >
+            {tab.name || `Tab ${index + 1}`}
+          </button>
+        ))}
+      </div>
+      <div className="tabs-content">
+        {node.tabs[activeTab]?.children?.map(child => renderFormNode(child))}
+      </div>
+    </div>
+  );
+};
 
 export default function AllSubmissions() {
   const navigate = useNavigate();
@@ -857,181 +1300,58 @@ export default function AllSubmissions() {
              </div>
 
              {filteredResponses.length > 0 ? (
-               <div className="rr-cards-container">
-                 <Row>
-                   {filteredResponses.map(response => {
-                     const formFields = getFormFields(response.form);
-                     
-                     return (
-                       <Col key={response._id} lg={6} xl={4} className="mb-4">
-                         <Card className="rr-submission-card h-100">
-                           <CardBody className="d-flex flex-column">
-                             {/* Card Header */}
-                             <div className="rr-card-header mb-3">
-                               <div className="d-flex justify-content-between align-items-start">
-                                 <div className="rr-card-title-section">
-                                   <div className="rr-form-name-card">
-                                     <i className="ni ni-file-docs text-primary me-2"></i>
-                                     {getFormLabel(response.form)}
-                                   </div>
-                                   <div className="rr-submitter-info-card">
-                                     <i className="ni ni-user text-muted me-1"></i>
-                                     {response.submitterName || 'Anonymous'}
-                                   </div>
-                                 </div>
-                                 <div className="rr-card-status">
-                                   {getStatusBadge(getSubmissionStatus(response))}
-                                 </div>
-                               </div>
-                               <div className="rr-card-meta mt-2">
-                                 <div className="rr-email-card">
-                                   <i className="ni ni-email text-muted me-1"></i>
-                                   {response.submitterEmail || 'N/A'}
-                                 </div>
-                                 <div className="rr-date-card">
-                                   <i className="ni ni-calendar text-muted me-1"></i>
-                                   {formatDate(response.submittedAt)}
-                                 </div>
-                               </div>
-                             </div>
-
-                             {/* Form Data */}
-                             <div className="rr-card-form-data flex-grow-1">
-                               <div className="rr-form-data-header">
-                                 <h6 className="rr-form-data-title">
-                                   <i className="ni ni-list-ul me-2"></i>
-                                   Form Responses
-                                 </h6>
-                               </div>
-                               
-                               {formFields.length > 0 ? (
-                                 <div className="rr-form-fields-list">
-                                   {formFields.map(field => (
-                                     <div key={field.id} className="rr-form-field-card">
-                                       <div className="rr-field-label-card">
-                                         <i className="ni ni-tag text-muted me-1"></i>
-                                         {field.label}:
-                                       </div>
-                                                                               <div className="rr-field-value-card">
-                                          <div className="rr-field-value-content">
-                                                                                         {(() => {
-                                               const answer = response.answers[field.id];
-                                               const displayText = getFieldAnswer(response, field.id);
-                                               
-                                                                                               // Check if it's a spreadsheet - new format with sheets property
-                                                if (answer && answer.sheets && Array.isArray(answer.sheets)) {
-                                                  const previewText = answer.sheets.map((sheet, index) => {
-                                                    const sheetName = sheet.name || `Sheet ${index + 1}`;
-                                                    const rowCount = sheet.data ? sheet.data.length : 0;
-                                                    return `${sheetName} (${rowCount} rows)`;
-                                                  }).join(', ');
-                                                  
-                                                  return (
-                                                    <div className="rr-field-value-long">
-                                                      <div className="rr-field-value-preview">
-                                                        {previewText}
-                                                      </div>
-                                                      <Button
-                                                        color="primary"
-                                                        size="sm"
-                                                        className="rr-view-spreadsheet-btn"
-                                                        onClick={() => openSpreadsheetModal(answer.sheets)}
-                                                      >
-                                                        <i className="ni ni-grid-3x3-gap me-1"></i>
-                                                        View Spreadsheet
-                                                      </Button>
-                                                    </div>
-                                                  );
-                                                }
-                                                
-                                                // Check if it's a legacy spreadsheet - array format
-                                                if (Array.isArray(answer) && answer.length > 0 && answer[0].data) {
-                                                  const previewText = answer.map((sheet, index) => {
-                                                    const sheetName = sheet.name || `Sheet ${index + 1}`;
-                                                    const rowCount = sheet.data ? sheet.data.length : 0;
-                                                    return `${sheetName} (${rowCount} rows)`;
-                                                  }).join(', ');
-                                                  
-                                                  return (
-                                                    <div className="rr-field-value-long">
-                                                      <div className="rr-field-value-preview">
-                                                        {previewText}
-                                                      </div>
-                                                      <Button
-                                                        color="primary"
-                                                        size="sm"
-                                                        className="rr-view-spreadsheet-btn"
-                                                        onClick={() => openSpreadsheetModal(answer)}
-                                                      >
-                                                        <i className="ni ni-grid-3x3-gap me-1"></i>
-                                                        View Spreadsheet
-                                                      </Button>
-                                                    </div>
-                                                  );
-                                                }
-                                               
-                                               // Check if content is too long for card display
-                                               if (displayText.length > 150) {
-                                                 return (
-                                                   <div className="rr-field-value-long">
-                                                     <div className="rr-field-value-preview">
-                                                       {displayText.substring(0, 150)}...
-                                                     </div>
-                                                     <Button
-                                                       color="link"
-                                                       size="sm"
-                                                       className="rr-view-details-btn"
-                                                       onClick={() => {
-                                                         // Create a modal or expand the content
-                                                         alert(`Full content:\n\n${displayText}`);
-                                                       }}
-                                                     >
-                                                       <i className="ni ni-eye me-1"></i>
-                                                       View Full Content
-                                                     </Button>
-                                                   </div>
-                                                 );
-                                               }
-                                               
-                                               return displayText;
-                                             })()}
-                                          </div>
-                                                                                     {(() => {
-                                             const answer = response.answers[field.id];
-                                             if (answer && typeof answer === 'object') {
-                                               if (Array.isArray(answer)) {
-                                                 // Check if it's a legacy spreadsheet array
-                                                 if (answer.length > 0 && answer[0].data) {
-                                                   return <small className="rr-field-type-indicator">Spreadsheet data</small>;
-                                                 }
-                                                 return <small className="rr-field-type-indicator">Multiple selections</small>;
-                                               } else if (answer.sheets && Array.isArray(answer.sheets)) {
-                                                 return <small className="rr-field-type-indicator">Spreadsheet data</small>;
-                                               } else if (answer.tabs) {
-                                                 return <small className="rr-field-type-indicator">Tab data</small>;
-                                               } else {
-                                                 return <small className="rr-field-type-indicator">Complex data</small>;
-                                               }
-                                             }
-                                             return null;
-                                           })()}
-                                        </div>
+               <div className="rr-forms-container">
+                 {filteredResponses.map((response, index) => {
+                   const form = getFormObject(response.form);
+                   
+                   return (
+                     <div key={response._id} className="rr-form-submission mb-5">
+                       {/* Submission Header */}
+                       <Card className="rr-submission-header mb-4">
+                         <CardBody>
+                           <div className="d-flex justify-content-between align-items-start">
+                             <div className="rr-submission-info">
+                               <div className="rr-submission-title">
+                                 <h4 className="mb-2">
+                                   <i className="ni ni-file-docs text-primary me-2"></i>
+                                   {getFormLabel(response.form)}
+                                 </h4>
+                                 <div className="rr-submission-meta">
+                                   <div className="d-flex flex-wrap gap-3">
+                                     <div className="rr-submitter-info">
+                                       <i className="ni ni-user text-muted me-1"></i>
+                                       <strong>Submitter:</strong> {response.submitterName || 'Anonymous'}
                                      </div>
-                                   ))}
+                                     <div className="rr-email-info">
+                                       <i className="ni ni-email text-muted me-1"></i>
+                                       <strong>Email:</strong> {response.submitterEmail || 'N/A'}
+                                     </div>
+                                     <div className="rr-date-info">
+                                       <i className="ni ni-calendar text-muted me-1"></i>
+                                       <strong>Submitted:</strong> {formatDate(response.submittedAt)}
+                                     </div>
+                                     <div className="rr-status-info">
+                                       {getStatusBadge(getSubmissionStatus(response))}
+                                     </div>
+                                   </div>
                                  </div>
-                               ) : (
-                                 <div className="rr-no-fields-card">
-                                   <i className="ni ni-info text-muted me-1"></i>
-                                   <span className="text-muted">No form fields</span>
-                                 </div>
-                               )}
+                               </div>
                              </div>
+                           </div>
+                         </CardBody>
+                       </Card>
+
+                       {/* Form Display */}
+                       {form && (
+                         <Card className="rr-form-display">
+                           <CardBody>
+                             <FormDisplayComponent form={form} response={response} />
                            </CardBody>
                          </Card>
-                       </Col>
-                     );
-                   })}
-                 </Row>
+                       )}
+                     </div>
+                   );
+                 })}
                </div>
              ) : (
                <div className="rr-no-results">
