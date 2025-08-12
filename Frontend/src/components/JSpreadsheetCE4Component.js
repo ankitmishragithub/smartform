@@ -2010,7 +2010,7 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
                            isSelected ? '2px solid #007bff' : 
                            isInRange ? '1px solid #70ad47' : '1px solid #d4d4d4',
                     padding: '0',
-                    backgroundColor: merge ? '#e3f2fd' : 
+                    backgroundColor: merge ? '#ffffff' : 
                                    dragStart && dragStart.row === rowIndex && dragStart.col === colIndex ? '#fff3cd' :
                                    isInRange ? '#e2efda' : '#ffffff',
                     position: 'relative',
@@ -2034,17 +2034,18 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
                          const cellOptions = getCellOptions(rowIndex, colIndex);
                          
                          // Show merge info for merged cells
-                         if (merge) {
+                          if (merge) {
                            return (
                              <div style={{ 
                                display: 'flex', 
                                flexDirection: 'column',
-                               alignItems: 'center', 
-                               justifyContent: 'center',
+                                alignItems: 'stretch', 
+                                justifyContent: 'flex-start',
                                width: '100%',
                                height: '100%',
                                padding: '4px',
-                               position: 'relative'
+                                position: 'relative',
+                                textAlign: 'left'
                              }}>
                                <div style={{
                                  position: 'absolute',
