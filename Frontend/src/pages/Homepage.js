@@ -84,7 +84,7 @@ const Homepage = () => {
   return (
     <>
       <Head title="Homepage" />
-      <h1 style={{ padding: "16px 16px 0 16px", margin: 0 }}>Welcome to the Homepage</h1>
+      {/* <h1 style={{ padding: "16px 16px 0 16px", margin: 0 }}>Welcome to the Homepage</h1> */}
 
       {/* Submitted Forms by Date */}
       <div style={{ padding: 16 }}>
