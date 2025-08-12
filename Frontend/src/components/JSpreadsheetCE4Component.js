@@ -1557,8 +1557,10 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
     
     // Remove any existing merges that overlap with the new merge
     const overlappingMerges = Object.entries(newMergedCells).filter(([key, merge]) => {
-      const [sr, sc, er, ec] = key.split('-').map(Number);
-      return !(endRow < sr || startRow > er || endCol < sc || startCol > ec);
+      const { startRow: sr, startCol: sc, endRow: er, endCol: ec } = merge;
+      // Overlap occurs unless one rectangle is completely to the left/right/above/below the other
+      const noOverlap = endRow < sr || startRow > er || endCol < sc || startCol > ec;
+      return !noOverlap;
     });
     
     console.log('🔗 Overlapping merges to remove:', overlappingMerges);
@@ -1661,6 +1663,8 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
     <div className="jspreadsheet-ce4-container" style={{ 
       width: '100%', 
       height: isFormFill ? '500px' : '400px',
+      position: 'relative',
+      paddingTop: showToolbar && !isFormFill ? 100 : 0,
       border: '2px solid #007bff',
       borderRadius: '8px',
       overflow: 'hidden',
@@ -1702,8 +1706,7 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
           justifyContent: 'space-between',
           alignItems: 'center'
         }}>
-          <span>📊 jSpreadsheet CE v4 (Custom Table) — {rows} rows × {cols} columns</span>
-          <div style={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
+          {/* <div style={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
             <button
               onClick={() => setIsReadOnly(!isReadOnly)}
               style={{
@@ -1752,7 +1755,7 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
               <input type="file" accept=".csv" style={{ display: 'none' }} onChange={(e) => importFromCSV(e.target.files?.[0])} />
             </label>
             <button onClick={exportToCSV} style={{ padding: '4px 8px', backgroundColor: '#17a2b8', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>📤 Export CSV</button>
-          </div>
+          </div> */}
         </div>
       )}
 
@@ -2961,7 +2964,6 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
         <>
           {/* Range Selection Instructions */}
           <div style={{
-            position: 'absolute',
             top: '10px',
             left: '10px',
             backgroundColor: '#e3f2fd',
@@ -2972,7 +2974,7 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
             zIndex: 999,
             fontSize: '12px',
             color: '#1976d2',
-            maxWidth: '300px'
+            maxWidth: '300px',
           }}>
             
           </div>
