@@ -30,18 +30,23 @@ const Homepage = () => {
     return new Date(iso).toLocaleDateString("en-US", { timeZone: "Asia/Kolkata" });
   };
 
-  const getTitle = (form) => {
-    // Prefer an explicit title if your API provides it:
-    if (form.title) return form.title;
+const getTitle = (form) => {
+  // Prefer explicit title if API provides it
+  if (form.title) return form.title;
 
-    // Try to infer from schema (common in form builders)
-    const fromSchema =
-      form?.schemaJson?.find?.(b => b?.formTitle || b?.title)?.formTitle ||
-      form?.schemaJson?.find?.(b => b?.title)?.title;
+  // Look for heading type in schemaJson
+  const headingItem = form?.schemaJson?.find?.(item => item?.type === "heading");
+  if (headingItem?.label) return headingItem.label;
 
-    // Fallback to your example title or a generic label
-    return fromSchema || "Filter Efficiency Monitoring Report";
-  };
+  // As a backup, check for formTitle or title in schema
+  const fromSchema =
+    form?.schemaJson?.find?.(b => b?.formTitle)?.formTitle ||
+    form?.schemaJson?.find?.(b => b?.title)?.title;
+
+  // Final fallback
+  return fromSchema || "Untitled Form";
+};
+
 
   if (loading) {
     return (
@@ -64,7 +69,7 @@ const Homepage = () => {
   return (
     <>
       <Head title="Homepage" />
-      <h1 style={{ padding: "16px 16px 0 16px", margin: 0 }}>Welcome to the Homepage</h1>
+      {/* <h1 style={{ padding: "16px 16px 0 16px", margin: 0 }}>Welcome to the Homepage</h1> */}
 
       <div
         style={{
