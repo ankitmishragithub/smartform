@@ -69,7 +69,7 @@ const getTitle = (form) => {
   return (
     <>
       <Head title="Homepage" />
-      <h1 style={{ padding: "16px 16px 0 16px", margin: 0 }}>Welcome to the Homepage</h1>
+      {/* <h1 style={{ padding: "16px 16px 0 16px", margin: 0 }}>Welcome to the Homepage</h1> */}
 
       <div
         style={{
