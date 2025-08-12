@@ -39,6 +39,7 @@ export const SECTIONS = [
       { type: "tabs", label: "📂 Tab Container", icon: "📂", description: "Organize in tabs", defaultTabs: 2 },
       { type: "spreadsheet", label: "📊 Spreadsheet", icon: "📊", description: "Dynamic spreadsheet with multiple sheets", defaultSheets: 1, defaultRows: 5, defaultCols: 5 },
       { type: "jspreadsheet", label: "📈 jSpreadsheet", icon: "📈", description: "Advanced jSpreadsheet ", defaultRows: 3, defaultCols: 4 },
+      { type: "jspreadsheetCE4", label: "📊 jSpreadsheet CE v4", icon: "📊", description: "Modern jSpreadsheet CE v4 with enhanced features", defaultRows: 5, defaultCols: 5 },
       { type: "well", label: "📦 Well Container", icon: "📦", description: "Bordered content area" },
     ],
   },

@@ -139,6 +139,74 @@ router.get('/bundle/:bundleId', requireAuth, requireAdmin, async (req, res) => {
   res.json(responses);
 });
 
+// Update a specific response by ID
+router.put('/:responseId', async (req, res) => {
+  try {
+    const { responseId } = req.params;
+    const { submitterName, submitterEmail, answers } = req.body;
+    
+    // Basic validation
+    if (submitterName !== undefined && (!submitterName || submitterName.trim() === '')) {
+      return res.status(400).json({ error: 'Submitter name cannot be empty' });
+    }
+    
+    if (submitterEmail !== undefined && (!submitterEmail || submitterEmail.trim() === '')) {
+      return res.status(400).json({ error: 'Submitter email cannot be empty' });
+    }
+    
+    if (submitterEmail !== undefined) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(submitterEmail.trim())) {
+        return res.status(400).json({ error: 'Invalid email format' });
+      }
+    }
+    
+    let response;
+    if (global.usingMongoDB) {
+      response = await Response.findById(responseId);
+      if (!response) {
+        return res.status(404).json({ error: 'Response not found' });
+      }
+      
+      // Update the response fields
+      if (submitterName !== undefined) response.submitterName = submitterName.trim();
+      if (submitterEmail !== undefined) response.submitterEmail = submitterEmail.trim();
+      if (answers !== undefined) response.answers = answers;
+      
+      // Update the timestamp to reflect the edit
+      response.submittedAt = new Date();
+      
+      await response.save();
+    } else {
+      response = global.fallbackData.getResponseById(responseId);
+      if (!response) {
+        return res.status(404).json({ error: 'Response not found' });
+      }
+      
+      // Update the response fields for fallback data
+      if (submitterName !== undefined) response.submitterName = submitterName.trim();
+      if (submitterEmail !== undefined) response.submitterEmail = submitterEmail.trim();
+      if (answers !== undefined) response.answers = answers;
+      
+      // Update the timestamp to reflect the edit
+      response.submittedAt = new Date();
+      
+      // Update in memory - find and replace the response
+      const responses = global.fallbackData.getAllResponses();
+      const index = responses.findIndex(r => r._id === responseId);
+      if (index !== -1) {
+        responses[index] = response;
+      }
+    }
+    
+    console.log('Updated response:', responseId);
+    res.json(response);
+  } catch (error) {
+    console.error('Error updating response:', error);
+    res.status(500).json({ error: 'Failed to update response' });
+  }
+});
+
 // Get a specific response by ID (must come AFTER specific routes)
 router.get('/:responseId', async (req, res) => {
   try {

@@ -1,0 +1,418 @@
+/* JSpreadsheet CE v4 Component Styles - Excel-like Interface */
+
+.jspreadsheet-ce4-container {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+/* Advanced Toolbar Styling */
+.spreadsheet-advanced-toolbar {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border: 1px solid #dee2e6;
+  border-radius: 8px 8px 0 0;
+  padding: 20px;
+  margin-bottom: 0;
+}
+
+.toolbar-section {
+  margin-bottom: 20px;
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+}
+
+.toolbar-section:last-child {
+  margin-bottom: 0;
+}
+
+.toolbar-section h4 {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #495057;
+  border-bottom: 2px solid #007bff;
+  padding-bottom: 8px;
+}
+
+.toolbar-section button,
+.toolbar-section label {
+  display: inline-block;
+  margin: 4px 6px 4px 0;
+  padding: 8px 16px;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  background: #ffffff;
+  color: #495057;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  white-space: nowrap;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.toolbar-section button:hover,
+.toolbar-section label:hover {
+  background: #007bff;
+  color: #ffffff;
+  border-color: #007bff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0,123,255,0.3);
+}
+
+.toolbar-section button:active,
+.toolbar-section label:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Special button styles */
+.toolbar-section button:nth-child(2) { /* Add Row */
+  background: #28a745;
+  color: white;
+  border-color: #28a745;
+}
+
+.toolbar-section button:nth-child(3) { /* Add Column */
+  background: #007bff;
+  color: white;
+  border-color: #007bff;
+}
+
+.toolbar-section button:nth-child(4) { /* Delete Row */
+  background: #dc3545;
+  color: white;
+  border-color: #dc3545;
+}
+
+.toolbar-section button:nth-child(5) { /* Delete Column */
+  background: #dc3545;
+  color: white;
+  border-color: #dc3545;
+}
+
+/* Data operation buttons */
+.toolbar-section:nth-child(2) button:nth-child(2) { /* From Array */
+  background: #6f42c1;
+  color: white;
+  border-color: #6f42c1;
+}
+
+.toolbar-section:nth-child(2) button:nth-child(3) { /* From JSON */
+  background: #fd7e14;
+  color: white;
+  border-color: #fd7e14;
+}
+
+.toolbar-section:nth-child(2) button:nth-child(4) { /* From CSV */
+  background: #20c997;
+  color: white;
+  border-color: #20c997;
+}
+
+/* Import/Export buttons */
+.btn-import {
+  background: #17a2b8 !important;
+  color: white !important;
+  border-color: #17a2b8 !important;
+}
+
+.toolbar-section button:nth-child(6) { /* Copy */
+  background: #28a745;
+  color: white;
+  border-color: #28a745;
+}
+
+.toolbar-section button:nth-child(7) { /* Paste */
+  background: #6f42c1;
+  color: white;
+  border-color: #6f42c1;
+}
+
+.toolbar-section button:nth-child(8) { /* Export */
+  background: #fd7e14;
+  color: white;
+  border-color: #fd7e14;
+}
+
+/* Column type buttons */
+.toolbar-section:nth-child(3) button:nth-child(2) { /* Dropdown */
+  background: #6f42c1;
+  color: white;
+  border-color: #6f42c1;
+}
+
+.toolbar-section:nth-child(3) button:nth-child(3) { /* Date */
+  background: #20c997;
+  color: white;
+  border-color: #20c997;
+}
+
+.toolbar-section:nth-child(3) button:nth-child(4) { /* Checkbox */
+  background: #fd7e14;
+  color: white;
+  border-color: #fd7e14;
+}
+
+.toolbar-section:nth-child(3) button:nth-child(5) { /* Number */
+  background: #17a2b8;
+  color: white;
+  border-color: #17a2b8;
+}
+
+.toolbar-section:nth-child(3) button:nth-child(6) { /* Color */
+  background: #e83e8c;
+  color: white;
+  border-color: #e83e8c;
+}
+
+/* Advanced feature buttons */
+.toolbar-section:nth-child(4) button:nth-child(2) { /* Freeze Columns */
+  background: #6c757d;
+  color: white;
+  border-color: #6c757d;
+}
+
+.toolbar-section:nth-child(4) button:nth-child(3) { /* Merge Cells */
+  background: #28a745;
+  color: white;
+  border-color: #28a745;
+}
+
+.toolbar-section:nth-child(4) button:nth-child(4) { /* Unmerge */
+  background: #dc3545;
+  color: white;
+  border-color: #dc3545;
+}
+
+.toolbar-section:nth-child(4) button:nth-child(5) { /* Search */
+  background: #17a2b8;
+  color: white;
+  border-color: #17a2b8;
+}
+
+.toolbar-section:nth-child(4) button:nth-child(6) { /* Filters */
+  background: #fd7e14;
+  color: white;
+  border-color: #fd7e14;
+}
+
+/* Documentation links */
+.doc-link {
+  background: #6c757d !important;
+  color: white !important;
+  border-color: #6c757d !important;
+  text-decoration: none !important;
+}
+
+.doc-link:hover {
+  background: #495057 !important;
+  border-color: #495057 !important;
+}
+
+/* Spreadsheet Container */
+.jspreadsheet-ce4-spreadsheet {
+  width: 100%;
+  min-height: 500px;
+  border: 1px solid #dee2e6;
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  overflow: hidden;
+  background: #ffffff;
+}
+
+.jspreadsheet-ce4-spreadsheet table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.jspreadsheet-ce4-spreadsheet th {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
+  border: 1px solid #dee2e6;
+  padding: 12px 8px;
+  font-weight: 600;
+  color: #495057;
+  text-align: center;
+  min-width: 120px;
+}
+
+.jspreadsheet-ce4-spreadsheet td {
+  border: 1px solid #e9ecef;
+  padding: 8px;
+  min-height: 40px;
+  background: #ffffff;
+  transition: background-color 0.2s ease;
+}
+
+.jspreadsheet-ce4-spreadsheet td:hover {
+  background-color: #f8f9fa;
+}
+
+.jspreadsheet-ce4-spreadsheet td input {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 14px;
+  padding: 4px;
+  border-radius: 3px;
+  transition: all 0.2s ease;
+}
+
+.jspreadsheet-ce4-spreadsheet td input:focus {
+  background-color: #e3f2fd !important;
+  box-shadow: inset 0 0 0 2px #2196f3;
+}
+
+/* Status Bar */
+.spreadsheet-status {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-top: 1px solid #dee2e6;
+  border-radius: 0 0 8px 8px;
+  font-size: 13px;
+  color: #6c757d;
+  font-weight: 500;
+}
+
+/* Responsive design */
+@media (max-width: 1200px) {
+  .spreadsheet-advanced-toolbar {
+    padding: 15px;
+  }
+  
+  .toolbar-section {
+    padding: 12px;
+    margin-bottom: 15px;
+  }
+  
+  .toolbar-section button,
+  .toolbar-section label {
+    padding: 6px 12px;
+    font-size: 11px;
+    margin: 3px 4px 3px 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .spreadsheet-advanced-toolbar {
+    padding: 10px;
+  }
+  
+  .toolbar-section {
+    padding: 10px;
+    margin-bottom: 10px;
+  }
+  
+  .toolbar-section button,
+  .toolbar-section label {
+    display: block;
+    width: 100%;
+    margin: 3px 0;
+    text-align: center;
+  }
+  
+  .spreadsheet-status {
+    flex-direction: column;
+    gap: 8px;
+    text-align: center;
+    padding: 10px 15px;
+  }
+}
+
+/* Canvas field styling */
+.canvas-field.jspreadsheet-ce4-field {
+  margin: 15px 0;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background-color: transparent;
+  box-shadow: none;
+}
+
+.canvas-field.jspreadsheet-ce4-field:hover {
+  border: none;
+  box-shadow: none;
+}
+
+/* Form fill mode styling */
+.jspreadsheet-ce4-container .spreadsheet-advanced-toolbar {
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+  border-color: #2196f3;
+}
+
+.jspreadsheet-ce4-container .spreadsheet-status {
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+  border-color: #2196f3;
+  color: #1976d2;
+}
+
+/* Loading and error states */
+.jspreadsheet-ce4-container .loading-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: #6c757d;
+  font-size: 16px;
+}
+
+.jspreadsheet-ce4-container .error-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: #dc3545;
+  font-size: 16px;
+  background: #f8d7da;
+  border: 1px solid #f5c6cb;
+  border-radius: 6px;
+}
+
+/* Loading spinner animation */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* JSpreadsheet specific overrides */
+.jspreadsheet-ce4-container .jexcel_table {
+  border-radius: 0 0 8px 8px;
+  overflow: hidden;
+}
+
+.jspreadsheet-ce4-container .jexcel_table th {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
+  border: 1px solid #dee2e6;
+  font-weight: 600;
+  color: #495057;
+}
+
+.jspreadsheet-ce4-container .jexcel_table td {
+  border: 1px solid #e9ecef;
+  background: #ffffff;
+}
+
+.jspreadsheet-ce4-container .jexcel_table input {
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 14px;
+  padding: 4px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.jspreadsheet-ce4-container .jexcel_table input:focus {
+  background-color: #e3f2fd !important;
+  box-shadow: inset 0 0 0 2px #2196f3;
+} 

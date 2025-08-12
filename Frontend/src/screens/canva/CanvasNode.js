@@ -6,6 +6,7 @@ import FieldCard from "./FieldCard";
 import AgGridSheet from "./AgGridSheet";
 import SpreadsheetComponent from "../../components/SpreadsheetComponent";
 import JSpreadsheetComponent from "../../components/JSpreadsheetComponent";
+import JSpreadsheetCE4Component from "../../components/JSpreadsheetCE4Component";
 
 export default function CanvasNode({
   node,
@@ -140,6 +141,18 @@ export default function CanvasNode({
       return (
         <div className="canvas-field jspreadsheet-field">
           <JSpreadsheetComponent 
+            field={node} 
+            onChange={(updatedField) => {
+              onUpdateField(node.id, updatedField);
+            }}
+            isFormFill={false}
+          />
+        </div>
+      );
+    case "jspreadsheetCE4":
+      return (
+        <div className="canvas-field jspreadsheet-ce4-field">
+          <JSpreadsheetCE4Component 
             field={node} 
             onChange={(updatedField) => {
               onUpdateField(node.id, updatedField);

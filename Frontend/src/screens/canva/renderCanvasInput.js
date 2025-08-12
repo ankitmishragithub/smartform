@@ -53,6 +53,7 @@ export default function renderCanvasInput(f) {
       "datamap",
       "spreadsheet",
       "jspreadsheet",
+  "jspreadsheetCE4",
     ].includes(f.type)
   ) {
     return <div className="placeholder-block">{f.label} Block</div>;

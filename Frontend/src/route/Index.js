@@ -49,6 +49,7 @@ const Router = () => {
         <Route path="forms/manage" element={<ManageForms />} />
         <Route path="forms/fill/:id" element={<FormFill />} />
         <Route path="response-details/:responseId" element={<ResponseDetails />} />
+        <Route path="response-details/:responseId/edit" element={<ResponseDetails />} />
         
         {/* Reports routes */}
         <Route path="reports/analytics" element={<FormAnalytics />} />

@@ -187,6 +187,15 @@ export const fieldTypes = {
     component: "spreadsheet",
     category: "layout"
   },
+  jspreadsheetCE4: {
+    type: "jspreadsheetCE4",
+    label: "jSpreadsheet CE v4",
+    icon: "📊",
+    defaultRows: 5,
+    defaultCols: 5,
+    component: "jspreadsheetCE4",
+    category: "layout"
+  },
   well: {
     type: "well",
     label: "Well Container",
@@ -227,7 +236,7 @@ export const fieldCategories = {
   layout: {
     label: "Layout Components", 
     description: "Structural components",
-    fields: ["columns", "table", "tabs", "spreadsheet", "well", "content"]
+    fields: ["columns", "table", "tabs", "spreadsheet", "jspreadsheetCE4", "well", "content"]
   },
   advanced: {
     label: "Advanced Fields",
@@ -362,6 +371,12 @@ export const getDefaultFieldProps = (type) => {
       mergedCells: [],
       activeSheet: 0
     }));
+  } else if (type === "jspreadsheetCE4") {
+    defaults.rows = fieldType.defaultRows;
+    defaults.cols = fieldType.defaultCols;
+    defaults.data = Array.from({ length: fieldType.defaultRows }, () =>
+      Array.from({ length: fieldType.defaultCols }, () => '')
+    );
   }
 
   return defaults;

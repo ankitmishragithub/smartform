@@ -25,6 +25,9 @@ export default function ResponseDetails() {
   const navigate = useNavigate();
   const { responseId } = useParams();
   
+  // Check if we're in edit mode
+  const isEditMode = location.pathname.includes('/edit');
+  
   const { response: stateResponse, form: stateForm } = location.state || {};
   
   const [response, setResponse] = useState(stateResponse);
@@ -47,6 +50,8 @@ export default function ResponseDetails() {
     fieldName: ''
   });
   const [filteredResponses, setFilteredResponses] = useState([]);
+  const [editingResponse, setEditingResponse] = useState(null);
+  const [saving, setSaving] = useState(false);
 
   // Fetch all responses for this form
   const fetchAllResponses = async () => {
@@ -259,6 +264,44 @@ export default function ResponseDetails() {
     }
   };
 
+  const handleEditResponse = () => {
+    setEditingResponse({ ...response });
+  };
+
+  const handleSaveResponse = async () => {
+    if (!editingResponse) return;
+    
+    setSaving(true);
+    try {
+      await api.put(`/responses/${response._id}`, editingResponse);
+      setResponse(editingResponse);
+      setEditingResponse(null);
+      alert('Response updated successfully!');
+    } catch (error) {
+      console.error('Error updating response:', error);
+      alert('Failed to update response. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingResponse(null);
+    navigate(`${process.env.PUBLIC_URL}/response-details/${responseId}`);
+  };
+
+  const handleFieldChange = (fieldId, value) => {
+    if (!editingResponse) return;
+    
+    setEditingResponse(prev => ({
+      ...prev,
+      answers: {
+        ...prev.answers,
+        [fieldId]: value
+      }
+    }));
+  };
+
   const folderName = getFolderNameFromSchema(form.schemaJson);
   const formHeading = getFormHeadingFromSchema(form.schemaJson);
 
@@ -276,6 +319,10 @@ export default function ResponseDetails() {
 
     console.log('ResponseFormView - Response data:', resp);
     console.log('ResponseFormView - Form schema:', form.schemaJson);
+
+    // Use editingResponse data if in edit mode, otherwise use original response
+    const currentResponse = editingResponse || resp;
+    const currentAnswers = currentResponse.answers || {};
 
     const renderResponseNode = (node, answers) => {
       console.log('Rendering node:', node.type, node.id, 'with answers:', answers);
@@ -514,6 +561,9 @@ export default function ResponseDetails() {
       // For regular form fields
       if (node.type && node.type !== 'folderName' && node.type !== 'heading') {
         const value = answers[node.id];
+        const isEditing = editingResponse !== null;
+        const currentValue = isEditing ? editingResponse.answers[node.id] : value;
+        
         return (
           <div key={node.id} style={{ marginBottom: "1rem" }}>
             <div style={{ 
@@ -526,23 +576,86 @@ export default function ResponseDetails() {
             </div>
             <div style={{ 
               padding: "0.75rem", 
-              backgroundColor: "#f8f9fa", 
+              backgroundColor: isEditing ? "white" : "#f8f9fa", 
               borderRadius: "6px",
               border: "1px solid #e9ecef",
               minHeight: "2.5rem",
               display: "flex",
               alignItems: "center"
             }}>
-              {value !== undefined && value !== null && value !== '' ? (
-                typeof value === 'boolean' ? (
-                  <Badge color={value ? 'success' : 'secondary'}>
-                    {value ? 'Yes' : 'No'}
-                  </Badge>
-                ) : (
-                  <span style={{ color: "#495057" }}>{String(value)}</span>
-                )
+              {isEditing ? (
+                // Edit mode - render input fields
+                (() => {
+                  switch (node.type) {
+                    case 'text':
+                    case 'email':
+                    case 'url':
+                    case 'phone':
+                    case 'number':
+                      return (
+                        <Input
+                          type={node.type === 'number' ? 'number' : 'text'}
+                          value={currentValue || ''}
+                          onChange={(e) => handleFieldChange(node.id, e.target.value)}
+                          style={{ border: 'none', backgroundColor: 'transparent', padding: 0 }}
+                        />
+                      );
+                    case 'textarea':
+                      return (
+                        <Input
+                          type="textarea"
+                          value={currentValue || ''}
+                          onChange={(e) => handleFieldChange(node.id, e.target.value)}
+                          style={{ border: 'none', backgroundColor: 'transparent', padding: 0 }}
+                        />
+                      );
+                    case 'checkbox':
+                      return (
+                        <Input
+                          type="checkbox"
+                          checked={currentValue || false}
+                          onChange={(e) => handleFieldChange(node.id, e.target.checked)}
+                        />
+                      );
+                    case 'select':
+                      return (
+                        <Input
+                          type="select"
+                          value={currentValue || ''}
+                          onChange={(e) => handleFieldChange(node.id, e.target.value)}
+                        >
+                          <option value="">Select an option</option>
+                          {node.options && node.options.map((option, index) => (
+                            <option key={index} value={option.value || option}>
+                              {option.label || option}
+                            </option>
+                          ))}
+                        </Input>
+                      );
+                    default:
+                      return (
+                        <Input
+                          type="text"
+                          value={currentValue || ''}
+                          onChange={(e) => handleFieldChange(node.id, e.target.value)}
+                          style={{ border: 'none', backgroundColor: 'transparent', padding: 0 }}
+                        />
+                      );
+                  }
+                })()
               ) : (
-                <span style={{ color: "#6c757d", fontStyle: "italic" }}>No response</span>
+                // View mode - display values
+                currentValue !== undefined && currentValue !== null && currentValue !== '' ? (
+                  typeof currentValue === 'boolean' ? (
+                    <Badge color={currentValue ? 'success' : 'secondary'}>
+                      {currentValue ? 'Yes' : 'No'}
+                    </Badge>
+                  ) : (
+                    <span style={{ color: "#495057" }}>{String(currentValue)}</span>
+                  )
+                ) : (
+                  <span style={{ color: "#6c757d", fontStyle: "italic" }}>No response</span>
+                )
               )}
             </div>
           </div>
@@ -594,7 +707,7 @@ export default function ResponseDetails() {
           
           <div>
             {form.schemaJson && Array.isArray(form.schemaJson) ? (
-              form.schemaJson.map(node => renderResponseNode(node, resp.answers || {}))
+              form.schemaJson.map(node => renderResponseNode(node, currentAnswers))
             ) : (
               <div className="text-center text-muted py-4">
                 <p>No form structure available to display</p>
@@ -635,27 +748,71 @@ export default function ResponseDetails() {
                 <div className="d-flex justify-content-between align-items-center mb-3">
                   <h5 className="mb-0">Response Data</h5>
                   <div className="d-flex gap-2">
-                    <Button 
-                      color="info" 
-                      size="sm"
-                      onClick={() => { setShowReport(true); fetchAllResponses(); }}
-                    >
-                      All Responses
-                    </Button>
-                    <Button 
-                      color="danger" 
-                      size="sm"
-                      onClick={() => setShowDeleteModal(true)}
-                    >
-                      Delete
-                    </Button>
+                    {isEditMode ? (
+                      <>
+                        <Button 
+                          color="success" 
+                          size="sm"
+                          onClick={handleSaveResponse}
+                          disabled={saving}
+                        >
+                          {saving ? (
+                            <>
+                              <Spinner size="sm" className="me-1" />
+                              Saving...
+                            </>
+                          ) : (
+                            <>
+                              <i className="ni ni-check me-1"></i>
+                              Save Changes
+                            </>
+                          )}
+                        </Button>
+                        <Button 
+                          color="secondary" 
+                          size="sm"
+                          onClick={handleCancelEdit}
+                        >
+                          <i className="ni ni-cross me-1"></i>
+                          Cancel
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <Button 
+                          color="info" 
+                          size="sm"
+                          onClick={() => { setShowReport(true); fetchAllResponses(); }}
+                        >
+                          <i className="ni ni-chart-bar-32 me-1"></i>
+                          All Responses
+                        </Button>
+                        <Button 
+                          color="warning" 
+                          size="sm"
+                          onClick={handleEditResponse}
+                        >
+                          <i className="ni ni-edit me-1"></i>
+                          Edit Response
+                        </Button>
+                        <Button 
+                          color="danger" 
+                          size="sm"
+                          onClick={() => setShowDeleteModal(true)}
+                        >
+                          <i className="ni ni-trash me-1"></i>
+                          Delete
+                        </Button>
+                      </>
+                    )}
                   </div>
                 </div>
 
-                {/* Filter Section */}
-                <Card className="mb-3" style={{ backgroundColor: '#f8f9fa' }}>
-                  <CardBody>
-                    <h6 className="mb-3">Filter Responses</h6>
+                {/* Filter Section - Only show in view mode */}
+                {!isEditMode && (
+                  <Card className="mb-3" style={{ backgroundColor: '#f8f9fa' }}>
+                    <CardBody>
+                      <h6 className="mb-3">Filter Responses</h6>
                     <Row>
                       <Col md={3}>
                         <FormGroup>
@@ -784,34 +941,52 @@ export default function ResponseDetails() {
                     )}
                   </CardBody>
                 </Card>
+                )}
 
                 {/* Form-like View for All Responses */}
-                {loadingReport ? (
-                  <div className="text-center py-5">
-                    <Spinner color="primary" />
-                    <p>Loading responses...</p>
-                  </div>
-                ) : filteredResponses.length === 0 ? (
-                  <div className="text-center text-muted py-5">
-                    <p>
-                      {allResponses.length === 0 ? 'No responses found for this form.' : 'No responses match the current filters.'}
-                    </p>
-                    {allResponses.length > 0 && (
-                      <Button 
-                        color="outline-secondary" 
-                        size="sm" 
-                        onClick={clearFilters}
-                      >
-                        Clear Filters
-                      </Button>
-                    )}
-                  </div>
+                {isEditMode ? (
+                  // Edit mode - show single response
+                  loading ? (
+                    <div className="text-center py-5">
+                      <Spinner color="primary" />
+                      <p>Loading response for editing...</p>
+                    </div>
+                  ) : response ? (
+                    <ResponseFormView key={response._id} resp={response} index={0} />
+                  ) : (
+                    <div className="text-center text-muted py-5">
+                      <p>Response not found.</p>
+                    </div>
+                  )
                 ) : (
-                  <div>
-                    {filteredResponses.map((resp, index) => (
-                      <ResponseFormView key={resp._id} resp={resp} index={index} />
-                    ))}
-                  </div>
+                  // View mode - show all responses
+                  loadingReport ? (
+                    <div className="text-center py-5">
+                      <Spinner color="primary" />
+                      <p>Loading responses...</p>
+                    </div>
+                  ) : filteredResponses.length === 0 ? (
+                    <div className="text-center text-muted py-5">
+                      <p>
+                        {allResponses.length === 0 ? 'No responses found for this form.' : 'No responses match the current filters.'}
+                      </p>
+                      {allResponses.length > 0 && (
+                        <Button 
+                          color="outline-secondary" 
+                          size="sm" 
+                          onClick={clearFilters}
+                        >
+                          Clear Filters
+                        </Button>
+                      )}
+                    </div>
+                  ) : (
+                    <div>
+                      {filteredResponses.map((resp, index) => (
+                        <ResponseFormView key={resp._id} resp={resp} index={index} />
+                      ))}
+                    </div>
+                  )
                 )}
               </CardBody>
             </Card>

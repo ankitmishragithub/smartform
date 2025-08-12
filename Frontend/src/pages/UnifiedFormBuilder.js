@@ -231,6 +231,19 @@ function UnifiedFormBuilder() {
           children: []
         })),
       };
+    } else if (item.type === "jspreadsheetCE4") {
+      const rows = item.defaultRows || 5;
+      const cols = item.defaultCols || 5;
+      node = {
+        id,
+        type: "jspreadsheetCE4",
+        label: item.label,
+        rows,
+        cols,
+        data: Array.from({ length: rows }, () =>
+          Array.from({ length: cols }, () => '')
+        ),
+      };
     } else {
       node = {
         id,

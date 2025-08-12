@@ -750,6 +750,15 @@ const exportToPDF = () => {
                               <i className="ni ni-eye me-1"></i>View
                             </Button>
                             <Button
+                              color="info"
+                              size="sm"
+                              className="rr-action-btn"
+                              onClick={() => navigate(`${process.env.PUBLIC_URL}/response-details/${response._id}/edit`)}
+                              title="Edit Response"
+                            >
+                              <i className="ni ni-edit me-1"></i>Edit Response
+                            </Button>
+                            <Button
                               color="danger"
                               size="sm"
                               className="rr-action-btn"

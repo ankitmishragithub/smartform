@@ -5,6 +5,7 @@ import {Button} from "reactstrap"
 import "../../css/Livepreview.css";
 import api from '../../api/api';
 import JSpreadsheetComponent from "../../components/JSpreadsheetComponent";
+import JSpreadsheetCE4Component from "../../components/JSpreadsheetCE4Component";
 
 
 // Separate component to handle tabs to avoid hooks issues
@@ -1511,6 +1512,22 @@ export default function LivePreview({ fields, values, onChange, folderName }) {
     return (
       <div key={node.id} style={{ marginBottom: "1rem" }}>
         <JSpreadsheetComponent 
+          field={node} 
+          value={values[node.id]}
+          onChange={(updatedField) => {
+            handlePreviewChange(node.id, updatedField);
+          }}
+          isFormFill={true}
+        />
+      </div>
+    );
+  }
+
+  // jSpreadsheet CE v4 layout
+  if (node.type === "jspreadsheetCE4") {
+    return (
+      <div key={node.id} style={{ marginBottom: "1rem" }}>
+        <JSpreadsheetCE4Component 
           field={node} 
           value={values[node.id]}
           onChange={(updatedField) => {

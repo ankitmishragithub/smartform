@@ -4,6 +4,7 @@ import api from "../api/api";
 import "../css/FormFill.css"; //
 import "../css/Livepreview.css";
 import JSpreadsheetComponent from "../components/JSpreadsheetComponent";
+import JSpreadsheetCE4Component from "../components/JSpreadsheetCE4Component";
 
   
 // Spreadsheet component for form fill
@@ -1577,6 +1578,15 @@ export default function FormFillPage(props) {
       case "jspreadsheet":
         return (
           <JSpreadsheetComponent 
+            field={f} 
+            value={val}
+            onChange={(updatedField) => handleChange(f.id, updatedField)}
+            isFormFill={true}
+          />
+        );
+      case "jspreadsheetCE4":
+        return (
+          <JSpreadsheetCE4Component 
             field={f} 
             value={val}
             onChange={(updatedField) => handleChange(f.id, updatedField)}
