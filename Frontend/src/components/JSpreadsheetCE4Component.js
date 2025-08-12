@@ -1227,11 +1227,25 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
   };
 
   // Cell selection handlers
-  const handleCellMouseDown = (rowIndex, colIndex) => {
-    setDragStart({ row: rowIndex, col: colIndex });
-    setIsSelecting(true);
-    setSelectedCell(`${rowIndex}-${colIndex}`);
-    setSelectedRange(null);
+  const handleCellMouseDown = (rowIndex, colIndex, e) => {
+    // Check if shift key is pressed for range selection
+    if (e.shiftKey && selectedCell) {
+      // Create a range from the previously selected cell to the current cell
+      const [prevRow, prevCol] = selectedCell.split('-').map(Number);
+      const startRow = Math.min(prevRow, rowIndex);
+      const endRow = Math.max(prevRow, rowIndex);
+      const startCol = Math.min(prevCol, colIndex);
+      const endCol = Math.max(prevCol, colIndex);
+      
+      setSelectedRange({ startRow, endRow, startCol, endCol });
+      setSelectedCell(`${rowIndex}-${colIndex}`);
+    } else {
+      // Single cell selection
+      setDragStart({ row: rowIndex, col: colIndex });
+      setIsSelecting(true);
+      setSelectedCell(`${rowIndex}-${colIndex}`);
+      setSelectedRange(null);
+    }
     setShowToolbar(true);
   };
 
@@ -1530,17 +1544,24 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
 
   // Merged Cells Management Functions
   const setMerge = (startRow, startCol, endRow, endCol) => {
+    console.log('🔗 setMerge called with:', { startRow, startCol, endRow, endCol });
+    
     // Save current state to history before making changes
     addToHistory(data);
     
     const mergeKey = `${startRow}-${startCol}`;
     const newMergedCells = { ...mergedCells };
     
+    console.log('🔗 Current mergedCells:', mergedCells);
+    console.log('🔗 New mergeKey:', mergeKey);
+    
     // Remove any existing merges that overlap with the new merge
     const overlappingMerges = Object.entries(newMergedCells).filter(([key, merge]) => {
       const [sr, sc, er, ec] = key.split('-').map(Number);
       return !(endRow < sr || startRow > er || endCol < sc || startCol > ec);
     });
+    
+    console.log('🔗 Overlapping merges to remove:', overlappingMerges);
     
     overlappingMerges.forEach(([key]) => {
       delete newMergedCells[key];
@@ -1549,8 +1570,12 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
     // Add the new merge
     newMergedCells[mergeKey] = { startRow, startCol, endRow, endCol };
     
+    console.log('🔗 Final mergedCells:', newMergedCells);
+    
     setMergedCells(newMergedCells);
     updateField({ mergedCells: newMergedCells });
+    
+    console.log('🔗 Merge operation completed');
   };
 
   const getMerge = (rowIndex, colIndex) => {
@@ -1654,7 +1679,7 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
       )}
 
       {/* Row Type Configuration Modal */}
-      {showRowTypeModal && rowTypeModalData && (
+      {/* {showRowTypeModal && rowTypeModalData && (
         <RowTypeModal
           rowIndex={rowTypeModalData.rowIndex}
           currentType={rowTypeModalData.currentType}
@@ -1662,7 +1687,7 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
           onSave={handleRowTypeSave}
           onCancel={handleRowTypeCancel}
         />
-      )}
+      )} */}
       
       {/* Header */}
       {!isFormFill && (
@@ -1728,23 +1753,6 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
             </label>
             <button onClick={exportToCSV} style={{ padding: '4px 8px', backgroundColor: '#17a2b8', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>📤 Export CSV</button>
           </div>
-        </div>
-      )}
-
-      {/* Fill Series Status Indicator */}
-      {!isFormFill && dragStart && (
-        <div style={{
-          padding: '6px 12px',
-          backgroundColor: '#fff3cd',
-          border: '1px solid #ffeaa7',
-          color: '#856404',
-          fontSize: '12px',
-          textAlign: 'center',
-          borderTop: 'none',
-          borderLeft: '2px solid #007bff',
-          borderRight: '2px solid #007bff'
-        }}>
-          🎯 <strong>Fill Series Mode Active</strong> - Drag to select range, release to copy data from cell {getColumnHeader(dragStart.col)}{dragStart.row + 1}
         </div>
       )}
 
@@ -1995,9 +2003,11 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
                     width: colSpan > 1 ? `${getColumnWidth(colIndex) * colSpan}px` : `${getColumnWidth(colIndex)}px`,
                     minWidth: colSpan > 1 ? `${getColumnWidth(colIndex) * colSpan}px` : `${getColumnWidth(colIndex)}px`,
                     height: rowSpan > 1 ? `${getRowHeight(rowIndex) * rowSpan}px` : `${getRowHeight(rowIndex)}px`,
-                    border: isSelected ? '2px solid #007bff' : isInRange ? '1px solid #70ad47' : '1px solid #d4d4d4',
+                    border: merge ? '2px solid #17a2b8' : 
+                           isSelected ? '2px solid #007bff' : 
+                           isInRange ? '1px solid #70ad47' : '1px solid #d4d4d4',
                     padding: '0',
-                    backgroundColor: merge ? '#f8f9fa' : 
+                    backgroundColor: merge ? '#e3f2fd' : 
                                    dragStart && dragStart.row === rowIndex && dragStart.col === colIndex ? '#fff3cd' :
                                    isInRange ? '#e2efda' : '#ffffff',
                     position: 'relative',
@@ -2948,241 +2958,267 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
 
       {/* Toolbar */}
       {showToolbar && !isFormFill && (
-        <div style={{
-          position: 'absolute',
-          top: '10px',
-          right: '10px',
-          backgroundColor: '#fff',
-          border: '1px solid #ddd',
-          borderRadius: '4px',
-          padding: '8px',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-          zIndex: 1000,
-          display: 'flex',
-          gap: '5px',
-          flexWrap: 'wrap'
-        }}>
-          <button
-            onClick={() => {
-              if (selectedCell) {
-                const [rowIndex, colIndex] = selectedCell.split('-').map(Number);
-                openColumnTypeModal(colIndex);
-              }
-            }}
-            style={{
-              padding: '6px 12px',
-              backgroundColor: '#007bff',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '12px'
-            }}
-            title="Set Column Type"
-          >
-            🔧 Col Type
-          </button>
-          <button
-            onClick={() => {
-              if (selectedCell) {
-                const [rowIndex, colIndex] = selectedCell.split('-').map(Number);
-                openRowTypeModal(rowIndex);
-              }
-            }}
-            style={{
-              padding: '6px 12px',
-              backgroundColor: '#28a745',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '12px'
-            }}
-            title="Set Row Type"
-          >
-            🔧 Row Type
-          </button>
-          <button
-            onClick={() => {
-              if (selectedCell) {
-                const [rowIndex, colIndex] = selectedCell.split('-').map(Number);
-                removeColumnType(colIndex);
-              }
-            }}
-            style={{
-              padding: '6px 12px',
-              backgroundColor: '#dc3545',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '12px'
-            }}
-            title="Remove Column Type"
-          >
-            ❌ Col Type
-          </button>
-          <button
-            onClick={() => {
-              if (selectedCell) {
-                const [rowIndex, colIndex] = selectedCell.split('-').map(Number);
-                removeRowType(rowIndex);
-              }
-            }}
-            style={{
-              padding: '6px 12px',
-              backgroundColor: '#dc3545',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '12px'
-            }}
-            title="Remove Row Type"
-          >
-            ❌ Row Type
-          </button>
-          <button
-            onClick={addRow}
-            style={{
-              padding: '6px 12px',
-              backgroundColor: '#28a745',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '12px'
-            }}
-            title="Add Row"
-          >
-            ➕ Row
-          </button>
-          <button
-            onClick={addColumn}
-            style={{
-              padding: '6px 12px',
-              backgroundColor: '#28a745',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '12px'
-            }}
-            title="Add Column"
-          >
-            ➕ Col
-          </button>
-          <button
-            onClick={deleteRow}
-            style={{
-              padding: '6px 12px',
-              backgroundColor: '#dc3545',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '12px'
-            }}
-            title="Delete Row"
-          >
-            ➖ Row
-          </button>
-          <button
-            onClick={deleteColumn}
-            style={{
-              padding: '6px 12px',
-              backgroundColor: '#dc3545',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '12px'
-            }}
-            title="Delete Column"
-          >
-            ➖ Col
-          </button>
-          <button
-            onClick={() => {
-              if (selectedRange) {
-                const { startRow, startCol, endRow, endCol } = selectedRange;
-                setMerge(startRow, startCol, endRow, endCol);
-              }
-            }}
-            disabled={!selectedRange}
-            style={{
-              padding: '6px 12px',
-              backgroundColor: !selectedRange ? '#6c757d' : '#17a2b8',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: !selectedRange ? 'not-allowed' : 'pointer',
-              fontSize: '12px'
-            }}
-            title="Merge Selected Cells"
-          >
-            🔗 Merge
-          </button>
-          <button
-            onClick={() => {
-              if (selectedCell) {
-                const [rowIndex, colIndex] = selectedCell.split('-').map(Number);
-                removeMerge(rowIndex, colIndex);
-              }
-            }}
-            disabled={!selectedCell}
-            style={{
-              padding: '6px 12px',
-              backgroundColor: !selectedCell ? '#6c757d' : '#fd7e14',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: !selectedCell ? 'not-allowed' : 'pointer',
-              fontSize: '12px'
-            }}
-            title="Unmerge Selected Cell"
-          >
-            🔓 Unmerge
-          </button>
-          <button
-            onClick={destroyMerged}
-            style={{ padding: '6px 12px', backgroundColor: '#6f42c1', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}
-            title="Remove All Merges">🗑️ Clear Merges</button>
-
-          <button onClick={() => {
-            if (selectedRange && dragStart) {
-              const startCellValue = data[dragStart.row]?.[dragStart.col] || '';
-              if (startCellValue !== '') {
-                const newData = [...data];
-                for (let r = selectedRange.startRow; r <= selectedRange.endRow; r++) {
-                  for (let c = selectedRange.startCol; c <= selectedRange.endCol; c++) {
-                    if (r === dragStart.row && c === dragStart.col) continue;
-                    if (!newData[r]) newData[r] = [];
-                    newData[r][c] = startCellValue;
-                  }
+        <>
+          {/* Range Selection Instructions */}
+          <div style={{
+            position: 'absolute',
+            top: '10px',
+            left: '10px',
+            backgroundColor: '#e3f2fd',
+            border: '1px solid #2196f3',
+            borderRadius: '4px',
+            padding: '8px 12px',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+            zIndex: 999,
+            fontSize: '12px',
+            color: '#1976d2',
+            maxWidth: '300px'
+          }}>
+            
+          </div>
+          
+          <div style={{
+            position: 'absolute',
+            top: '10px',
+            right: '10px',
+            backgroundColor: '#fff',
+            border: '1px solid #ddd',
+            borderRadius: '4px',
+            padding: '8px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+            zIndex: 1000,
+            display: 'flex',
+            gap: '5px',
+            flexWrap: 'wrap'
+          }}>
+            <button
+              onClick={() => {
+                if (selectedCell) {
+                  const [rowIndex, colIndex] = selectedCell.split('-').map(Number);
+                  openColumnTypeModal(colIndex);
                 }
-                setData(newData);
-                addToHistory(newData);
-                updateField({ data: newData });
+              }}
+              style={{
+                padding: '6px 12px',
+                backgroundColor: '#007bff',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '12px'
+              }}
+              title="Set Column Type"
+            >
+              🔧 Col Type
+            </button>
+            <button
+              onClick={() => {
+                if (selectedCell) {
+                  const [rowIndex, colIndex] = selectedCell.split('-').map(Number);
+                  openRowTypeModal(rowIndex);
+                }
+              }}
+              style={{
+                padding: '6px 12px',
+                backgroundColor: '#28a745',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '12px'
+              }}
+              title="Set Row Type"
+            >
+              🔧 Row Type
+            </button>
+            <button
+              onClick={() => {
+                if (selectedCell) {
+                  const [rowIndex, colIndex] = selectedCell.split('-').map(Number);
+                  removeColumnType(colIndex);
+                }
+              }}
+              style={{
+                padding: '6px 12px',
+                backgroundColor: '#dc3545',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '12px'
+              }}
+              title="Remove Column Type"
+            >
+              ❌ Col Type
+            </button>
+            <button
+              onClick={() => {
+                if (selectedCell) {
+                  const [rowIndex, colIndex] = selectedCell.split('-').map(Number);
+                  removeRowType(rowIndex);
+                }
+              }}
+              style={{
+                padding: '6px 12px',
+                backgroundColor: '#dc3545',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '12px'
+              }}
+              title="Remove Row Type"
+            >
+              ❌ Row Type
+            </button>
+            <button
+              onClick={addRow}
+              style={{
+                padding: '6px 12px',
+                backgroundColor: '#28a745',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '12px'
+              }}
+              title="Add Row"
+            >
+              ➕ Row
+            </button>
+            <button
+              onClick={addColumn}
+              style={{
+                padding: '6px 12px',
+                backgroundColor: '#28a745',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '12px'
+              }}
+              title="Add Column"
+            >
+              ➕ Col
+            </button>
+            <button
+              onClick={deleteRow}
+              style={{
+                padding: '6px 12px',
+                backgroundColor: '#dc3545',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '12px'
+              }}
+              title="Delete Row"
+            >
+              ➖ Row
+            </button>
+            <button
+              onClick={deleteColumn}
+              style={{
+                padding: '6px 12px',
+                backgroundColor: '#dc3545',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '12px'
+              }}
+              title="Delete Column"
+            >
+              ➖ Col
+            </button>
+            <button
+              onClick={() => {
+                if (selectedRange) {
+                  const { startRow, startCol, endRow, endCol } = selectedRange;
+                  console.log('🔗 Merging cells:', { startRow, startCol, endRow, endCol });
+                  setMerge(startRow, startCol, endRow, endCol);
+                } else {
+                  console.log('❌ No range selected for merge');
+                }
+              }}
+              disabled={!selectedRange}
+              style={{
+                padding: '6px 12px',
+                backgroundColor: !selectedRange ? '#6c757d' : '#17a2b8',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: !selectedRange ? 'not-allowed' : 'pointer',
+                fontSize: '12px'
+              }}
+              title={!selectedRange ? 
+                "Select a range first: Click a cell, then Shift+Click another cell, or drag to select" : 
+                `Merge ${selectedRange ? `${selectedRange.endRow - selectedRange.startRow + 1}×${selectedRange.endCol - selectedRange.startCol + 1}` : ''} cells`
               }
-            }
-          }}
-          disabled={!selectedRange || !dragStart}
-          style={{ 
-            padding: '6px 12px', 
-            backgroundColor: !selectedRange || !dragStart ? '#6c757d' : '#20c997', 
-            color: 'white', 
-            border: 'none', 
-            borderRadius: '4px', 
-            cursor: !selectedRange || !dragStart ? 'not-allowed' : 'pointer', 
-            fontSize: '12px' 
-          }}
-          title="Fill Series - Copy data from start cell to selected range">🔄 Fill Series</button>
+            >
+              🔗 Merge
+            </button>
+            <button
+              onClick={() => {
+                if (selectedCell) {
+                  const [rowIndex, colIndex] = selectedCell.split('-').map(Number);
+                  removeMerge(rowIndex, colIndex);
+                }
+              }}
+              disabled={!selectedCell}
+              style={{
+                padding: '6px 12px',
+                backgroundColor: !selectedCell ? '#6c757d' : '#fd7e14',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: !selectedCell ? 'not-allowed' : 'pointer',
+                fontSize: '12px'
+              }}
+              title="Unmerge Selected Cell"
+            >
+              🔓 Unmerge
+            </button>
+            <button
+              onClick={destroyMerged}
+              style={{ padding: '6px 12px', backgroundColor: '#6f42c1', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}
+              title="Remove All Merges">🗑️ Clear Merges</button>
 
-          <button onClick={copyData}
-            style={{ padding: '6px 12px', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}
-            title="Copy Selected Data">📋 Copy</button>
-        </div>
+            <button onClick={() => {
+              if (selectedRange && dragStart) {
+                const startCellValue = data[dragStart.row]?.[dragStart.col] || '';
+                if (startCellValue !== '') {
+                  const newData = [...data];
+                  for (let r = selectedRange.startRow; r <= selectedRange.endRow; r++) {
+                    for (let c = selectedRange.startCol; c <= selectedRange.endCol; c++) {
+                      if (r === dragStart.row && c === dragStart.col) continue;
+                      if (!newData[r]) newData[r] = [];
+                      newData[r][c] = startCellValue;
+                    }
+                  }
+                  setData(newData);
+                  addToHistory(newData);
+                  updateField({ data: newData });
+                }
+              }
+            }}
+            disabled={!selectedRange || !dragStart}
+            style={{ 
+              padding: '6px 12px', 
+              backgroundColor: !selectedRange || !dragStart ? '#6c757d' : '#20c997', 
+              color: 'white', 
+              border: 'none', 
+              borderRadius: '4px', 
+              cursor: !selectedRange || !dragStart ? 'not-allowed' : 'pointer', 
+              fontSize: '12px' 
+            }}
+            title="Fill Series - Copy data from start cell to selected range">🔄 Fill Series</button>
+
+            <button onClick={copyData}
+              style={{ padding: '6px 12px', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}
+              title="Copy Selected Data">📋 Copy</button>
+          </div>
+        </>
       )}
 
 
