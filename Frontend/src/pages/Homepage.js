@@ -1,22 +1,28 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom"; // make sure you're using react-router
 import Head from "../layout/head/Head";
 import api from "../api/api";
 
 const Homepage = () => {
   const [forms, setForms] = useState([]);
+  const [responses, setResponses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(() => new Date()); // defaults to today
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const { data } = await api.get("/forms");
-        setForms(Array.isArray(data) ? data : []);
+        const [formsRes, responsesRes] = await Promise.all([
+          api.get("/forms"),
+          api.get("/responses"),
+        ]);
+        setForms(Array.isArray(formsRes.data) ? formsRes.data : []);
+        setResponses(Array.isArray(responsesRes.data) ? responsesRes.data : []);
       } catch (error) {
         console.error("Error fetching data:", error);
-        setErr("Could not load forms");
+        setErr("Could not load data");
       } finally {
         setLoading(false);
       }
@@ -24,24 +30,38 @@ const Homepage = () => {
     fetchData();
   }, []);
 
-  const formatDate = (iso) => {
-    if (!iso) return "—";
-    // Example output: 7/26/2025 (Asia/Kolkata)
-    return new Date(iso).toLocaleDateString("en-US", { timeZone: "Asia/Kolkata" });
+  const getFormObject = (formId) => forms.find((f) => f._id === formId);
+
+  const getFormLabel = (formId) => {
+    const form = getFormObject(formId);
+    if (!form) return "Unknown";
+    const heading = form.schemaJson?.find((e) => e.type === "heading")?.label;
+    const folder = form.schemaJson?.find((e) => e.type === "folderName")?.label;
+    return heading || folder || "Untitled Form";
   };
 
-  const getTitle = (form) => {
-    // Prefer an explicit title if your API provides it:
-    if (form.title) return form.title;
+  // Responses for the selected day
+  const sameDayResponses = useMemo(() => {
+    if (!selectedDate || responses.length === 0) return [];
+    const start = new Date(selectedDate);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(selectedDate);
+    end.setHours(23, 59, 59, 999);
 
-    // Try to infer from schema (common in form builders)
-    const fromSchema =
-      form?.schemaJson?.find?.(b => b?.formTitle || b?.title)?.formTitle ||
-      form?.schemaJson?.find?.(b => b?.title)?.title;
+    return responses.filter((r) => {
+      const ts = new Date(r.submittedAt).getTime();
+      return ts >= start.getTime() && ts <= end.getTime();
+    });
+  }, [selectedDate, responses]);
 
-    // Fallback to your example title or a generic label
-    return fromSchema || "Filter Efficiency Monitoring Report";
-  };
+  // Unique forms (and counts) submitted that day
+  const formsForDay = useMemo(() => {
+    const map = new Map(); // formId -> count
+    sameDayResponses.forEach((r) => {
+      map.set(r.form, (map.get(r.form) || 0) + 1);
+    });
+    return Array.from(map.entries()).map(([formId, count]) => ({ formId, count }));
+  }, [sameDayResponses]);
 
   if (loading) {
     return (
@@ -66,6 +86,86 @@ const Homepage = () => {
       <Head title="Homepage" />
       <h1 style={{ padding: "16px 16px 0 16px", margin: 0 }}>Welcome to the Homepage</h1>
 
+      {/* Submitted Forms by Date */}
+      <div style={{ padding: 16 }}>
+        <div
+          style={{
+            background: "linear-gradient(180deg, #ffffff, #fafafa)",
+            border: "1px solid #eee",
+            borderRadius: 16,
+            boxShadow: "0 8px 24px rgba(0,0,0,0.06)",
+            padding: 16,
+          }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+            <h3 style={{ margin: 0, color: "#1f2937" }}>
+              <i className="ni ni-list text-primary" style={{ marginRight: 8 }}></i>
+              Forms Submitted on Selected Date
+            </h3>
+            <div>
+              <label style={{ marginRight: 8, color: "#4b5563", fontWeight: 600 }}>Date:</label>
+              <input
+                type="date"
+                value={selectedDate ? new Date(selectedDate.getTime() - selectedDate.getTimezoneOffset() * 60000).toISOString().slice(0, 10) : ""}
+                onChange={(e) => {
+                  const val = e.target.value; // yyyy-mm-dd
+                  if (!val) return setSelectedDate(null);
+                  setSelectedDate(new Date(`${val}T00:00:00`));
+                }}
+                style={{
+                  padding: "6px 10px",
+                  borderRadius: 8,
+                  border: "1px solid #d1d5db",
+                }}
+              />
+            </div>
+          </div>
+
+          {formsForDay.length > 0 ? (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 12 }}>
+              {formsForDay.map(({ formId, count }) => (
+                <div key={formId} style={{
+                  border: "1px solid #e5e7eb",
+                  borderRadius: 12,
+                  padding: 12,
+                  background: "#fff",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 8,
+                }}>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontWeight: 700, color: "#111827", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {getFormLabel(formId)}
+                    </div>
+                    <div style={{ color: "#6b7280", fontSize: 12 }}>{count} {count === 1 ? "submission" : "submissions"}</div>
+                  </div>
+                  <button
+                    onClick={() => navigate(`/forms/fill/${formId}`)}
+                    title="Resubmit this form"
+                    style={{
+                      padding: "8px 12px",
+                      borderRadius: 10,
+                      border: "1px solid #111827",
+                      background: "#111827",
+                      color: "#fff",
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    Resubmit
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{ color: "#6b7280" }}>No forms submitted on the selected date.</div>
+          )}
+        </div>
+      </div>
+
+      {/* Existing forms grid */}
       <div
         style={{
           display: "grid",
@@ -101,21 +201,20 @@ const Homepage = () => {
                     fontWeight: 700,
                     color: "#1f2937",
                   }}
-                  title={getTitle(form)}
+                  title={getFormLabel(form._id)}
                 >
-                  {getTitle(form)}
+                  {getFormLabel(form._id)}
                 </h3>
 
                 <div style={{ display: "flex", flexDirection: "column", gap: 4, color: "#4b5563" }}>
                   <span>
                     <strong>{fieldCount}</strong> {fieldCount === 1 ? "field" : "fields"}
                   </span>
-                  <span>Created: {formatDate(form.createdAt)}</span>
+                  <span>Created: {new Date(form.createdAt).toLocaleDateString()}</span>
                 </div>
               </div>
 
               <button
-              ///forms/fill/6883d5c14e326fda161aa72f
                 onClick={() => navigate(`/forms/fill/${form._id}`)}
                 style={{
                   marginTop: 12,
