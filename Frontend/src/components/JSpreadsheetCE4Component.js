@@ -786,6 +786,7 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
   const [columnWidths, setColumnWidths] = useState({});
   const [rowHeights, setRowHeights] = useState({});
   const [showToolbar, setShowToolbar] = useState(false);
+  const [showFormatBar, setShowFormatBar] = useState(false);
   const [showColumnTypeModal, setShowColumnTypeModal] = useState(false);
   const [columnTypeModalData, setColumnTypeModalData] = useState(null);
   const [showRowTypeModal, setShowRowTypeModal] = useState(false);
@@ -1662,11 +1663,11 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
   return (
     <div className="jspreadsheet-ce4-container" style={{ 
       width: '100%', 
-      height: isFormFill ? '500px' : '400px',
+      height: isFormFill ? 'auto' : '400px',
       position: 'relative',
       paddingTop: showToolbar && !isFormFill ? 100 : 0,
-      border: '2px solid #007bff',
-      borderRadius: '8px',
+      border: isFormFill ? '1px solid #e5e7eb' : '2px solid #007bff',
+      borderRadius: isFormFill ? '12px' : '8px',
       overflow: 'hidden',
       backgroundColor: '#fff'
     }} onMouseUp={handleMouseUp}>
@@ -1779,20 +1780,25 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
       {/* Enhanced Spreadsheet Table */}
       <div style={{ 
         overflowX: 'auto',
-        overflowY: 'auto',
-        maxHeight: isFormFill ? '380px' : '280px',
-        border: '1px solid #ddd'
+        overflowY: isFormFill ? 'visible' : 'auto',
+        maxHeight: isFormFill ? undefined : '280px',
+        border: isFormFill ? '1px solid #e5e7eb' : '1px solid #ddd',
+        borderRadius: isFormFill ? 12 : 0,
+        background: '#fff'
       }}>
         <table ref={tableRef} style={{ 
           width: '100%', 
-          borderCollapse: 'separate',
+          borderCollapse: isFormFill ? 'collapse' : 'separate',
           borderSpacing: '0',
           fontSize: '12px',
           fontFamily: '"Segoe UI", Arial, sans-serif',
           userSelect: 'none',
           backgroundColor: '#ffffff',
-          border: '1px solid #9c9c9c',
-          tableLayout: 'fixed'
+          border: isFormFill ? '1px solid #e5e7eb' : '1px solid #9c9c9c',
+          tableLayout: 'fixed',
+          boxShadow: isFormFill ? '0 8px 24px rgba(0,0,0,0.06)' : undefined,
+          borderRadius: isFormFill ? 12 : 0,
+          overflow: 'hidden'
         }}>
           {!isFormFill && (
             <thead>
@@ -1870,8 +1876,9 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
                       whiteSpace: 'nowrap'
                     }}
                     onClick={(e) => !isFormFill && handleColumnHeaderClick(colIndex, e)}
-                    title={isFormFill ? `Column ${getColumnHeader(colIndex)}` : `Select Column ${getColumnHeader(colIndex)}`}
+                    title={isFormFill ? undefined : `Select Column ${getColumnHeader(colIndex)}`}
                                      >
+                     {!isFormFill && (
                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
                        <span>{getColumnHeader(colIndex)}</span>
                        <span style={{ fontSize: '10px', color: '#666', fontWeight: 'normal' }}>
@@ -1907,6 +1914,7 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
                          ) : null;
                        })()}
                      </div>
+                     )}
                    </th>
                 ))}
               </tr>
@@ -1948,41 +1956,39 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
                   onClick={(e) => handleRowHeaderClick(rowIndex, e)}
                   title={`Select Row ${rowIndex + 1}`}
                   >
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
-                      <span>{rowIndex + 1}</span>
-                      <span style={{ fontSize: '10px', color: '#666', fontWeight: 'normal' }}>
-                        {getRowType(rowIndex) !== 'text' ? getRowType(rowIndex) : ''}
-                      </span>
-                      {/* Show range info if type is applied to specific columns */}
-                      {(() => {
-                        const type = getRowType(rowIndex);
-                        if (type === 'text') return null;
-                        
-                        // Find the range for this row type
-                        let rangeInfo = '';
-                        for (let c = 0; c < cols; c++) {
-                          const cellKey = `${rowIndex}-${c}`;
-                          if (rowTypes[cellKey] === type) {
-                            if (rangeInfo === '') {
-                              rangeInfo = `${getColumnHeader(c)}`;
-                            } else {
-                              const lastCol = rangeInfo.split('-')[1] || rangeInfo;
-                              if (c > getColumnHeader(lastCol).charCodeAt(0) - 65) {
-                                rangeInfo = rangeInfo.includes('-') ? 
-                                  rangeInfo.split('-')[0] + `-${getColumnHeader(c)}` : 
-                                  `${rangeInfo}-${getColumnHeader(c)}`;
+                    {!isFormFill && (
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
+                        <span>{rowIndex + 1}</span>
+                        <span style={{ fontSize: '10px', color: '#666', fontWeight: 'normal' }}>
+                          {getRowType(rowIndex) !== 'text' ? getRowType(rowIndex) : ''}
+                        </span>
+                        {(() => {
+                          const type = getRowType(rowIndex);
+                          if (type === 'text') return null;
+                          let rangeInfo = '';
+                          for (let c = 0; c < cols; c++) {
+                            const cellKey = `${rowIndex}-${c}`;
+                            if (rowTypes[cellKey] === type) {
+                              if (rangeInfo === '') {
+                                rangeInfo = `${getColumnHeader(c)}`;
+                              } else {
+                                const lastCol = rangeInfo.split('-')[1] || rangeInfo;
+                                if (c > getColumnHeader(lastCol).charCodeAt(0) - 65) {
+                                  rangeInfo = rangeInfo.includes('-') ? 
+                                    rangeInfo.split('-')[0] + `-${getColumnHeader(c)}` : 
+                                    `${rangeInfo}-${getColumnHeader(c)}`;
+                                }
                               }
                             }
                           }
-                        }
-                        
-                        return rangeInfo ? (
-                          <span style={{ fontSize: '8px', color: '#999', fontStyle: 'italic' }}>
-                            {rangeInfo}
-                          </span>
-                        ) : null;
-                      })()}
-                    </div>
+                          return rangeInfo ? (
+                            <span style={{ fontSize: '8px', color: '#999', fontStyle: 'italic' }}>
+                              {rangeInfo}
+                            </span>
+                          ) : null;
+                        })()}
+                      </div>
+                    )}
                   </td>
                 )}
                 {Array.from({ length: cols }, (_, colIndex) => {
@@ -2024,14 +2030,22 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
                       key={colIndex} 
                       rowSpan={rowSpan}
                       colSpan={colSpan}
-                      style={baseCellStyle}
+                      style={{
+                        ...baseCellStyle,
+                        border: isFormFill ? '1px solid #e5e7eb' : baseCellStyle.border,
+                        padding: isFormFill ? '6px' : baseCellStyle.padding,
+                        textAlign: isFormFill ? 'left' : baseCellStyle.textAlign,
+                        backgroundColor: isFormFill ? '#fff' : baseCellStyle.backgroundColor
+                      }}
                       onMouseDown={(e) => !isFormFill && handleCellMouseDown(rowIndex, colIndex, e)}
                       onMouseEnter={() => !isFormFill && handleCellMouseEnter(rowIndex, colIndex)}
                     >
                                              {(() => {
                          const cellType = getCellType(rowIndex, colIndex);
                          const cellValue = data[rowIndex]?.[colIndex] || '';
-                         const cellOptions = getCellOptions(rowIndex, colIndex);
+                          const cellOptions = getCellOptions(rowIndex, colIndex);
+                          const styleKey = `${rowIndex}-${colIndex}`;
+                          const appliedStyle = cellStyles[styleKey] || {};
                          
                          // Show merge info for merged cells
                           if (merge) {
@@ -2128,7 +2142,7 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
                                      
                                      case 'autocomplete':
                                        return (
-                                         <input
+                                          <input
                                            type="text"
                                            value={cellValue}
                                            onChange={(e) => handleCellChange(rowIndex, colIndex, e.target.value)}
@@ -2166,7 +2180,7 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
                                              fontFamily: '"Segoe UI", Arial, sans-serif',
                                              lineHeight: '24px'
                                            }}
-                                           placeholder={`${getColumnHeader(colIndex)}${rowIndex + 1}`}
+                                              placeholder={isFormFill ? '' : `${getColumnHeader(colIndex)}${rowIndex + 1}`}
                                            disabled={isReadOnly}
                                            list={`autocomplete-${rowIndex}-${colIndex}`}
                                          />
@@ -2289,7 +2303,7 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
                                              }
                                            }}
                                            data-cell={cellKey}
-                                           style={{
+                                            style={{
                                              width: '100%',
                                              height: '100%',
                                              border: 'none',
@@ -2297,10 +2311,11 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
                                              padding: '8px',
                                              backgroundColor: 'transparent',
                                              fontSize: '12px',
-                                             fontFamily: '"Segoe UI", Arial, sans-serif',
-                                             lineHeight: '24px'
+                                              fontFamily: '"Segoe UI", Arial, sans-serif',
+                                              lineHeight: '24px',
+                                              ...appliedStyle
                                            }}
-                                           placeholder={`${getColumnHeader(colIndex)}${rowIndex + 1}`}
+                                              placeholder={isFormFill ? '' : `${getColumnHeader(colIndex)}${rowIndex + 1}`}
                                            disabled={isReadOnly}
                                          />
                                        );
@@ -2410,7 +2425,7 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
                                      
                                      case 'richtext':
                                        return (
-                                         <textarea
+                                          <textarea
                                            value={cellValue}
                                            onChange={(e) => handleCellChange(rowIndex, colIndex, e.target.value)}
                                            onFocus={() => {
@@ -2440,7 +2455,7 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
                                              }
                                            }}
                                            data-cell={cellKey}
-                                           style={{
+                                            style={{
                                              width: '100%',
                                              height: '100%',
                                              border: 'none',
@@ -2448,58 +2463,93 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
                                              padding: '8px',
                                              backgroundColor: 'transparent',
                                              fontSize: '12px',
-                                             fontFamily: '"Segoe UI", Arial, sans-serif',
-                                             resize: 'none',
-                                             overflow: 'hidden'
+                                              fontFamily: '"Segoe UI", Arial, sans-serif',
+                                              resize: 'none',
+                                              overflow: 'hidden',
+                                              ...appliedStyle
                                            }}
-                                           placeholder={`${getColumnHeader(colIndex)}${rowIndex + 1}`}
+                                            placeholder={isFormFill ? '' : `${getColumnHeader(colIndex)}${rowIndex + 1}`}
                                            disabled={isReadOnly}
                                          />
                                        );
                                      
                                      default: // text
                                        return (
-                                         <input
-                                           type="text"
-                                           value={cellValue}
-                                           onChange={(e) => handleCellChange(rowIndex, colIndex, e.target.value)}
-                                           onFocus={() => {
-                                             if (!isFormFill) {
-                                               setSelectedCell(cellKey);
-                                               setShowToolbar(true);
-                                             }
-                                           }}
-                                           onKeyDown={(e) => {
-                                             if (e.key === 'Enter') {
-                                               const nextRow = rowIndex + 1;
-                                               if (nextRow < rows) {
-                                                 const nextInput = document.querySelector(`input[data-cell="${nextRow}-${colIndex}"]`);
-                                                 if (nextInput) nextInput.focus();
+                                         isFormFill ? (
+                                           <textarea
+                                             value={cellValue}
+                                             onChange={(e) => {
+                                               handleCellChange(rowIndex, colIndex, e.target.value);
+                                               e.target.style.height = 'auto';
+                                               e.target.style.height = `${e.target.scrollHeight}px`;
+                                             }}
+                                             onFocus={(e) => {
+                                               e.target.style.height = 'auto';
+                                               e.target.style.height = `${e.target.scrollHeight}px`;
+                                             }}
+                                             data-cell={cellKey}
+                                             style={{
+                                               width: '100%',
+                                               minHeight: '32px',
+                                               border: 'none',
+                                               outline: 'none',
+                                               padding: '8px',
+                                               backgroundColor: 'transparent',
+                                               fontSize: '12px',
+                                               fontFamily: '"Segoe UI", Arial, sans-serif',
+                                               whiteSpace: 'pre-wrap',
+                                               wordBreak: 'break-word',
+                                               overflowWrap: 'anywhere',
+                                               resize: 'none',
+                                               lineHeight: '20px',
+                                               ...appliedStyle
+                                             }}
+                                             placeholder={isFormFill ? '' : `${getColumnHeader(colIndex)}${rowIndex + 1}`}
+                                             disabled={isReadOnly}
+                                           />
+                                         ) : (
+                                           <input
+                                             type="text"
+                                             value={cellValue}
+                                             onChange={(e) => handleCellChange(rowIndex, colIndex, e.target.value)}
+                                             onFocus={() => {
+                                               if (!isFormFill) {
+                                                 setSelectedCell(cellKey);
+                                                 setShowToolbar(true);
                                                }
-                                             } else if (e.key === 'Tab') {
-                                               e.preventDefault();
-                                               const nextCol = colIndex + 1;
-                                               if (nextCol < cols) {
-                                                 const nextInput = document.querySelector(`input[data-cell="${rowIndex}-${nextCol}"]`);
-                                                 if (nextInput) nextInput.focus();
+                                             }}
+                                             onKeyDown={(e) => {
+                                               if (e.key === 'Enter') {
+                                                 const nextRow = rowIndex + 1;
+                                                 if (nextRow < rows) {
+                                                   const nextInput = document.querySelector(`input[data-cell=\"${nextRow}-${colIndex}\"]`);
+                                                   if (nextInput) nextInput.focus();
+                                                 }
+                                               } else if (e.key === 'Tab') {
+                                                 e.preventDefault();
+                                                 const nextCol = colIndex + 1;
+                                                 if (nextCol < cols) {
+                                                   const nextInput = document.querySelector(`input[data-cell=\"${rowIndex}-${nextCol}\"]`);
+                                                   if (nextInput) nextInput.focus();
+                                                 }
                                                }
-                                             }
-                                           }}
-                                           data-cell={cellKey}
-                                           style={{
-                                             width: '100%',
-                                             height: '100%',
-                                             border: 'none',
-                                             outline: 'none',
-                                             padding: '8px',
-                                             backgroundColor: 'transparent',
-                                             fontSize: '12px',
-                                             fontFamily: '"Segoe UI", Arial, sans-serif',
-                                             lineHeight: '24px'
-                                           }}
-                                           placeholder={`${getColumnHeader(colIndex)}${rowIndex + 1}`}
-                                           disabled={isReadOnly}
-                                         />
+                                             }}
+                                             data-cell={cellKey}
+                                             style={{
+                                               width: '100%',
+                                               height: '100%',
+                                               border: 'none',
+                                               outline: 'none',
+                                               padding: '8px',
+                                               backgroundColor: 'transparent',
+                                               fontSize: '12px',
+                                               fontFamily: '"Segoe UI", Arial, sans-serif',
+                                               lineHeight: '24px'
+                                             }}
+                                              placeholder={isFormFill ? '' : `${getColumnHeader(colIndex)}${rowIndex + 1}`}
+                                             disabled={isReadOnly}
+                                           />
+                                         )
                                        );
                                    }
                                  })()}
@@ -2614,7 +2664,7 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
                                    fontFamily: '"Segoe UI", Arial, sans-serif',
                                    lineHeight: '24px'
                                  }}
-                                 placeholder={`${getColumnHeader(colIndex)}${rowIndex + 1}`}
+                                  placeholder={isFormFill ? '' : `${getColumnHeader(colIndex)}${rowIndex + 1}`}
                                  disabled={isReadOnly}
                                  list={`autocomplete-${rowIndex}-${colIndex}`}
                                />
@@ -2746,9 +2796,10 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
                                    backgroundColor: 'transparent',
                                    fontSize: '12px',
                                    fontFamily: '"Segoe UI", Arial, sans-serif',
-                                   lineHeight: '24px'
+                                    lineHeight: '24px',
+                                    ...appliedStyle
                                  }}
-                                 placeholder={`${getColumnHeader(colIndex)}${rowIndex + 1}`}
+                                placeholder={isFormFill ? '' : `${getColumnHeader(colIndex)}${rowIndex + 1}`}
                                  disabled={isReadOnly}
                                />
                              );
@@ -2858,7 +2909,7 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
                            
                            case 'richtext':
                              return (
-                               <textarea
+                              <textarea
                                  value={cellValue}
                                  onChange={(e) => handleCellChange(rowIndex, colIndex, e.target.value)}
                                  onFocus={() => {
@@ -2888,7 +2939,7 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
                                    }
                                  }}
                                  data-cell={cellKey}
-                                 style={{
+                                  style={{
                                    width: '100%',
                                    height: '100%',
                                    border: 'none',
@@ -2897,10 +2948,11 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
                                    backgroundColor: 'transparent',
                                    fontSize: '12px',
                                    fontFamily: '"Segoe UI", Arial, sans-serif',
-                                   resize: 'none',
-                                   overflow: 'hidden'
+                                    resize: 'none',
+                                    overflow: 'hidden',
+                                    ...appliedStyle
                                  }}
-                                 placeholder={`${getColumnHeader(colIndex)}${rowIndex + 1}`}
+                                placeholder={isFormFill ? '' : `${getColumnHeader(colIndex)}${rowIndex + 1}`}
                                  disabled={isReadOnly}
                                />
                              );
@@ -2945,7 +2997,7 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
                                    fontFamily: '"Segoe UI", Arial, sans-serif',
                                    lineHeight: '24px'
                                  }}
-                                 placeholder={`${getColumnHeader(colIndex)}${rowIndex + 1}`}
+                                  placeholder={isFormFill ? '' : `${getColumnHeader(colIndex)}${rowIndex + 1}`}
                                  disabled={isReadOnly}
                                />
                              );
@@ -2994,6 +3046,79 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
             gap: '5px',
             flexWrap: 'wrap'
           }}>
+            {/* Inline format bar for text styling */}
+            <select
+              onChange={(e) => {
+                if (!selectedCell) return;
+                const [r, c] = selectedCell.split('-').map(Number);
+                const key = `${r}-${c}`;
+                const next = { ...(cellStyles[key] || {}), fontSize: e.target.value };
+                const nextMap = { ...cellStyles, [key]: next };
+                setCellStyles(nextMap);
+                updateField({ cellStyles: nextMap });
+              }}
+              defaultValue="14px"
+              style={{ padding: '4px', borderRadius: 4 }}
+              title="Font size"
+            >
+              {['12px','14px','16px','18px','20px'].map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+            <input
+              type="color"
+              title="Font color"
+              onChange={(e) => {
+                if (!selectedCell) return;
+                const [r, c] = selectedCell.split('-').map(Number);
+                const key = `${r}-${c}`;
+                const next = { ...(cellStyles[key] || {}), color: e.target.value };
+                const nextMap = { ...cellStyles, [key]: next };
+                setCellStyles(nextMap);
+                updateField({ cellStyles: nextMap });
+              }}
+              style={{ width: 36, height: 32, padding: 0, border: '1px solid #ddd', borderRadius: 4 }}
+            />
+            <button
+              onClick={() => {
+                if (!selectedCell) return;
+                const [r, c] = selectedCell.split('-').map(Number);
+                const key = `${r}-${c}`;
+                const cur = cellStyles[key] || {};
+                const next = { ...cur, fontWeight: cur.fontWeight === 'bold' ? 'normal' : 'bold' };
+                const nextMap = { ...cellStyles, [key]: next };
+                setCellStyles(nextMap);
+                updateField({ cellStyles: nextMap });
+              }}
+              style={{ padding: '6px 10px' }}
+              title="Bold"
+            >B</button>
+            <button
+              onClick={() => {
+                if (!selectedCell) return;
+                const [r, c] = selectedCell.split('-').map(Number);
+                const key = `${r}-${c}`;
+                const cur = cellStyles[key] || {};
+                const next = { ...cur, fontStyle: cur.fontStyle === 'italic' ? 'normal' : 'italic' };
+                const nextMap = { ...cellStyles, [key]: next };
+                setCellStyles(nextMap);
+                updateField({ cellStyles: nextMap });
+              }}
+              style={{ padding: '6px 10px', fontStyle: 'italic' }}
+              title="Italic"
+            >I</button>
+            <button
+              onClick={() => {
+                if (!selectedCell) return;
+                const [r, c] = selectedCell.split('-').map(Number);
+                const key = `${r}-${c}`;
+                const cur = cellStyles[key] || {};
+                const next = { ...cur, textDecoration: cur.textDecoration === 'underline' ? 'none' : 'underline' };
+                const nextMap = { ...cellStyles, [key]: next };
+                setCellStyles(nextMap);
+                updateField({ cellStyles: nextMap });
+              }}
+              style={{ padding: '6px 10px', textDecoration: 'underline' }}
+              title="Underline"
+            >U</button>
             <button
               onClick={() => {
                 if (selectedCell) {
