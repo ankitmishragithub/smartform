@@ -1,5 +1,10 @@
 const menu = [
   {
+    icon: "home-fill",
+    text: "Home",
+    link: "/",
+  },
+  {
     //form-builder
     icon: "dashlite",
     text: "Create Form",
