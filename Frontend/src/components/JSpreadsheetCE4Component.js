@@ -2131,7 +2131,8 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
                                              backgroundColor: 'transparent',
                                              fontSize: '12px',
                                              fontFamily: '"Segoe UI", Arial, sans-serif',
-                                             cursor: 'pointer'
+                                    cursor: 'pointer',
+                                    ...appliedStyle
                                            }}
                                            disabled={isReadOnly}
                                          >
@@ -2180,7 +2181,8 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
                                              backgroundColor: 'transparent',
                                              fontSize: '12px',
                                              fontFamily: '"Segoe UI", Arial, sans-serif',
-                                             lineHeight: '24px'
+                                    lineHeight: '24px',
+                                    ...appliedStyle
                                            }}
                                               placeholder={isFormFill ? '' : `${getColumnHeader(colIndex)}${rowIndex + 1}`}
                                            disabled={isReadOnly}
@@ -2226,7 +2228,8 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
                                              backgroundColor: 'transparent',
                                              fontSize: '12px',
                                              fontFamily: '"Segoe UI", Arial, sans-serif',
-                                             lineHeight: '24px'
+                                    lineHeight: '24px',
+                                    ...appliedStyle
                                            }}
                                            disabled={isReadOnly}
                                          />
@@ -2270,7 +2273,8 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
                                              backgroundColor: 'transparent',
                                              fontSize: '12px',
                                              fontFamily: '"Segoe UI", Arial, sans-serif',
-                                             lineHeight: '24px'
+                                    lineHeight: '24px',
+                                    ...appliedStyle
                                            }}
                                            disabled={isReadOnly}
                                          />
@@ -2546,7 +2550,8 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
                                                backgroundColor: 'transparent',
                                                fontSize: '12px',
                                                fontFamily: '"Segoe UI", Arial, sans-serif',
-                                               lineHeight: '24px'
+                                    lineHeight: '24px',
+                                    ...appliedStyle
                                              }}
                                               placeholder={isFormFill ? '' : `${getColumnHeader(colIndex)}${rowIndex + 1}`}
                                              disabled={isReadOnly}
@@ -3059,7 +3064,7 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
                 setCellStyles(nextMap);
                 updateField({ cellStyles: nextMap });
               }}
-              defaultValue="14px"
+               value={selectedCell ? ((cellStyles[selectedCell] && cellStyles[selectedCell].fontSize) || '12px') : '12px'}
               style={{ padding: '4px', borderRadius: 4 }}
               title="Font size"
             >
@@ -3077,6 +3082,7 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
                 setCellStyles(nextMap);
                 updateField({ cellStyles: nextMap });
               }}
+               value={selectedCell ? ((cellStyles[selectedCell] && cellStyles[selectedCell].color) || '#000000') : '#000000'}
               style={{ width: 36, height: 32, padding: 0, border: '1px solid #ddd', borderRadius: 4 }}
             />
             <button

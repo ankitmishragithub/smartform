@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../api/api";
 import "../css/FormFill.css"; //
@@ -14,6 +14,10 @@ function SpreadsheetFormFillComponent({ field, value, onChange }) {
   const [currentActiveSheet, setCurrentActiveSheet] = useState(0);
   const [addedRows, setAddedRows] = useState(new Set());
   const [addedColumns, setAddedColumns] = useState(new Set());
+  // Track which columns (per sheet) have been stamped once
+  const stampedColumnsRef = useRef(new Set()); // keys like `${sheetIndex}:${colIndex}`
+  // Track a single audit row per sheet; reuse it for all stamps
+  const auditRowIndexRef = useRef(new Map()); // sheetIndex -> rowIndex
   
   // Initialize editable data when component mounts or field changes
   useEffect(() => {
@@ -164,6 +168,128 @@ function SpreadsheetFormFillComponent({ field, value, onChange }) {
         }
       });
       
+      activeSheet.data = updatedData;
+      
+      // Auto-audit logic: add audit column/row with user and timestamp when thresholds met
+      try {
+        const hasContent = (cell) => {
+          if (typeof cell === 'object' && cell !== null) {
+            const c = (cell.content || '').toString().trim();
+            return c !== '';
+          }
+          const s = (cell ?? '').toString().trim();
+          return s !== '';
+        };
+
+        const getCellString = (cell) => {
+          if (typeof cell === 'object' && cell !== null) return (cell.content || '').toString();
+          return (cell ?? '').toString();
+        };
+
+        const stamp = `admin - ${new Date().toLocaleString()}`;
+
+        // Ensure headers array exists if present
+        const headers = Array.isArray(activeSheet.headers) ? activeSheet.headers : null;
+
+        // Helper to find or create an "Audit" column; returns its index
+        const ensureAuditColumn = () => {
+          let auditIndex = -1;
+          if (headers) {
+            auditIndex = headers.findIndex((h) => (h || '').toString().trim().toLowerCase() === 'audit');
+          }
+          const currentCols = updatedData[0]?.length || 0;
+          if (auditIndex === -1) {
+            // Create new audit column at the end
+            auditIndex = currentCols;
+            for (let r = 0; r < updatedData.length; r++) {
+              const row = updatedData[r] || [];
+              // Pad row to currentCols if needed
+              while (row.length < currentCols) row.push('');
+              row.push('');
+              updatedData[r] = row;
+            }
+            if (headers) headers.push('Audit');
+            activeSheet.cols = (updatedData[0]?.length || currentCols + 1);
+          }
+          return auditIndex;
+        };
+
+        // Helper to find a usable bottom row or create one; returns its index
+        const ensureBottomRowForColumn = (targetCol) => {
+          const colsLen = updatedData[0]?.length || 0;
+          let lastIndex = updatedData.length - 1;
+          if (lastIndex < 0) {
+            // Create header row placeholder if sheet was empty
+            updatedData.push(new Array(colsLen).fill(''));
+            lastIndex = 0;
+          }
+          // Try to use last row if the target cell is empty (and not header row)
+          if (lastIndex >= 1 && !hasContent(updatedData[lastIndex]?.[targetCol])) {
+            return lastIndex;
+          }
+          // Otherwise append a new bottom row
+          const newRow = new Array(colsLen).fill('');
+          updatedData.push(newRow);
+          activeSheet.rows = updatedData.length;
+          return updatedData.length - 1;
+        };
+
+        // Helper: ensure a single audit row exists for this sheet and return its index
+        const ensureAuditRow = () => {
+          const colsLen = updatedData[0]?.length || (colIndex + 1);
+          const existing = auditRowIndexRef.current.get(currentActiveSheet);
+          if (typeof existing === 'number' && existing >= 0 && existing < updatedData.length) {
+            return existing;
+          }
+          const newRow = new Array(colsLen).fill('');
+          updatedData.push(newRow);
+          const idx = updatedData.length - 1;
+          auditRowIndexRef.current.set(currentActiveSheet, idx);
+          activeSheet.rows = updatedData.length;
+          return idx;
+        };
+
+        // 1) Row rule: when a data row reaches exactly 2 filled cells, stamp the same row in a single audit column (right side)
+        if (rowIndex >= 1) {
+          const rowCells = updatedData[rowIndex] || [];
+          let filledInRow = 0;
+          for (let c = 0; c < rowCells.length; c++) {
+            if (hasContent(rowCells[c])) filledInRow++;
+          }
+          if (filledInRow === 2) {
+            const auditColIdx = ensureAuditColumn();
+            updatedData[rowIndex][auditColIdx] = stamp;
+          }
+        }
+
+        // 2) Column rule: when a column reaches 3 or more filled cells (in data rows), append ONE new bottom row
+        // and stamp that new row's cell in this column with admin + timestamp (only once per column)
+        {
+          let filledInColumn = 0;
+          const totalRows = updatedData.length;
+          for (let r = 1; r < totalRows; r++) {
+            if (hasContent(updatedData[r]?.[colIndex])) filledInColumn++;
+          }
+          const stampKey = `${currentActiveSheet}:${colIndex}`;
+          if (filledInColumn >= 3 && !stampedColumnsRef.current.has(stampKey)) {
+            const auditRowIdx = ensureAuditRow();
+            const currentCell = updatedData[auditRowIdx][colIndex];
+            if (!hasContent(currentCell)) {
+              if (typeof currentCell === 'object' && currentCell !== null) {
+                updatedData[auditRowIdx][colIndex] = { ...currentCell, content: stamp };
+              } else {
+                updatedData[auditRowIdx][colIndex] = stamp;
+              }
+            }
+            stampedColumnsRef.current.add(stampKey);
+          }
+        }
+      } catch (e) {
+        // Fail-safe: do not block user input on audit logic errors
+        // console.warn('Audit logic error:', e);
+      }
+
+      // Assign possibly-augmented data back to sheet
       activeSheet.data = updatedData;
       updatedSheets[currentActiveSheet] = activeSheet;
       
@@ -1623,6 +1749,7 @@ export default function FormFillPage(props) {
           />
         );
       case "jspreadsheetCE4":
+      case "jspreadsheetce4":
         return (
           <JSpreadsheetCE4Component 
             field={f} 
