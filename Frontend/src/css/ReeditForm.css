@@ -1,0 +1,180 @@
+/* Resubmit (Reedit) Page Styling - Inspired by FormFill.css */
+
+.reedit-container {
+  background: linear-gradient(
+    135deg,
+    rgba(102, 126, 234, 0.08) 0%,
+    rgba(118, 75, 162, 0.04) 50%,
+    rgba(64, 224, 208, 0.08) 100%
+  );
+  min-height: 100vh;
+  padding: 16px; /* consistent with content padding; side navbar already handled by layout */
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.reedit-card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 24px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.05),
+    0 8px 32px rgba(102, 126, 234, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  width: 100%; /* full width of content area */
+  margin: 0;   /* no centering margins */
+  overflow: hidden;
+  position: relative;
+  box-sizing: border-box;
+}
+
+.reedit-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #4facfe 100%);
+}
+
+.reedit-card-body {
+  padding: 24px;
+}
+
+/* Loading state wrapper */
+.reedit-loading {
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 20px;
+  padding: 40px;
+  box-shadow: 0 12px 32px rgba(16, 185, 129, 0.1);
+}
+
+.reedit-group {
+  margin-bottom: 20px;
+}
+
+.reedit-group label {
+  font-weight: 700;
+  font-size: 16px;
+  color: #1f2937;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.reedit-input,
+.reedit-select,
+.reedit-textarea {
+  background: rgba(255, 255, 255, 0.9);
+  border: 2px solid rgba(102, 126, 234, 0.2);
+  border-radius: 12px;
+  padding: 14px 16px;
+  font-size: 15px;
+  font-weight: 500;
+  color: #374151;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  width: 100%;
+}
+
+.reedit-input:focus,
+.reedit-select:focus,
+.reedit-textarea:focus {
+  border-color: rgba(102, 126, 234, 0.6);
+  box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1), 0 8px 24px rgba(102, 126, 234, 0.15), inset 0 1px 2px rgba(255, 255, 255, 0.9);
+  outline: none;
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.reedit-spreadsheet {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 8px;
+  background: #fff;
+}
+
+.reedit-submit-btn {
+  background: linear-gradient(135deg, #10b981 0%, #3b82f6 100%);
+  border: none;
+  border-radius: 16px;
+  padding: 12px 24px;
+  font-weight: 700;
+  font-size: 15px;
+  color: white;
+  box-shadow: 0 12px 32px rgba(16, 185, 129, 0.3);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.reedit-submit-btn:hover {
+  transform: translateY(-2px) scale(1.01);
+  box-shadow: 0 16px 40px rgba(16, 185, 129, 0.4);
+}
+
+.reedit-actions { display: flex; gap: 10px; margin-top: 16px; }
+.reedit-cancel-btn { border: 2px solid #d1d5db; background: #fff; color: #374151; padding: 12px 20px; font-weight: 600; border-radius: 12px; transition: all 0.2s; }
+.reedit-cancel-btn:hover { background: #f3f4f6; }
+
+/* Spreadsheet styles inspired by FormFill */
+.reedit-spreadsheet-container { position: relative; width: 100%; max-width: 100%; }
+.reedit-spreadsheet-scroll-container {
+  overflow: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background-color: white;
+  max-height: 400px;
+  max-width: 100%;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+.reedit-spreadsheet-table { min-width: max-content; border-collapse: collapse; font-size: 14px; table-layout: fixed; width: 100%; }
+.reedit-spreadsheet-table th,
+.reedit-spreadsheet-table td {
+  min-width: 120px;
+  max-width: 200px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 8px;
+  border: 1px solid #e5e7eb;
+  vertical-align: middle;
+}
+.reedit-spreadsheet-table th { background-color: #f9fafb; font-weight: 600; text-align: left; position: sticky; top: 0; z-index: 10; }
+.reedit-spreadsheet-input { width: 100%; height: 100%; border: none; background: transparent; outline: none; font-size: 14px; padding: 8px; box-sizing: border-box; }
+.reedit-spreadsheet-input:focus { background-color: rgba(102, 126, 234, 0.1); box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2); }
+
+.reedit-spreadsheet-tabs { display: flex; background: linear-gradient(135deg, rgba(248, 249, 255, 0.9) 0%, rgba(240, 245, 255, 0.9) 100%); padding: 8px; border-radius: 16px; margin-bottom: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.08); gap: 6px; border: 2px solid rgba(102, 126, 234, 0.1); }
+.reedit-tab-button { flex: 1; padding: 12px 16px; border: none; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s; background: transparent; color: #6b7280; }
+.reedit-tab-button.active { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4); }
+.reedit-tab-button:not(.active):hover { background: rgba(229,231,235,0.6); color: #374151; }
+
+/* Hide selection highlight/overlays inside resubmit page only */
+.reedit-container .jspreadsheet-ce4-container td,
+.reedit-container .jspreadsheet td,
+.reedit-container .jexcel td {
+  border: 1px solid #d4d4d4 !important;
+  background-color: #ffffff !important;
+}
+
+/* Common selection overlay classes from spreadsheet libs */
+.reedit-container .highlight,
+.reedit-container .selected,
+.reedit-container .jexcel_selection,
+.reedit-container .jexcel_corner,
+.reedit-container .jexcel-selected,
+.reedit-container .jexcel-highlight,
+.reedit-container .jss-highlighting {
+  display: none !important;
+}
+
+/* Remove focus outline/border artifacts on active cell */
+.reedit-container .jspreadsheet-ce4-container td:focus,
+.reedit-container .jspreadsheet td:focus,
+.reedit-container .jexcel td:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Reverted: selection highlighting remains default */
+
+@media (max-width: 768px) {
+  .reedit-card-body { padding: 16px; }
+}

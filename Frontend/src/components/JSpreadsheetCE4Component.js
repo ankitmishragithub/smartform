@@ -818,15 +818,17 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
     setHistory([initialData]);
     setHistoryStep(0);
 
-    if (field?.cellStyles) setCellStyles(field.cellStyles);
-    if (field?.mergedCells) setMergedCells(field.mergedCells);
-    if (field?.cellTypes) setCellTypes(field.cellTypes);
-    if (field?.cellDropdowns) setCellDropdowns(field.cellDropdowns);
-    if (field?.rowTypes) setRowTypes(field.rowTypes);
-    if (field?.rowDropdowns) setRowDropdowns(field.rowDropdowns);
-    if (field?.columnWidths) setColumnWidths(field.columnWidths);
-    if (field?.rowHeights) setRowHeights(field.rowHeights);
-    if (field?.readOnly) setIsReadOnly(field.readOnly);
+    // Prefer value-provided config during form fill; fall back to field config
+    const source = (isFormFill && value && typeof value === 'object') ? value : field || {};
+    if (source?.cellStyles) setCellStyles(source.cellStyles);
+    if (source?.mergedCells) setMergedCells(source.mergedCells);
+    if (source?.cellTypes) setCellTypes(source.cellTypes);
+    if (source?.cellDropdowns) setCellDropdowns(source.cellDropdowns);
+    if (source?.rowTypes) setRowTypes(source.rowTypes);
+    if (source?.rowDropdowns) setRowDropdowns(source.rowDropdowns);
+    if (source?.columnWidths) setColumnWidths(source.columnWidths);
+    if (source?.rowHeights) setRowHeights(source.rowHeights);
+    if (source?.readOnly) setIsReadOnly(source.readOnly);
   }, [field, value, isFormFill]);
 
   // Update field with all current state
@@ -846,7 +848,7 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
           rowDropdowns: rowDropdowns,
           columnWidths: columnWidths,
           rowHeights: rowHeights,
-          ...updates
+          ...updates,
         };
         onChange(updatedField);
       }
@@ -1242,10 +1244,10 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
       setSelectedCell(`${rowIndex}-${colIndex}`);
     } else {
       // Single cell selection
-      setDragStart({ row: rowIndex, col: colIndex });
-      setIsSelecting(true);
-      setSelectedCell(`${rowIndex}-${colIndex}`);
-      setSelectedRange(null);
+    setDragStart({ row: rowIndex, col: colIndex });
+    setIsSelecting(true);
+    setSelectedCell(`${rowIndex}-${colIndex}`);
+    setSelectedRange(null);
     }
     setShowToolbar(true);
   };
@@ -1684,7 +1686,7 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
       )}
 
       {/* Row Type Configuration Modal */}
-      {/* {showRowTypeModal && rowTypeModalData && (
+      {showRowTypeModal && rowTypeModalData && (
         <RowTypeModal
           rowIndex={rowTypeModalData.rowIndex}
           currentType={rowTypeModalData.currentType}
@@ -1692,7 +1694,7 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
           onSave={handleRowTypeSave}
           onCancel={handleRowTypeCancel}
         />
-      )} */}
+      )}
       
       {/* Header */}
       {!isFormFill && (
@@ -2048,7 +2050,7 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
                           const appliedStyle = cellStyles[styleKey] || {};
                          
                          // Show merge info for merged cells
-                          if (merge) {
+                         if (merge) {
                            return (
                              <div style={{ 
                                display: 'flex', 
@@ -3264,88 +3266,88 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
                 if (selectedRange) {
                   const { startRow, startCol, endRow, endCol } = selectedRange;
                   console.log('🔗 Merging cells:', { startRow, startCol, endRow, endCol });
-                  setMerge(startRow, startCol, endRow, endCol);
+                setMerge(startRow, startCol, endRow, endCol);
                 } else {
                   console.log('❌ No range selected for merge');
-                }
-              }}
-              disabled={!selectedRange}
-              style={{
-                padding: '6px 12px',
-                backgroundColor: !selectedRange ? '#6c757d' : '#17a2b8',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: !selectedRange ? 'not-allowed' : 'pointer',
-                fontSize: '12px'
-              }}
+              }
+            }}
+            disabled={!selectedRange}
+            style={{
+              padding: '6px 12px',
+              backgroundColor: !selectedRange ? '#6c757d' : '#17a2b8',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: !selectedRange ? 'not-allowed' : 'pointer',
+              fontSize: '12px'
+            }}
               title={!selectedRange ? 
                 "Select a range first: Click a cell, then Shift+Click another cell, or drag to select" : 
                 `Merge ${selectedRange ? `${selectedRange.endRow - selectedRange.startRow + 1}×${selectedRange.endCol - selectedRange.startCol + 1}` : ''} cells`
               }
-            >
-              🔗 Merge
-            </button>
-            <button
-              onClick={() => {
-                if (selectedCell) {
-                  const [rowIndex, colIndex] = selectedCell.split('-').map(Number);
-                  removeMerge(rowIndex, colIndex);
-                }
-              }}
-              disabled={!selectedCell}
-              style={{
-                padding: '6px 12px',
-                backgroundColor: !selectedCell ? '#6c757d' : '#fd7e14',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: !selectedCell ? 'not-allowed' : 'pointer',
-                fontSize: '12px'
-              }}
-              title="Unmerge Selected Cell"
-            >
-              🔓 Unmerge
-            </button>
-            <button
-              onClick={destroyMerged}
-              style={{ padding: '6px 12px', backgroundColor: '#6f42c1', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}
-              title="Remove All Merges">🗑️ Clear Merges</button>
-
-            <button onClick={() => {
-              if (selectedRange && dragStart) {
-                const startCellValue = data[dragStart.row]?.[dragStart.col] || '';
-                if (startCellValue !== '') {
-                  const newData = [...data];
-                  for (let r = selectedRange.startRow; r <= selectedRange.endRow; r++) {
-                    for (let c = selectedRange.startCol; c <= selectedRange.endCol; c++) {
-                      if (r === dragStart.row && c === dragStart.col) continue;
-                      if (!newData[r]) newData[r] = [];
-                      newData[r][c] = startCellValue;
-                    }
-                  }
-                  setData(newData);
-                  addToHistory(newData);
-                  updateField({ data: newData });
-                }
+          >
+            🔗 Merge
+          </button>
+          <button
+            onClick={() => {
+              if (selectedCell) {
+                const [rowIndex, colIndex] = selectedCell.split('-').map(Number);
+                removeMerge(rowIndex, colIndex);
               }
             }}
-            disabled={!selectedRange || !dragStart}
-            style={{ 
-              padding: '6px 12px', 
-              backgroundColor: !selectedRange || !dragStart ? '#6c757d' : '#20c997', 
-              color: 'white', 
-              border: 'none', 
-              borderRadius: '4px', 
-              cursor: !selectedRange || !dragStart ? 'not-allowed' : 'pointer', 
-              fontSize: '12px' 
+            disabled={!selectedCell}
+            style={{
+              padding: '6px 12px',
+              backgroundColor: !selectedCell ? '#6c757d' : '#fd7e14',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: !selectedCell ? 'not-allowed' : 'pointer',
+              fontSize: '12px'
             }}
-            title="Fill Series - Copy data from start cell to selected range">🔄 Fill Series</button>
+            title="Unmerge Selected Cell"
+          >
+            🔓 Unmerge
+          </button>
+          <button
+            onClick={destroyMerged}
+            style={{ padding: '6px 12px', backgroundColor: '#6f42c1', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}
+            title="Remove All Merges">🗑️ Clear Merges</button>
 
-            <button onClick={copyData}
-              style={{ padding: '6px 12px', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}
-              title="Copy Selected Data">📋 Copy</button>
-          </div>
+          <button onClick={() => {
+            if (selectedRange && dragStart) {
+              const startCellValue = data[dragStart.row]?.[dragStart.col] || '';
+              if (startCellValue !== '') {
+                const newData = [...data];
+                for (let r = selectedRange.startRow; r <= selectedRange.endRow; r++) {
+                  for (let c = selectedRange.startCol; c <= selectedRange.endCol; c++) {
+                    if (r === dragStart.row && c === dragStart.col) continue;
+                    if (!newData[r]) newData[r] = [];
+                    newData[r][c] = startCellValue;
+                  }
+                }
+                setData(newData);
+                addToHistory(newData);
+                updateField({ data: newData });
+              }
+            }
+          }}
+          disabled={!selectedRange || !dragStart}
+          style={{ 
+            padding: '6px 12px', 
+            backgroundColor: !selectedRange || !dragStart ? '#6c757d' : '#20c997', 
+            color: 'white', 
+            border: 'none', 
+            borderRadius: '4px', 
+            cursor: !selectedRange || !dragStart ? 'not-allowed' : 'pointer', 
+            fontSize: '12px' 
+          }}
+          title="Fill Series - Copy data from start cell to selected range">🔄 Fill Series</button>
+
+          <button onClick={copyData}
+            style={{ padding: '6px 12px', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}
+            title="Copy Selected Data">📋 Copy</button>
+        </div>
         </>
       )}
 

@@ -962,6 +962,7 @@ export default function FormFillPage(props) {
   const params = useParams();
   const id = props.id || params.id;
   const navigate = useNavigate(); 
+  const [responseId, setResponseId] = useState(props.responseId || null);
 
   // Defensive check for invalid id
   if (!id || id === 'undefined') {
@@ -976,10 +977,19 @@ export default function FormFillPage(props) {
   const [submitterEmail, setSubmitterEmail] = useState('');
   const [loading, setLoading] = useState(true);
   const [formName, setFormName] = useState('');
-
+  const [baseInit, setBaseInit] = useState(null);
+  const [formLoaded, setFormLoaded] = useState(false);
 
 
   useEffect(() => {
+    // Parse responseId from query string if not passed via props
+    let rid = props.responseId || responseId;
+    if (!rid) {
+      const qs = new URLSearchParams(window.location.search);
+      rid = qs.get('responseId');
+      if (rid) setResponseId(rid);
+    }
+
     console.log("Form ID from URL:", id);
     api.get(`/forms/${id}`)
       .then((res) => {
@@ -1008,22 +1018,44 @@ export default function FormFillPage(props) {
         });
         
         setFields(schema);
+
         const init = {};
         schema.forEach((f) => {
           if (f.type === "checkbox") {
             init[f.id] = false;
           } else if (f.type === "spreadsheet") {
-            // Initialize spreadsheet with its original data structure
-            init[f.id] = f;
+            init[f.id] = f; // original structure as default
           } else {
             init[f.id] = "";
           }
         });
+        setBaseInit(init);
         setValues(init);
+        setFormLoaded(true);
       })
       .catch((err) => console.error("API error:", err))
       .finally(() => setLoading(false));
-  }, [id]);
+  }, [id, props.responseId]);
+
+  // Prefill with existing response answers once form is loaded and responseId is available
+  useEffect(() => {
+    const rid = props.responseId || responseId;
+    if (!rid || !formLoaded || !baseInit) return;
+    api.get(`/responses/${rid}`)
+      .then((r) => {
+        const resp = r.data || {};
+        setSubmitterName(resp.submitterName || "");
+        setSubmitterEmail(resp.submitterEmail || "");
+        const merged = { ...baseInit };
+        Object.keys(resp.answers || {}).forEach((key) => {
+          merged[key] = resp.answers[key];
+        });
+        setValues(merged);
+      })
+      .catch((err) => {
+        console.error('Failed to load existing response for edit:', err);
+      });
+  }, [props.responseId, responseId, formLoaded, baseInit]);
 
   const handleChange = (fid, val) => {
     setValues((v) => ({ ...v, [fid]: val }));
@@ -1112,23 +1144,29 @@ export default function FormFillPage(props) {
         return;
       }
       
-      console.log('Submitting form:', { 
-        form: id, 
-        submitterName, 
-        submitterEmail, 
-        answers: values 
-      });
+      console.log(responseId ? 'Updating submission:' : 'Submitting form:', { form: id, submitterName, submitterEmail });
+
+      let resp;
+      if (responseId) {
+        // Update existing response
+        resp = await api.put(`/responses/${responseId}`, {
+          submitterName: submitterName.trim(),
+          submitterEmail: submitterEmail.trim(),
+          answers: values,
+        });
+      } else {
+        // New submission
+        resp = await api.post("/responses", { 
+          form: id, 
+          submitterName: submitterName.trim(),
+          submitterEmail: submitterEmail.trim(),
+          answers: values 
+        });
+      }
       
-      const response = await api.post("/responses", { 
-        form: id, 
-        submitterName: submitterName.trim(),
-        submitterEmail: submitterEmail.trim(),
-        answers: values 
-      });
+      console.log('Submit response:', resp);
       
-      console.log('Submit response:', response);
-      
-      alert("Form submitted successfully!");
+      alert(responseId ? "Form updated successfully!" : "Form submitted successfully!");
       
       // Navigate back to forms list after successful submission
       navigate(`${process.env.PUBLIC_URL}/forms/folders`);
