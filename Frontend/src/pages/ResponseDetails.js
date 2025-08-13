@@ -53,6 +53,13 @@ export default function ResponseDetails() {
   const [editingResponse, setEditingResponse] = useState(null);
   const [saving, setSaving] = useState(false);
 
+  // If user navigates to the /edit route, auto-enter edit mode once data is loaded
+  useEffect(() => {
+    if (isEditMode && response && !editingResponse) {
+      setEditingResponse({ ...response });
+    }
+  }, [isEditMode, response, editingResponse]);
+
   // Fetch all responses for this form
   const fetchAllResponses = async () => {
     setLoadingReport(true);

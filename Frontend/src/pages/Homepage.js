@@ -40,6 +40,24 @@ const Homepage = () => {
     return heading || folder || "Untitled Form";
   };
 
+  // Popularity: responses per form
+  const responseCountByForm = useMemo(() => {
+    const map = new Map();
+    (responses || []).forEach((r) => {
+      if (!r || !r.form) return;
+      map.set(r.form, (map.get(r.form) || 0) + 1);
+    });
+    return map;
+  }, [responses]);
+
+  const sortedForms = useMemo(() => {
+    return [...(forms || [])].sort((a, b) => {
+      const cb = responseCountByForm.get(b?._id) || 0;
+      const ca = responseCountByForm.get(a?._id) || 0;
+      return cb - ca;
+    });
+  }, [forms, responseCountByForm]);
+
   // Responses for the selected day
   const sameDayResponses = useMemo(() => {
     if (!selectedDate || responses.length === 0) return [];
@@ -48,20 +66,15 @@ const Homepage = () => {
     const end = new Date(selectedDate);
     end.setHours(23, 59, 59, 999);
 
-    return responses.filter((r) => {
+    const filtered = responses.filter((r) => {
       const ts = new Date(r.submittedAt).getTime();
       return ts >= start.getTime() && ts <= end.getTime();
     });
+    // latest first
+    filtered.sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt));
+    return filtered;
   }, [selectedDate, responses]);
-
-  // Unique forms (and counts) submitted that day
-  const formsForDay = useMemo(() => {
-    const map = new Map(); // formId -> count
-    sameDayResponses.forEach((r) => {
-      map.set(r.form, (map.get(r.form) || 0) + 1);
-    });
-    return Array.from(map.entries()).map(([formId, count]) => ({ formId, count }));
-  }, [sameDayResponses]);
+  
 
   if (loading) {
     return (
@@ -121,10 +134,10 @@ const Homepage = () => {
             </div>
           </div>
 
-          {formsForDay.length > 0 ? (
+          {sameDayResponses.length > 0 ? (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 12 }}>
-              {formsForDay.map(({ formId, count }) => (
-                <div key={formId} style={{
+              {sameDayResponses.map((resp) => (
+                <div key={resp._id} style={{
                   border: "1px solid #e5e7eb",
                   borderRadius: 12,
                   padding: 12,
@@ -136,13 +149,13 @@ const Homepage = () => {
                 }}>
                   <div style={{ minWidth: 0 }}>
                     <div style={{ fontWeight: 700, color: "#111827", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                      {getFormLabel(formId)}
+                      {getFormLabel(resp.form)}
                     </div>
-                    <div style={{ color: "#6b7280", fontSize: 12 }}>{count} {count === 1 ? "submission" : "submissions"}</div>
+                    {/* Keeping details minimal as requested */}
                   </div>
                   <button
-                    onClick={() => navigate(`/forms/fill/${formId}`)}
-                    title="Resubmit this form"
+                    onClick={() => navigate(`/forms/reedit/${resp.form}/${resp._id}`)}
+                    title="Resubmit (edit this submission)"
                     style={{
                       padding: "8px 12px",
                       borderRadius: 10,
@@ -174,8 +187,9 @@ const Homepage = () => {
           padding: 16,
         }}
       >
-        {forms.map((form) => {
+        {sortedForms.map((form) => {
           const fieldCount = Array.isArray(form?.schemaJson) ? form.schemaJson.length : 0;
+          const submissionCount = responseCountByForm.get(form._id) || 0;
 
           return (
             <div
@@ -210,6 +224,7 @@ const Homepage = () => {
                   <span>
                     <strong>{fieldCount}</strong> {fieldCount === 1 ? "field" : "fields"}
                   </span>
+                  <span>Submissions: {submissionCount}</span>
                   <span>Created: {new Date(form.createdAt).toLocaleDateString()}</span>
                 </div>
               </div>

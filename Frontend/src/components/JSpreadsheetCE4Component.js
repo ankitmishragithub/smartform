@@ -817,15 +817,17 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
     setHistory([initialData]);
     setHistoryStep(0);
 
-    if (field?.cellStyles) setCellStyles(field.cellStyles);
-    if (field?.mergedCells) setMergedCells(field.mergedCells);
-    if (field?.cellTypes) setCellTypes(field.cellTypes);
-    if (field?.cellDropdowns) setCellDropdowns(field.cellDropdowns);
-    if (field?.rowTypes) setRowTypes(field.rowTypes);
-    if (field?.rowDropdowns) setRowDropdowns(field.rowDropdowns);
-    if (field?.columnWidths) setColumnWidths(field.columnWidths);
-    if (field?.rowHeights) setRowHeights(field.rowHeights);
-    if (field?.readOnly) setIsReadOnly(field.readOnly);
+    // Prefer value-provided config during form fill; fall back to field config
+    const source = (isFormFill && value && typeof value === 'object') ? value : field || {};
+    if (source?.cellStyles) setCellStyles(source.cellStyles);
+    if (source?.mergedCells) setMergedCells(source.mergedCells);
+    if (source?.cellTypes) setCellTypes(source.cellTypes);
+    if (source?.cellDropdowns) setCellDropdowns(source.cellDropdowns);
+    if (source?.rowTypes) setRowTypes(source.rowTypes);
+    if (source?.rowDropdowns) setRowDropdowns(source.rowDropdowns);
+    if (source?.columnWidths) setColumnWidths(source.columnWidths);
+    if (source?.rowHeights) setRowHeights(source.rowHeights);
+    if (source?.readOnly) setIsReadOnly(source.readOnly);
   }, [field, value, isFormFill]);
 
   // Update field with all current state
@@ -845,7 +847,7 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
           rowDropdowns: rowDropdowns,
           columnWidths: columnWidths,
           rowHeights: rowHeights,
-          ...updates
+          ...updates,
         };
         onChange(updatedField);
       }
@@ -2034,7 +2036,7 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
                          const cellOptions = getCellOptions(rowIndex, colIndex);
                          
                          // Show merge info for merged cells
-                          if (merge) {
+                         if (merge) {
                            return (
                              <div style={{ 
                                display: 'flex', 
