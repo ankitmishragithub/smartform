@@ -49,7 +49,7 @@ const FormDisplayComponent = ({ form, response, hideTitles = false }) => {
     if (node.type === "heading") {
       if (hideTitles) return null;
       return (
-        <h2
+        <h6
           key={node.id}
           style={{
             textAlign: "center",
@@ -59,7 +59,7 @@ const FormDisplayComponent = ({ form, response, hideTitles = false }) => {
           }}
         >
           {node.label || "Untitled Form"}
-        </h2>
+        </h6>
       );
     }
     
@@ -464,7 +464,7 @@ export default function AllSubmissions() {
   const [filteredResponses, setFilteredResponses] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedForms, setSelectedForms] = useState([]);
-  const [selectedFolders, setSelectedFolders] = useState([]);
+  const [selectedFolders, setSelectedFolders] = useState(['Brindavan Bottlers Private Limited, UNNAO']);
   const [statusFilter, setStatusFilter] = useState('all');
   
   // Modal state for spreadsheet viewer
@@ -1311,7 +1311,7 @@ export default function AllSubmissions() {
                      <div key={response._id} className="rr-form-submission mb-5">
                        {/* Submission Header */}
                        <Card className="rr-submission-header mb-4">
-                         <CardBody>
+                         {/* <CardBody>
                            <div className="d-flex justify-content-between align-items-start">
                              <div className="rr-submission-info">
                                <div className="rr-submission-title">
@@ -1341,7 +1341,7 @@ export default function AllSubmissions() {
                                </div>
                              </div>
                            </div>
-                         </CardBody>
+                         </CardBody> */}
                        </Card>
 
                        {/* Form Display */}
