@@ -12,7 +12,7 @@ import api from '../../api/api';
 import './response-reports.css';
 
 // Form Display Component (Read-only version of FormFill)
-const FormDisplayComponent = ({ form, response }) => {
+const FormDisplayComponent = ({ form, response, hideTitles = false }) => {
   // Helper function to check if a cell is merged
   const isCellMerged = (rowIndex, colIndex, mergedCells = []) => {
     return mergedCells?.some(merge => 
@@ -47,8 +47,9 @@ const FormDisplayComponent = ({ form, response }) => {
 
   const renderFormNode = (node) => {
     if (node.type === "heading") {
+      if (hideTitles) return null;
       return (
-        <h2
+        <h6
           key={node.id}
           style={{
             textAlign: "center",
@@ -58,7 +59,7 @@ const FormDisplayComponent = ({ form, response }) => {
           }}
         >
           {node.label || "Untitled Form"}
-        </h2>
+        </h6>
       );
     }
     
@@ -220,6 +221,7 @@ const FormDisplayComponent = ({ form, response }) => {
 
     // Handle folder name as a header
     if (node.type === "folderName") {
+      if (hideTitles) return null;
       return (
         <div key={node.id} style={{
           marginBottom: "1rem",
@@ -462,7 +464,7 @@ export default function AllSubmissions() {
   const [filteredResponses, setFilteredResponses] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedForms, setSelectedForms] = useState([]);
-  const [selectedFolders, setSelectedFolders] = useState([]);
+  const [selectedFolders, setSelectedFolders] = useState(['Brindavan Bottlers Private Limited, UNNAO']);
   const [statusFilter, setStatusFilter] = useState('all');
   
   // Modal state for spreadsheet viewer
@@ -789,9 +791,9 @@ export default function AllSubmissions() {
   function getFormLabel(formId) {
     const form = getFormObject(formId);
     if (!form) return "Unknown";
-    const folder = form.schemaJson.find(e => e.type === "heading")?.label;
     const heading = form.schemaJson.find(e => e.type === "heading")?.label;
-    return folder ? folder : heading ? heading : "Untitled Form";
+    const folder = form.schemaJson.find(e => e.type === "folderName")?.label;
+    return heading ? heading : folder ? folder : "Untitled Form";
   }
 
   const formatDate = (dateString) =>
@@ -1303,12 +1305,13 @@ export default function AllSubmissions() {
                <div className="rr-forms-container">
                  {filteredResponses.map((response, index) => {
                    const form = getFormObject(response.form);
+                   const hideTitles = selectedFolders.length > 0;
                    
                    return (
                      <div key={response._id} className="rr-form-submission mb-5">
                        {/* Submission Header */}
                        <Card className="rr-submission-header mb-4">
-                         <CardBody>
+                         {/* <CardBody>
                            <div className="d-flex justify-content-between align-items-start">
                              <div className="rr-submission-info">
                                <div className="rr-submission-title">
@@ -1338,14 +1341,14 @@ export default function AllSubmissions() {
                                </div>
                              </div>
                            </div>
-                         </CardBody>
+                         </CardBody> */}
                        </Card>
 
                        {/* Form Display */}
                        {form && (
                          <Card className="rr-form-display">
                            <CardBody>
-                             <FormDisplayComponent form={form} response={response} />
+                             <FormDisplayComponent form={form} response={response} hideTitles={hideTitles} />
                            </CardBody>
                          </Card>
                        )}
