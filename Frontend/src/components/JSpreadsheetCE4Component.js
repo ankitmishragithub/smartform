@@ -27,7 +27,7 @@ const ColumnTypeModal = ({ columnIndex, currentType, currentOptions, onSave, onC
 
   const handleSave = () => {
     const config = { type, rowRange };
-    
+
     switch (type) {
       case 'dropdown':
       case 'autocomplete':
@@ -51,37 +51,34 @@ const ColumnTypeModal = ({ columnIndex, currentType, currentOptions, onSave, onC
       default:
         break;
     }
-    
+
     onSave(columnIndex, type, config);
   };
 
   return (
     <div style={{
       position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
+      top: 0, left: 0, right: 0, bottom: 0,
       backgroundColor: 'rgba(0,0,0,0.5)',
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      zIndex: 1000,
+      display: 'flex', justifyContent: 'center',
+      alignItems: 'flex-start',
+      overflowY: 'auto',
+      padding: '40px 16px',
+      zIndex: 3000,
     }}>
       <div style={{
         backgroundColor: 'white',
         borderRadius: '8px',
         padding: '20px',
-        minWidth: '500px',
-        maxWidth: '600px',
-        maxHeight: '80vh',
-        overflowY: 'auto',
+        width: 'min(90vw, 900px)',
+        maxHeight: 'none',
+        margin: '0 auto',
         boxShadow: '0 4px 20px rgba(0,0,0,0.15)'
       }}>
         <h3 style={{ margin: '0 0 15px 0', color: '#333', fontSize: '18px' }}>
           🔧 Configure Column {String.fromCharCode(65 + columnIndex)} Type
         </h3>
-        
+
         {/* Column Type Selection */}
         <div style={{ marginBottom: '20px' }}>
           <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#555' }}>
@@ -148,7 +145,7 @@ const ColumnTypeModal = ({ columnIndex, currentType, currentOptions, onSave, onC
             <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#555' }}>
               {type === 'dropdown' ? 'Dropdown' : 'Autocomplete'} Options:
             </label>
-            
+
             {options.map((option, index) => (
               <div key={index} style={{ display: 'flex', marginBottom: '8px', alignItems: 'center' }}>
                 <input
@@ -185,7 +182,7 @@ const ColumnTypeModal = ({ columnIndex, currentType, currentOptions, onSave, onC
                 </button>
               </div>
             ))}
-            
+
             <div style={{ display: 'flex' }}>
               <input
                 type="text"
@@ -308,7 +305,7 @@ const ColumnTypeModal = ({ columnIndex, currentType, currentOptions, onSave, onC
               <option value="currency">Currency</option>
               <option value="percentage">Percentage</option>
             </select>
-            
+
             <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
               <div style={{ flex: 1 }}>
                 <label style={{ display: 'block', marginBottom: '5px', fontSize: '12px', color: '#666' }}>
@@ -463,7 +460,7 @@ const RowTypeModal = ({ rowIndex, currentType, currentOptions, onSave, onCancel 
         <h3 style={{ margin: '0 0 15px 0', color: '#333', fontSize: '18px' }}>
           🔧 Configure Row {rowIndex + 1} Type
         </h3>
-        
+
         {/* Row Type Selection */}
         <div style={{ marginBottom: '20px' }}>
           <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#555' }}>
@@ -530,7 +527,7 @@ const RowTypeModal = ({ rowIndex, currentType, currentOptions, onSave, onCancel 
             <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#555' }}>
               {type === 'dropdown' ? 'Dropdown' : 'Autocomplete'} Options:
             </label>
-            
+
             {options.map((option, index) => (
               <div key={index} style={{ display: 'flex', marginBottom: '8px', alignItems: 'center' }}>
                 <input
@@ -567,7 +564,7 @@ const RowTypeModal = ({ rowIndex, currentType, currentOptions, onSave, onCancel 
                 </button>
               </div>
             ))}
-            
+
             <div style={{ display: 'flex' }}>
               <input
                 type="text"
@@ -690,7 +687,7 @@ const RowTypeModal = ({ rowIndex, currentType, currentOptions, onSave, onCancel 
               <option value="currency">Currency</option>
               <option value="percentage">Percentage</option>
             </select>
-            
+
             <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
               <div style={{ flex: 1 }}>
                 <label style={{ display: 'block', marginBottom: '5px', fontSize: '12px', color: '#666' }}>
@@ -793,67 +790,89 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
   const [rowTypeModalData, setRowTypeModalData] = useState(null);
   const tableRef = useRef(null);
 
+  const [tableRemountKey, setTableRemountKey] = useState(0);
+  useEffect(() => {
+    setTableRemountKey(k => k + 1);
+  }, [cellTypes, rowTypes, cellDropdowns, rowDropdowns, mergedCells, cellStyles]);
+
+
   // Initialize data based on field configuration
   useEffect(() => {
     const rows = field?.rows || field?.defaultRows || 5;
     const cols = field?.cols || field?.defaultCols || 5;
-    
+
+    // DATA: in form-fill read data from value, else from field
     let initialData;
-    if (isFormFill && value) {
-      initialData = value.data || value || [];
-    } else if (field?.data && field.data.length > 0) {
-      initialData = field.data;
+    if (isFormFill) {
+      const v = Array.isArray(value) ? { data: value } : (value || {});
+      if (Array.isArray(v.data)) {
+        initialData = v.data;
+      } else if (Array.isArray(field?.data)) {
+        initialData = field.data;
+      } else {
+        initialData = Array.from({ length: rows }, () => Array.from({ length: cols }, () => ''));
+      }
     } else {
-      initialData = [];
-      for (let i = 0; i < rows; i++) {
-        const row = [];
-        for (let j = 0; j < cols; j++) {
-          row.push('');
-        }
-        initialData.push(row);
+      if (Array.isArray(field?.data)) {
+        initialData = field.data;
+      } else {
+        initialData = Array.from({ length: rows }, () => Array.from({ length: cols }, () => ''));
       }
     }
-    
+
     setData(initialData);
-    setHistory([initialData]);
+    setHistory([{
+      data: initialData,
+      cellStyles: field?.cellStyles || {},
+      mergedCells: field?.mergedCells || {},
+      cellTypes: field?.cellTypes || {},
+      cellDropdowns: field?.cellDropdowns || {},
+      rowTypes: field?.rowTypes || {},
+      rowDropdowns: field?.rowDropdowns || {},
+      columnWidths: field?.columnWidths || {},
+      rowHeights: field?.rowHeights || {}
+    }]);
     setHistoryStep(0);
 
-    // Prefer value-provided config during form fill; fall back to field config
-    const source = (isFormFill && value && typeof value === 'object') ? value : field || {};
-    if (source?.cellStyles) setCellStyles(source.cellStyles);
-    if (source?.mergedCells) setMergedCells(source.mergedCells);
-    if (source?.cellTypes) setCellTypes(source.cellTypes);
-    if (source?.cellDropdowns) setCellDropdowns(source.cellDropdowns);
-    if (source?.rowTypes) setRowTypes(source.rowTypes);
-    if (source?.rowDropdowns) setRowDropdowns(source.rowDropdowns);
-    if (source?.columnWidths) setColumnWidths(source.columnWidths);
-    if (source?.rowHeights) setRowHeights(source.rowHeights);
-    if (source?.readOnly) setIsReadOnly(source.readOnly);
+    // CONFIG: always from field so preview keeps types/styles/merges
+    const cfg = field || {};
+    setCellStyles(cfg.cellStyles || {});
+    setMergedCells(cfg.mergedCells || {});
+    setCellTypes(cfg.cellTypes || {});
+    setCellDropdowns(cfg.cellDropdowns || {});
+    setRowTypes(cfg.rowTypes || {});
+    setRowDropdowns(cfg.rowDropdowns || {});
+    setColumnWidths(cfg.columnWidths || {});
+    setRowHeights(cfg.rowHeights || {});
+    setIsReadOnly(!!cfg.readOnly);
   }, [field, value, isFormFill]);
 
   // Update field with all current state
+  // Update field with all current state (always send full payload in form-fill)
+  const buildPayload = (overrides = {}) => ({
+    data,
+    cellStyles,
+    mergedCells,
+    cellTypes,
+    cellDropdowns,
+    rowTypes,
+    rowDropdowns,
+    columnWidths,
+    rowHeights,
+    readOnly: isReadOnly,
+    ...overrides,
+  });
+
   const updateField = (updates = {}) => {
-    if (onChange) {
-      if (isFormFill) {
-        onChange(data);
-      } else {
-        const updatedField = {
-          ...field,
-          data: data,
-          cellStyles: cellStyles,
-          mergedCells: mergedCells,
-          cellTypes: cellTypes,
-          cellDropdowns: cellDropdowns,
-          rowTypes: rowTypes,
-          rowDropdowns: rowDropdowns,
-          columnWidths: columnWidths,
-          rowHeights: rowHeights,
-          ...updates,
-        };
-        onChange(updatedField);
-      }
+    if (!onChange) return;
+    const payload = buildPayload(updates);
+    if (isFormFill) {
+      onChange(payload);           // <— send object, not just data array
+    } else {
+      onChange({ ...field, ...payload });
     }
   };
+
 
   // Add to history for undo/redo
   const addToHistory = useCallback((newData) => {
@@ -868,7 +887,7 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
       columnWidths: columnWidths,
       rowHeights: rowHeights
     };
-    
+
     const newHistory = history.slice(0, historyStep + 1);
     newHistory.push(currentState);
     if (newHistory.length > 50) {
@@ -894,7 +913,7 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
       setRowDropdowns(previousState.rowDropdowns || {});
       setColumnWidths(previousState.columnWidths || {});
       setRowHeights(previousState.rowHeights || {});
-      updateField({ 
+      updateField({
         data: previousState.data,
         cellStyles: previousState.cellStyles,
         mergedCells: previousState.mergedCells,
@@ -923,7 +942,7 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
       setRowDropdowns(nextState.rowDropdowns || {});
       setColumnWidths(nextState.columnWidths || {});
       setRowHeights(nextState.rowHeights || {});
-      updateField({ 
+      updateField({
         data: nextState.data,
         cellStyles: nextState.cellStyles,
         mergedCells: nextState.mergedCells,
@@ -956,15 +975,15 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
   // Handle cell value changes
   const handleCellChange = (rowIndex, colIndex, value) => {
     if (isReadOnly) return;
-    
+
     // Save current state to history before making changes
     addToHistory(data);
-    
+
     const newData = [...data];
     if (!newData[rowIndex]) {
       newData[rowIndex] = [];
     }
-    
+
     newData[rowIndex][colIndex] = value;
     setData(newData);
     updateField({ data: newData });
@@ -973,10 +992,10 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
   // Add row
   const addRow = () => {
     if (isReadOnly) return;
-    
+
     // Save current state to history before making changes
     addToHistory(data);
-    
+
     let insertPosition = data.length;
     if (selectedCell) {
       const [rowIndex] = selectedCell.split('-').map(Number);
@@ -984,16 +1003,16 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
     } else if (selectedRange) {
       insertPosition = selectedRange.startRow;
     }
-    
+
     const currentCols = Math.max(data[0]?.length || 0, field?.cols || field?.defaultCols || 5);
     const newRow = new Array(currentCols).fill('');
-    
+
     const newData = [...data];
     newData.splice(insertPosition, 0, newRow);
-    
+
     setData(newData);
-    updateField({ 
-      data: newData, 
+    updateField({
+      data: newData,
       rows: newData.length
     });
   };
@@ -1001,10 +1020,10 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
   // Add column
   const addColumn = () => {
     if (isReadOnly) return;
-    
+
     // Save current state to history before making changes
     addToHistory(data);
-    
+
     let insertPosition = data[0]?.length || 0;
     if (selectedCell) {
       const [, colIndex] = selectedCell.split('-').map(Number);
@@ -1012,20 +1031,20 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
     } else if (selectedRange) {
       insertPosition = selectedRange.startCol;
     }
-    
+
     const newData = data.map(row => {
       const newRow = [...row];
       newRow.splice(insertPosition, 0, '');
       return newRow;
     });
-    
+
     if (newData.length === 0) {
       newData.push(new Array(1).fill(''));
     }
-    
+
     setData(newData);
-    updateField({ 
-      data: newData, 
+    updateField({
+      data: newData,
       cols: newData[0]?.length || 1
     });
   };
@@ -1033,12 +1052,12 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
   // Delete selected rows
   const deleteRow = () => {
     if (isReadOnly) return;
-    
+
     // Save current state to history before making changes
     addToHistory(data);
-    
+
     const rowsToDelete = new Set();
-    
+
     if (selectedRange) {
       for (let r = selectedRange.startRow; r <= selectedRange.endRow; r++) {
         rowsToDelete.add(r);
@@ -1047,22 +1066,22 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
       const [rowIndex] = selectedCell.split('-').map(Number);
       rowsToDelete.add(rowIndex);
     }
-    
+
     if (rowsToDelete.size === 0) return;
-    
+
     if (rowsToDelete.size >= data.length) {
       setData([new Array(Math.max(data[0]?.length || 0, 1)).fill('')]);
-      updateField({ 
-        data: [new Array(Math.max(data[0]?.length || 0, 1)).fill('')], 
+      updateField({
+        data: [new Array(Math.max(data[0]?.length || 0, 1)).fill('')],
         rows: 1
       });
       return;
     }
-    
+
     const newData = data.filter((_, index) => !rowsToDelete.has(index));
     setData(newData);
-    updateField({ 
-      data: newData, 
+    updateField({
+      data: newData,
       rows: newData.length
     });
   };
@@ -1070,12 +1089,12 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
   // Delete selected columns
   const deleteColumn = () => {
     if (isReadOnly) return;
-    
+
     // Save current state to history before making changes
     addToHistory(data);
-    
+
     const colsToDelete = new Set();
-    
+
     if (selectedRange) {
       for (let c = selectedRange.startCol; c <= selectedRange.endCol; c++) {
         colsToDelete.add(c);
@@ -1084,36 +1103,36 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
       const [, colIndex] = selectedCell.split('-').map(Number);
       colsToDelete.add(colIndex);
     }
-    
+
     if (colsToDelete.size === 0) return;
-    
+
     if (colsToDelete.size >= (data[0]?.length || 1)) {
       const newData = data.map(() => ['']);
       setData(newData);
-      updateField({ 
-        data: newData, 
+      updateField({
+        data: newData,
         cols: 1
       });
       return;
     }
-    
-    const newData = data.map(row => 
+
+    const newData = data.map(row =>
       row.filter((_, index) => !colsToDelete.has(index))
     );
-    
+
     setData(newData);
-    updateField({ 
-      data: newData, 
+    updateField({
+      data: newData,
       cols: newData[0]?.length || 1
     });
   };
 
   // Export to CSV
   const exportToCSV = () => {
-    const csvContent = data.map(row => 
+    const csvContent = data.map(row =>
       row.map(cell => `"${cell || ''}"`).join(',')
     ).join('\n');
-    
+
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -1128,7 +1147,7 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
     const reader = new FileReader();
     reader.onload = (e) => {
       const csv = e.target.result;
-      const rows = csv.split('\n').map(row => 
+      const rows = csv.split('\n').map(row =>
         row.split(',').map(cell => cell.replace(/^"|"$/g, ''))
       );
       setData(rows);
@@ -1142,7 +1161,7 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
   const copyData = async () => {
     try {
       let copyText = '';
-      
+
       if (selectedRange) {
         const { startRow, endRow, startCol, endCol } = selectedRange;
         for (let r = startRow; r <= endRow; r++) {
@@ -1152,17 +1171,17 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
           }
           copyText += rowData.join('\t') + '\n';
         }
-        
+
         await navigator.clipboard.writeText(copyText.trim());
         console.log('📋 Copied range to clipboard');
-        
+
       } else if (selectedCell) {
         const [row, col] = selectedCell.split('-').map(Number);
         copyText = data[row]?.[col] || '';
         await navigator.clipboard.writeText(copyText);
         console.log('📋 Copied cell to clipboard');
       }
-      
+
     } catch (error) {
       console.error('❌ Copy failed:', error);
     }
@@ -1183,38 +1202,38 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
 
       if (selectedRange) {
         const { startRow, endRow, startCol, endCol } = selectedRange;
-        
+
         for (let r = startRow; r <= endRow; r++) {
           for (let c = startCol; c <= endCol; c++) {
             const pasteRowIdx = (r - startRow) % pasteCells.length;
             const pasteCellIdx = (c - startCol) % pasteCells[pasteRowIdx].length;
             let pasteValue = pasteCells[pasteRowIdx][pasteCellIdx] || '';
-            
+
             while (newData.length <= r) {
               newData.push(new Array(Math.max(cols, c + 1)).fill(''));
             }
             while (newData[r].length <= c) {
               newData[r].push('');
             }
-            
+
             newData[r][c] = pasteValue;
           }
         }
       } else if (selectedCell) {
         const [startRow, startCol] = selectedCell.split('-').map(Number);
-        
+
         pasteCells.forEach((rowCells, rowOffset) => {
           rowCells.forEach((cell, colOffset) => {
             const targetRow = startRow + rowOffset;
             const targetCol = startCol + colOffset;
-            
+
             while (newData.length <= targetRow) {
               newData.push(new Array(Math.max(cols, targetCol + 1)).fill(''));
             }
             while (newData[targetRow].length <= targetCol) {
               newData[targetRow].push('');
             }
-            
+
             newData[targetRow][targetCol] = cell;
           });
         });
@@ -1223,7 +1242,7 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
       setData(newData);
       addToHistory(newData);
       updateField({ data: newData });
-      
+
     } catch (error) {
       console.error('❌ Paste failed:', error);
     }
@@ -1239,15 +1258,15 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
       const endRow = Math.max(prevRow, rowIndex);
       const startCol = Math.min(prevCol, colIndex);
       const endCol = Math.max(prevCol, colIndex);
-      
+
       setSelectedRange({ startRow, endRow, startCol, endCol });
       setSelectedCell(`${rowIndex}-${colIndex}`);
     } else {
       // Single cell selection
-    setDragStart({ row: rowIndex, col: colIndex });
-    setIsSelecting(true);
-    setSelectedCell(`${rowIndex}-${colIndex}`);
-    setSelectedRange(null);
+      setDragStart({ row: rowIndex, col: colIndex });
+      setIsSelecting(true);
+      setSelectedCell(`${rowIndex}-${colIndex}`);
+      setSelectedRange(null);
     }
     setShowToolbar(true);
   };
@@ -1280,7 +1299,7 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
         updateField({ data: newData });
       }
     }
-    
+
     setIsSelecting(false);
     setDragStart(null);
   };
@@ -1317,8 +1336,8 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
   const isCellInRange = (rowIndex, colIndex) => {
     if (!selectedRange) return false;
     const { startRow, endRow, startCol, endCol } = selectedRange;
-    return rowIndex >= startRow && rowIndex <= endRow && 
-           colIndex >= startCol && colIndex <= endCol;
+    return rowIndex >= startRow && rowIndex <= endRow &&
+      colIndex >= startCol && colIndex <= endCol;
   };
 
   // Column Type Management Functions
@@ -1326,40 +1345,40 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
     addToHistory(data);
     const newCellTypes = { ...cellTypes };
     const newCellDropdowns = { ...cellDropdowns };
-    
+
     // Determine row range to apply the type to
     const rowRange = options.rowRange || { start: 0, end: 0 };
     const startRow = rowRange.start || 0;
     const endRow = rowRange.end || 0;
-    
+
     // If both start and end are 0, apply to all rows
     const applyToAllRows = startRow === 0 && endRow === 0;
-    
+
     for (let rowIndex = 0; rowIndex < rows; rowIndex++) {
       // Skip rows outside the specified range
       if (!applyToAllRows && (rowIndex < startRow || rowIndex > endRow)) {
         continue;
       }
-      
+
       const cellKey = `${rowIndex}-${colIndex}`;
       newCellTypes[cellKey] = type;
-      
+
       if (type === 'checkbox' && !data[rowIndex]?.[colIndex]) {
         const newData = [...data];
         if (!newData[rowIndex]) newData[rowIndex] = [];
         newData[rowIndex][colIndex] = false;
         setData(newData);
       }
-      
+
       if (type === 'dropdown' && options.dropdownOptions) {
         newCellDropdowns[cellKey] = options.dropdownOptions;
       }
-      
+
       if (type === 'autocomplete' && options.autocompleteOptions) {
         newCellDropdowns[cellKey] = options.autocompleteOptions;
       }
     }
-    
+
     setCellTypes(newCellTypes);
     setCellDropdowns(newCellDropdowns);
     updateField({ cellTypes: newCellTypes, cellDropdowns: newCellDropdowns });
@@ -1368,17 +1387,17 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
   const removeColumnType = (colIndex) => {
     // Save current state to history before making changes
     addToHistory(data);
-    
+
     const newCellTypes = { ...cellTypes };
     const newCellDropdowns = { ...cellDropdowns };
-    
+
     // Remove type for all cells in the column
     for (let rowIndex = 0; rowIndex < rows; rowIndex++) {
       const cellKey = `${rowIndex}-${colIndex}`;
       delete newCellTypes[cellKey];
       delete newCellDropdowns[cellKey];
     }
-    
+
     setCellTypes(newCellTypes);
     setCellDropdowns(newCellDropdowns);
     updateField({ cellTypes: newCellTypes, cellDropdowns: newCellDropdowns });
@@ -1401,40 +1420,40 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
     addToHistory(data);
     const newRowTypes = { ...rowTypes };
     const newRowDropdowns = { ...rowDropdowns };
-    
+
     // Determine column range to apply the type to
     const colRange = options.colRange || { start: 0, end: 0 };
     const startCol = colRange.start || 0;
     const endCol = colRange.end || 0;
-    
+
     // If both start and end are 0, apply to all columns
     const applyToAllCols = startCol === 0 && endCol === 0;
-    
+
     for (let colIndex = 0; colIndex < cols; colIndex++) {
       // Skip columns outside the specified range
       if (!applyToAllCols && (colIndex < startCol || colIndex > endCol)) {
         continue;
       }
-      
+
       const cellKey = `${rowIndex}-${colIndex}`;
       newRowTypes[cellKey] = type;
-      
+
       if (type === 'checkbox' && !data[rowIndex]?.[colIndex]) {
         const newData = [...data];
         if (!newData[rowIndex]) newData[rowIndex] = [];
         newData[rowIndex][colIndex] = false;
         setData(newData);
       }
-      
+
       if (type === 'dropdown' && options.dropdownOptions) {
         newRowDropdowns[cellKey] = options.dropdownOptions;
       }
-      
+
       if (type === 'autocomplete' && options.autocompleteOptions) {
         newRowDropdowns[cellKey] = options.autocompleteOptions;
       }
     }
-    
+
     setRowTypes(newRowTypes);
     setRowDropdowns(newRowDropdowns);
     updateField({ rowTypes: newRowTypes, rowDropdowns: newRowDropdowns });
@@ -1443,17 +1462,17 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
   const removeRowType = (rowIndex) => {
     // Save current state to history before making changes
     addToHistory(data);
-    
+
     const newRowTypes = { ...rowTypes };
     const newRowDropdowns = { ...rowDropdowns };
-    
+
     // Remove type for all cells in the row
     for (let colIndex = 0; colIndex < cols; colIndex++) {
       const cellKey = `${rowIndex}-${colIndex}`;
       delete newRowTypes[cellKey];
       delete newRowDropdowns[cellKey];
     }
-    
+
     setRowTypes(newRowTypes);
     setRowDropdowns(newRowDropdowns);
     updateField({ rowTypes: newRowTypes, rowDropdowns: newRowDropdowns });
@@ -1474,17 +1493,17 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
   // Enhanced getCellType function that checks both column and row types
   const getCellType = (rowIndex, colIndex) => {
     const cellKey = `${rowIndex}-${colIndex}`;
-    
+
     // Row type takes precedence over column type
     if (rowTypes[cellKey]) {
       return rowTypes[cellKey];
     }
-    
+
     // Fall back to column type
     if (cellTypes[cellKey]) {
       return cellTypes[cellKey];
     }
-    
+
     // Default to text
     return 'text';
   };
@@ -1492,17 +1511,17 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
   // Enhanced getCellOptions function that checks both column and row options
   const getCellOptions = (rowIndex, colIndex) => {
     const cellKey = `${rowIndex}-${colIndex}`;
-    
+
     // Row options take precedence over column options
     if (rowDropdowns[cellKey]) {
       return rowDropdowns[cellKey];
     }
-    
+
     // Fall back to column options
     if (cellDropdowns[cellKey]) {
       return cellDropdowns[cellKey];
     }
-    
+
     // Default to empty array
     return [];
   };
@@ -1548,16 +1567,16 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
   // Merged Cells Management Functions
   const setMerge = (startRow, startCol, endRow, endCol) => {
     console.log('🔗 setMerge called with:', { startRow, startCol, endRow, endCol });
-    
+
     // Save current state to history before making changes
     addToHistory(data);
-    
+
     const mergeKey = `${startRow}-${startCol}`;
     const newMergedCells = { ...mergedCells };
-    
+
     console.log('🔗 Current mergedCells:', mergedCells);
     console.log('🔗 New mergeKey:', mergeKey);
-    
+
     // Remove any existing merges that overlap with the new merge
     const overlappingMerges = Object.entries(newMergedCells).filter(([key, merge]) => {
       const { startRow: sr, startCol: sc, endRow: er, endCol: ec } = merge;
@@ -1565,21 +1584,21 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
       const noOverlap = endRow < sr || startRow > er || endCol < sc || startCol > ec;
       return !noOverlap;
     });
-    
+
     console.log('🔗 Overlapping merges to remove:', overlappingMerges);
-    
+
     overlappingMerges.forEach(([key]) => {
       delete newMergedCells[key];
     });
-    
+
     // Add the new merge
     newMergedCells[mergeKey] = { startRow, startCol, endRow, endCol };
-    
+
     console.log('🔗 Final mergedCells:', newMergedCells);
-    
+
     setMergedCells(newMergedCells);
     updateField({ mergedCells: newMergedCells });
-    
+
     console.log('🔗 Merge operation completed');
   };
 
@@ -1589,52 +1608,52 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
     if (mergedCells[mergeKey]) {
       return mergedCells[mergeKey];
     }
-    
+
     // Check if this cell is part of any merge
     for (const [key, merge] of Object.entries(mergedCells)) {
       const { startRow, startCol, endRow, endCol } = merge;
-      if (rowIndex >= startRow && rowIndex <= endRow && 
-          colIndex >= startCol && colIndex <= endCol) {
+      if (rowIndex >= startRow && rowIndex <= endRow &&
+        colIndex >= startCol && colIndex <= endCol) {
         return merge;
       }
     }
-    
+
     return null;
   };
 
   const removeMerge = (rowIndex, colIndex) => {
     // Save current state to history before making changes
     addToHistory(data);
-    
+
     const mergeKey = `${rowIndex}-${colIndex}`;
     const newMergedCells = { ...mergedCells };
-    
+
     if (newMergedCells[mergeKey]) {
       delete newMergedCells[mergeKey];
       setMergedCells(newMergedCells);
       updateField({ mergedCells: newMergedCells });
       return true;
     }
-    
+
     // Check if this cell is part of any merge
     for (const [key, merge] of Object.entries(newMergedCells)) {
       const { startRow, startCol, endRow, endCol } = merge;
-      if (rowIndex >= startRow && rowIndex <= endRow && 
-          colIndex >= startCol && colIndex <= endCol) {
+      if (rowIndex >= startRow && rowIndex <= endRow &&
+        colIndex >= startCol && colIndex <= endCol) {
         delete newMergedCells[key];
         setMergedCells(newMergedCells);
         updateField({ mergedCells: newMergedCells });
         return true;
       }
     }
-    
+
     return false;
   };
 
   const destroyMerged = () => {
     // Save current state to history before making changes
     addToHistory(data);
-    
+
     setMergedCells({});
     updateField({ mergedCells: {} });
   };
@@ -1647,7 +1666,7 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
   const getMergeSpan = (rowIndex, colIndex) => {
     const merge = getMerge(rowIndex, colIndex);
     if (!merge) return { rowSpan: 1, colSpan: 1 };
-    
+
     const { startRow, startCol, endRow, endCol } = merge;
     if (rowIndex === startRow && colIndex === startCol) {
       return {
@@ -1655,16 +1674,42 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
         colSpan: endCol - startCol + 1
       };
     }
-    
+
     return { rowSpan: 1, colSpan: 1 };
   };
 
   const rows = Math.max(data.length, field?.rows || field?.defaultRows || 5);
   const cols = Math.max(data[0]?.length || 0, field?.cols || field?.defaultCols || 5);
 
+  // Apply style updates to selected cell or selected range
+  const updateStylesForSelection = (mergeFn) => {
+    let nextMap = { ...cellStyles };
+    if (selectedRange) {
+      const { startRow, endRow, startCol, endCol } = selectedRange;
+      for (let r = startRow; r <= endRow; r++) {
+        for (let c = startCol; c <= endCol; c++) {
+          const key = `${r}-${c}`;
+          const cur = nextMap[key] || {};
+          const next = mergeFn(cur, r, c);
+          nextMap[key] = next;
+        }
+      }
+    } else if (selectedCell) {
+      const [r, c] = selectedCell.split('-').map(Number);
+      const key = `${r}-${c}`;
+      const cur = nextMap[key] || {};
+      const next = mergeFn(cur, r, c);
+      nextMap[key] = next;
+    } else {
+      return; // nothing selected
+    }
+    setCellStyles(nextMap);
+    updateField({ cellStyles: nextMap });
+  };
+
   return (
-    <div className="jspreadsheet-ce4-container" style={{ 
-      width: '100%', 
+    <div className="jspreadsheet-ce4-container" style={{
+      width: '100%',
       height: isFormFill ? 'auto' : '400px',
       position: 'relative',
       paddingTop: showToolbar && !isFormFill ? 100 : 0,
@@ -1673,7 +1718,7 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
       overflow: 'hidden',
       backgroundColor: '#fff'
     }} onMouseUp={handleMouseUp}>
-      
+
       {/* Column Type Configuration Modal */}
       {showColumnTypeModal && columnTypeModalData && (
         <ColumnTypeModal
@@ -1695,7 +1740,7 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
           onCancel={handleRowTypeCancel}
         />
       )}
-      
+
       {/* Header */}
       {!isFormFill && (
         <div style={{
@@ -1766,7 +1811,7 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
       {!isFormFill && Array.from({ length: cols }, (_, colIndex) => {
         const cellType = getColumnType(colIndex);
         const options = getColumnOptions(colIndex);
-        
+
         if (cellType === 'autocomplete' && options.length > 0) {
           return (
             <datalist key={`autocomplete-${colIndex}`} id={`autocomplete-${colIndex}`}>
@@ -1780,7 +1825,7 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
       })}
 
       {/* Enhanced Spreadsheet Table */}
-      <div style={{ 
+      <div style={{
         overflowX: 'auto',
         overflowY: isFormFill ? 'visible' : 'auto',
         maxHeight: isFormFill ? undefined : '280px',
@@ -1788,8 +1833,9 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
         borderRadius: isFormFill ? 12 : 0,
         background: '#fff'
       }}>
-        <table ref={tableRef} style={{ 
-          width: '100%', 
+        <table key={tableRemountKey} ref={tableRef} style={{
+
+          width: '100%',
           borderCollapse: isFormFill ? 'collapse' : 'separate',
           borderSpacing: '0',
           fontSize: '12px',
@@ -1826,37 +1872,37 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
                   backgroundImage: 'linear-gradient(to bottom, #ffffff 0%, #f0f0f0 100%)',
                   boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.8)'
                 }}
-                onClick={!isFormFill ? () => {
-                  const maxRows = Math.max(data.length, 1);
-                  const maxCols = Math.max(data[0]?.length || 0, 1);
-                  setSelectedRange({
-                    startRow: 0,
-                    endRow: maxRows - 1,
-                    startCol: 0,
-                    endCol: maxCols - 1
-                  });
-                  setSelectedCell(null);
-                  setShowToolbar(true);
-                } : undefined}
-                title={isFormFill ? "jSpreadsheet CE v4" : "Select All"}
+                  onClick={!isFormFill ? () => {
+                    const maxRows = Math.max(data.length, 1);
+                    const maxCols = Math.max(data[0]?.length || 0, 1);
+                    setSelectedRange({
+                      startRow: 0,
+                      endRow: maxRows - 1,
+                      startCol: 0,
+                      endCol: maxCols - 1
+                    });
+                    setSelectedCell(null);
+                    setShowToolbar(true);
+                  } : undefined}
+                  title={isFormFill ? "jSpreadsheet CE v4" : "Select All"}
                 >
                   ⊞
                 </th>
                 {Array.from({ length: cols }, (_, colIndex) => (
-                  <th 
-                    key={colIndex} 
+                  <th
+                    key={colIndex}
                     style={{
                       minWidth: `${getColumnWidth(colIndex)}px`,
                       width: `${getColumnWidth(colIndex)}px`,
                       height: '40px',
-                      backgroundColor: selectedRange && 
-                        selectedRange.startCol <= colIndex && 
+                      backgroundColor: selectedRange &&
+                        selectedRange.startCol <= colIndex &&
                         selectedRange.endCol >= colIndex ? '#d4e6f8' : '#f2f2f2',
-                      backgroundImage: selectedRange && 
-                        selectedRange.startCol <= colIndex && 
-                        selectedRange.endCol >= colIndex 
-                          ? 'linear-gradient(to bottom, #e8f1fd 0%, #c4daf8 100%)' 
-                          : 'linear-gradient(to bottom, #ffffff 0%, #f0f0f0 100%)',
+                      backgroundImage: selectedRange &&
+                        selectedRange.startCol <= colIndex &&
+                        selectedRange.endCol >= colIndex
+                        ? 'linear-gradient(to bottom, #e8f1fd 0%, #c4daf8 100%)'
+                        : 'linear-gradient(to bottom, #ffffff 0%, #f0f0f0 100%)',
                       border: '1px solid #d4d4d4',
                       borderTop: '1px solid #9c9c9c',
                       borderBottom: '2px solid #8a8a8a',
@@ -1879,45 +1925,45 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
                     }}
                     onClick={(e) => !isFormFill && handleColumnHeaderClick(colIndex, e)}
                     title={isFormFill ? undefined : `Select Column ${getColumnHeader(colIndex)}`}
-                                     >
-                     {!isFormFill && (
-                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
-                       <span>{getColumnHeader(colIndex)}</span>
-                       <span style={{ fontSize: '10px', color: '#666', fontWeight: 'normal' }}>
-                         {getColumnType(colIndex) !== 'text' ? getColumnType(colIndex) : ''}
-                       </span>
-                       {/* Show range info if type is applied to specific rows */}
-                       {(() => {
-                         const type = getColumnType(colIndex);
-                         if (type === 'text') return null;
-                         
-                         // Find the range for this column type
-                         let rangeInfo = '';
-                         for (let r = 0; r < rows; r++) {
-                           const cellKey = `${r}-${colIndex}`;
-                           if (cellTypes[cellKey] === type) {
-                             if (rangeInfo === '') {
-                               rangeInfo = `R${r + 1}`;
-                             } else {
-                               const lastRow = rangeInfo.split('-')[1] || rangeInfo.split('R')[1];
-                               if (r + 1 > parseInt(lastRow)) {
-                                 rangeInfo = rangeInfo.includes('-') ? 
-                                   rangeInfo.split('-')[0] + `-${r + 1}` : 
-                                   `${rangeInfo}-${r + 1}`;
-                               }
-                             }
-                           }
-                         }
-                         
-                         return rangeInfo ? (
-                           <span style={{ fontSize: '8px', color: '#999', fontStyle: 'italic' }}>
-                             {rangeInfo}
-                           </span>
-                         ) : null;
-                       })()}
-                     </div>
-                     )}
-                   </th>
+                  >
+                    {!isFormFill && (
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
+                        <span>{getColumnHeader(colIndex)}</span>
+                        <span style={{ fontSize: '10px', color: '#666', fontWeight: 'normal' }}>
+                          {getColumnType(colIndex) !== 'text' ? getColumnType(colIndex) : ''}
+                        </span>
+                        {/* Show range info if type is applied to specific rows */}
+                        {(() => {
+                          const type = getColumnType(colIndex);
+                          if (type === 'text') return null;
+
+                          // Find the range for this column type
+                          let rangeInfo = '';
+                          for (let r = 0; r < rows; r++) {
+                            const cellKey = `${r}-${colIndex}`;
+                            if (cellTypes[cellKey] === type) {
+                              if (rangeInfo === '') {
+                                rangeInfo = `R${r + 1}`;
+                              } else {
+                                const lastRow = rangeInfo.split('-')[1] || rangeInfo.split('R')[1];
+                                if (r + 1 > parseInt(lastRow)) {
+                                  rangeInfo = rangeInfo.includes('-') ?
+                                    rangeInfo.split('-')[0] + `-${r + 1}` :
+                                    `${rangeInfo}-${r + 1}`;
+                                }
+                              }
+                            }
+                          }
+
+                          return rangeInfo ? (
+                            <span style={{ fontSize: '8px', color: '#999', fontStyle: 'italic' }}>
+                              {rangeInfo}
+                            </span>
+                          ) : null;
+                        })()}
+                      </div>
+                    )}
+                  </th>
                 ))}
               </tr>
             </thead>
@@ -1929,14 +1975,14 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
                   <td style={{
                     width: '30px',
                     height: `${getRowHeight(rowIndex)}px`,
-                    backgroundColor: selectedRange && 
-                      selectedRange.startRow <= rowIndex && 
+                    backgroundColor: selectedRange &&
+                      selectedRange.startRow <= rowIndex &&
                       selectedRange.endRow >= rowIndex ? '#d4e6f8' : '#f2f2f2',
-                    backgroundImage: selectedRange && 
-                      selectedRange.startRow <= rowIndex && 
-                      selectedRange.endRow >= rowIndex 
-                        ? 'linear-gradient(to bottom, #e8f1fd 0%, #c4daf8 100%)' 
-                        : 'linear-gradient(to bottom, #ffffff 0%, #f0f0f0 100%)',
+                    backgroundImage: selectedRange &&
+                      selectedRange.startRow <= rowIndex &&
+                      selectedRange.endRow >= rowIndex
+                      ? 'linear-gradient(to bottom, #e8f1fd 0%, #c4daf8 100%)'
+                      : 'linear-gradient(to bottom, #ffffff 0%, #f0f0f0 100%)',
                     border: '1px solid #d4d4d4',
                     borderLeft: '1px solid #9c9c9c',
                     borderRight: '2px solid #8a8a8a',
@@ -1955,8 +2001,8 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
                     boxShadow: 'inset 0 0 1px rgba(255,255,255,0.8)',
                     lineHeight: '36px'
                   }}
-                  onClick={(e) => handleRowHeaderClick(rowIndex, e)}
-                  title={`Select Row ${rowIndex + 1}`}
+                    onClick={(e) => handleRowHeaderClick(rowIndex, e)}
+                    title={`Select Row ${rowIndex + 1}`}
                   >
                     {!isFormFill && (
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
@@ -1976,8 +2022,8 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
                               } else {
                                 const lastCol = rangeInfo.split('-')[1] || rangeInfo;
                                 if (c > getColumnHeader(lastCol).charCodeAt(0) - 65) {
-                                  rangeInfo = rangeInfo.includes('-') ? 
-                                    rangeInfo.split('-')[0] + `-${getColumnHeader(c)}` : 
+                                  rangeInfo = rangeInfo.includes('-') ?
+                                    rangeInfo.split('-')[0] + `-${getColumnHeader(c)}` :
                                     `${rangeInfo}-${getColumnHeader(c)}`;
                                 }
                               }
@@ -1997,30 +2043,31 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
                   const cellKey = `${rowIndex}-${colIndex}`;
                   const isSelected = selectedCell === cellKey;
                   const isInRange = isCellInRange(rowIndex, colIndex);
-                  
+
                   // Check if this cell is part of a merge
                   const merge = getMerge(rowIndex, colIndex);
                   const isMergeStart = isMergeStartCell(rowIndex, colIndex);
-                  
+
                   // Skip rendering if this cell is part of a merge but not the start
                   if (merge && !isMergeStart) {
                     return null;
                   }
-                  
+
                   // Get merge span for the start cell
                   const { rowSpan, colSpan } = getMergeSpan(rowIndex, colIndex);
 
                   const baseCellStyle = {
                     width: colSpan > 1 ? `${getColumnWidth(colIndex) * colSpan}px` : `${getColumnWidth(colIndex)}px`,
                     minWidth: colSpan > 1 ? `${getColumnWidth(colIndex) * colSpan}px` : `${getColumnWidth(colIndex)}px`,
-                    height: rowSpan > 1 ? `${getRowHeight(rowIndex) * rowSpan}px` : `${getRowHeight(rowIndex)}px`,
-                    border: merge ? '2px solid #17a2b8' : 
-                           isSelected ? '2px solid #007bff' : 
-                           isInRange ? '1px solid #70ad47' : '1px solid #d4d4d4',
+                    height: `${getRowHeight(rowIndex)}px`,
+                    minHeight: `${getRowHeight(rowIndex)}px`,
+                    border: merge ? '2px solid #17a2b8' :
+                      isSelected ? '2px solid #007bff' :
+                        isInRange ? '1px solid #70ad47' : '1px solid #d4d4d4',
                     padding: '0',
-                    backgroundColor: merge ? '#ffffff' : 
-                                   dragStart && dragStart.row === rowIndex && dragStart.col === colIndex ? '#fff3cd' :
-                                   isInRange ? '#e2efda' : '#ffffff',
+                    backgroundColor: merge ? '#ffffff' :
+                      dragStart && dragStart.row === rowIndex && dragStart.col === colIndex ? '#fff3cd' :
+                        isInRange ? '#e2efda' : '#ffffff',
                     position: 'relative',
                     verticalAlign: 'top',
                     boxSizing: 'border-box',
@@ -2028,8 +2075,8 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
                   };
 
                   return (
-                    <td 
-                      key={colIndex} 
+                    <td
+                      key={colIndex}
                       rowSpan={rowSpan}
                       colSpan={colSpan}
                       style={{
@@ -2042,974 +2089,981 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
                       onMouseDown={(e) => !isFormFill && handleCellMouseDown(rowIndex, colIndex, e)}
                       onMouseEnter={() => !isFormFill && handleCellMouseEnter(rowIndex, colIndex)}
                     >
-                                             {(() => {
-                         const cellType = getCellType(rowIndex, colIndex);
-                         const cellValue = data[rowIndex]?.[colIndex] || '';
-                          const cellOptions = getCellOptions(rowIndex, colIndex);
-                          const styleKey = `${rowIndex}-${colIndex}`;
-                          const appliedStyle = cellStyles[styleKey] || {};
-                         
-                         // Show merge info for merged cells
-                         if (merge) {
-                           return (
-                             <div style={{ 
-                               display: 'flex', 
-                               flexDirection: 'column',
-                                alignItems: 'stretch', 
-                                justifyContent: 'flex-start',
-                               width: '100%',
-                               height: '100%',
-                               padding: '4px',
-                                position: 'relative',
-                                textAlign: 'left'
-                             }}>
-                               <div style={{
-                                 position: 'absolute',
-                                 top: '2px',
-                                 right: '2px',
-                                 fontSize: '10px',
-                                 color: '#666',
-                                 backgroundColor: '#e9ecef',
-                                 padding: '1px 3px',
-                                 borderRadius: '2px'
-                               }}>
-                                 {rowSpan > 1 && colSpan > 1 ? `${rowSpan}×${colSpan}` : 
+                      {(() => {
+                        const cellType = getCellType(rowIndex, colIndex);
+                        const cellValue = data[rowIndex]?.[colIndex] || '';
+                        const cellOptions = getCellOptions(rowIndex, colIndex);
+                        const styleKey = `${rowIndex}-${colIndex}`;
+                        const appliedStyle = cellStyles[styleKey] || {};
+
+                        // Show merge info for merged cells
+                        if (merge) {
+                          return (
+                            <div style={{
+                              display: 'flex',
+                              flexDirection: 'column',
+                              alignItems: 'stretch',
+                              justifyContent: 'flex-start',
+                              width: '100%',
+                              height: '100%',
+                              padding: '4px',
+                              position: 'relative',
+                              textAlign: 'left'
+                            }}>
+                              <div style={{
+                                position: 'absolute',
+                                top: '2px',
+                                right: '2px',
+                                fontSize: '10px',
+                                color: '#666',
+                                backgroundColor: '#e9ecef',
+                                padding: '1px 3px',
+                                borderRadius: '2px'
+                              }}>
+                                {rowSpan > 1 && colSpan > 1 ? `${rowSpan}×${colSpan}` :
                                   rowSpan > 1 ? `${rowSpan}R` : `${colSpan}C`}
-                               </div>
-                               <div style={{ marginTop: '12px' }}>
-                                 {(() => {
-                                   switch (cellType) {
-                                     case 'checkbox':
-                                       return (
-                                         <div style={{ 
-                                           display: 'flex', 
-                                           alignItems: 'center', 
-                                           justifyContent: 'center',
-                                           width: '100%',
-                                           height: '100%'
-                                         }}>
-                                           <input
-                                             type="checkbox"
-                                             checked={cellValue === true || cellValue === 'true'}
-                                             onChange={(e) => handleCellChange(rowIndex, colIndex, e.target.checked)}
-                                             onFocus={() => {
-                                               if (!isFormFill) {
-                                                 setSelectedCell(cellKey);
-                                                 setShowToolbar(true);
-                                               }
-                                             }}
-                                             data-cell={cellKey}
-                                             style={{
-                                               width: '16px',
-                                               height: '16px',
-                                               cursor: 'pointer',
-                                               accentColor: '#007bff'
-                                             }}
-                                             disabled={isReadOnly}
-                                           />
-                                         </div>
-                                       );
-                                     
-                                     case 'dropdown':
-                                       return (
-                                         <select
-                                           value={cellValue}
-                                           onChange={(e) => handleCellChange(rowIndex, colIndex, e.target.value)}
-                                           onFocus={() => {
-                                             if (!isFormFill) {
-                                               setSelectedCell(cellKey);
-                                               setShowToolbar(true);
-                                             }
-                                           }}
-                                           data-cell={cellKey}
-                                           style={{
-                                             width: '100%',
-                                             height: '100%',
-                                             border: 'none',
-                                             outline: 'none',
-                                             padding: '4px',
-                                             backgroundColor: 'transparent',
-                                             fontSize: '12px',
-                                             fontFamily: '"Segoe UI", Arial, sans-serif',
-                                    cursor: 'pointer',
-                                    ...appliedStyle
-                                           }}
-                                           disabled={isReadOnly}
-                                         >
-                                           <option value="">Select...</option>
-                                           {cellOptions.map((option, idx) => (
-                                             <option key={idx} value={option}>{option}</option>
-                                           ))}
-                                         </select>
-                                       );
-                                     
-                                     case 'autocomplete':
-                                       return (
+                              </div>
+                              <div style={{ marginTop: '12px' }}>
+                                {(() => {
+                                  switch (cellType) {
+                                    case 'checkbox':
+                                      return (
+                                        <div style={{
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          justifyContent: 'center',
+                                          width: '100%',
+                                          height: '100%'
+                                        }}>
                                           <input
-                                           type="text"
-                                           value={cellValue}
-                                           onChange={(e) => handleCellChange(rowIndex, colIndex, e.target.value)}
-                                           onFocus={() => {
-                                             if (!isFormFill) {
-                                               setSelectedCell(cellKey);
-                                               setShowToolbar(true);
-                                             }
-                                           }}
-                                           onKeyDown={(e) => {
-                                             if (e.key === 'Enter') {
-                                               const nextRow = rowIndex + 1;
-                                               if (nextRow < rows) {
-                                                 const nextInput = document.querySelector(`input[data-cell="${nextRow}-${colIndex}"]`);
-                                                 if (nextInput) nextInput.focus();
-                                               }
-                                             } else if (e.key === 'Tab') {
-                                               e.preventDefault();
-                                               const nextCol = colIndex + 1;
-                                               if (nextCol < cols) {
-                                                 const nextInput = document.querySelector(`input[data-cell="${rowIndex}-${nextCol}"]`);
-                                                 if (nextInput) nextInput.focus();
-                                               }
-                                             }
-                                           }}
-                                           data-cell={cellKey}
-                                           style={{
-                                             width: '100%',
-                                             height: '100%',
-                                             border: 'none',
-                                             outline: 'none',
-                                             padding: '8px',
-                                             backgroundColor: 'transparent',
-                                             fontSize: '12px',
-                                             fontFamily: '"Segoe UI", Arial, sans-serif',
-                                    lineHeight: '24px',
-                                    ...appliedStyle
-                                           }}
-                                              placeholder={isFormFill ? '' : `${getColumnHeader(colIndex)}${rowIndex + 1}`}
-                                           disabled={isReadOnly}
-                                           list={`autocomplete-${rowIndex}-${colIndex}`}
-                                         />
-                                       );
-                                     
-                                     case 'date':
-                                       return (
-                                         <input
-                                           type="date"
-                                           value={cellValue}
-                                           onChange={(e) => handleCellChange(rowIndex, colIndex, e.target.value)}
-                                           onFocus={() => {
-                                             if (!isFormFill) {
-                                               setSelectedCell(cellKey);
-                                               setShowToolbar(true);
-                                             }
-                                           }}
-                                           onKeyDown={(e) => {
-                                             if (e.key === 'Enter') {
-                                               const nextRow = rowIndex + 1;
-                                               if (nextRow < rows) {
-                                                 const nextInput = document.querySelector(`input[data-cell="${nextRow}-${colIndex}"]`);
-                                                 if (nextInput) nextInput.focus();
-                                               }
-                                             } else if (e.key === 'Tab') {
-                                               e.preventDefault();
-                                               const nextCol = colIndex + 1;
-                                               if (nextCol < cols) {
-                                                 const nextInput = document.querySelector(`input[data-cell="${rowIndex}-${nextCol}"]`);
-                                                 if (nextInput) nextInput.focus();
-                                               }
-                                             }
-                                           }}
-                                           data-cell={cellKey}
-                                           style={{
-                                             width: '100%',
-                                             height: '100%',
-                                             border: 'none',
-                                             outline: 'none',
-                                             padding: '8px',
-                                             backgroundColor: 'transparent',
-                                             fontSize: '12px',
-                                             fontFamily: '"Segoe UI", Arial, sans-serif',
-                                    lineHeight: '24px',
-                                    ...appliedStyle
-                                           }}
-                                           disabled={isReadOnly}
-                                         />
-                                       );
-                                     
-                                     case 'time':
-                                       return (
-                                         <input
-                                           type="time"
-                                           value={cellValue}
-                                           onChange={(e) => handleCellChange(rowIndex, colIndex, e.target.value)}
-                                           onFocus={() => {
-                                             if (!isFormFill) {
-                                               setSelectedCell(cellKey);
-                                               setShowToolbar(true);
-                                             }
-                                           }}
-                                           onKeyDown={(e) => {
-                                             if (e.key === 'Enter') {
-                                               const nextRow = rowIndex + 1;
-                                               if (nextRow < rows) {
-                                                 const nextInput = document.querySelector(`input[data-cell="${nextRow}-${colIndex}"]`);
-                                                 if (nextInput) nextInput.focus();
-                                               }
-                                             } else if (e.key === 'Tab') {
-                                               e.preventDefault();
-                                               const nextCol = colIndex + 1;
-                                               if (nextCol < cols) {
-                                                 const nextInput = document.querySelector(`input[data-cell="${rowIndex}-${nextCol}"]`);
-                                                 if (nextInput) nextInput.focus();
-                                               }
-                                             }
-                                           }}
-                                           data-cell={cellKey}
-                                           style={{
-                                             width: '100%',
-                                             height: '100%',
-                                             border: 'none',
-                                             outline: 'none',
-                                             padding: '8px',
-                                             backgroundColor: 'transparent',
-                                             fontSize: '12px',
-                                             fontFamily: '"Segoe UI", Arial, sans-serif',
-                                    lineHeight: '24px',
-                                    ...appliedStyle
-                                           }}
-                                           disabled={isReadOnly}
-                                         />
-                                       );
-                                     
-                                     case 'numeric':
-                                       return (
-                                         <input
-                                           type="number"
-                                           value={cellValue}
-                                           onChange={(e) => handleCellChange(rowIndex, colIndex, e.target.value)}
-                                           onFocus={() => {
-                                             if (!isFormFill) {
-                                               setSelectedCell(cellKey);
-                                               setShowToolbar(true);
-                                             }
-                                           }}
-                                           onKeyDown={(e) => {
-                                             if (e.key === 'Enter') {
-                                               const nextRow = rowIndex + 1;
-                                               if (nextRow < rows) {
-                                                 const nextInput = document.querySelector(`input[data-cell="${nextRow}-${colIndex}"]`);
-                                                 if (nextInput) nextInput.focus();
-                                               }
-                                             } else if (e.key === 'Tab') {
-                                               e.preventDefault();
-                                               const nextCol = colIndex + 1;
-                                               if (nextCol < cols) {
-                                                 const nextInput = document.querySelector(`input[data-cell="${rowIndex}-${nextCol}"]`);
-                                                 if (nextInput) nextInput.focus();
-                                               }
-                                             }
-                                           }}
-                                           data-cell={cellKey}
+                                            type="checkbox"
+                                            checked={cellValue === true || cellValue === 'true'}
+                                            onChange={(e) => handleCellChange(rowIndex, colIndex, e.target.checked)}
+                                            onFocus={() => {
+                                              if (!isFormFill) {
+                                                setSelectedCell(cellKey);
+                                                setShowToolbar(true);
+                                              }
+                                            }}
+                                            data-cell={cellKey}
                                             style={{
-                                             width: '100%',
-                                             height: '100%',
-                                             border: 'none',
-                                             outline: 'none',
-                                             padding: '8px',
-                                             backgroundColor: 'transparent',
-                                             fontSize: '12px',
+                                              width: '16px',
+                                              height: '16px',
+                                              cursor: 'pointer',
+                                              accentColor: '#007bff'
+                                            }}
+                                            disabled={isReadOnly}
+                                          />
+                                        </div>
+                                      );
+
+                                    case 'dropdown':
+                                      return (
+                                        <select
+                                          value={cellValue}
+                                          onChange={(e) => handleCellChange(rowIndex, colIndex, e.target.value)}
+                                          onFocus={() => {
+                                            if (!isFormFill) {
+                                              setSelectedCell(cellKey);
+                                              setShowToolbar(true);
+                                            }
+                                          }}
+                                          data-cell={cellKey}
+                                          style={{
+                                            width: '100%',
+                                            height: '100%',
+                                            border: 'none',
+                                            outline: 'none',
+                                            padding: '4px',
+                                            backgroundColor: 'transparent',
+                                            fontSize: '12px',
+                                            fontFamily: '"Segoe UI", Arial, sans-serif',
+                                            cursor: 'pointer',
+                                            ...appliedStyle
+                                          }}
+                                          disabled={isReadOnly}
+                                        >
+                                          <option value="">Select...</option>
+                                          {cellOptions.map((option, idx) => (
+                                            <option key={idx} value={option}>{option}</option>
+                                          ))}
+                                        </select>
+                                      );
+
+                                    case 'autocomplete':
+                                      return (
+                                        <input
+                                          type="text"
+                                          value={cellValue}
+                                          onChange={(e) => handleCellChange(rowIndex, colIndex, e.target.value)}
+                                          onFocus={() => {
+                                            if (!isFormFill) {
+                                              setSelectedCell(cellKey);
+                                              setShowToolbar(true);
+                                            }
+                                          }}
+                                          onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                              const nextRow = rowIndex + 1;
+                                              if (nextRow < rows) {
+                                                const nextInput = document.querySelector(`input[data-cell="${nextRow}-${colIndex}"]`);
+                                                if (nextInput) nextInput.focus();
+                                              }
+                                            } else if (e.key === 'Tab') {
+                                              e.preventDefault();
+                                              const nextCol = colIndex + 1;
+                                              if (nextCol < cols) {
+                                                const nextInput = document.querySelector(`input[data-cell="${rowIndex}-${nextCol}"]`);
+                                                if (nextInput) nextInput.focus();
+                                              }
+                                            }
+                                          }}
+                                          data-cell={cellKey}
+                                          style={{
+                                            width: '100%',
+                                            height: '100%',
+                                            border: 'none',
+                                            outline: 'none',
+                                            padding: '8px',
+                                            backgroundColor: 'transparent',
+                                            fontSize: '12px',
+                                            fontFamily: '"Segoe UI", Arial, sans-serif',
+                                            lineHeight: '24px',
+                                            ...appliedStyle
+                                          }}
+                                          placeholder={isFormFill ? '' : `${getColumnHeader(colIndex)}${rowIndex + 1}`}
+                                          disabled={isReadOnly}
+                                          list={`autocomplete-${rowIndex}-${colIndex}`}
+                                        />
+                                      );
+
+                                    case 'date':
+                                      return (
+                                        <input
+                                          type="date"
+                                          value={cellValue}
+                                          onChange={(e) => handleCellChange(rowIndex, colIndex, e.target.value)}
+                                          onFocus={() => {
+                                            if (!isFormFill) {
+                                              setSelectedCell(cellKey);
+                                              setShowToolbar(true);
+                                            }
+                                          }}
+                                          onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                              const nextRow = rowIndex + 1;
+                                              if (nextRow < rows) {
+                                                const nextInput = document.querySelector(`input[data-cell="${nextRow}-${colIndex}"]`);
+                                                if (nextInput) nextInput.focus();
+                                              }
+                                            } else if (e.key === 'Tab') {
+                                              e.preventDefault();
+                                              const nextCol = colIndex + 1;
+                                              if (nextCol < cols) {
+                                                const nextInput = document.querySelector(`input[data-cell="${rowIndex}-${nextCol}"]`);
+                                                if (nextInput) nextInput.focus();
+                                              }
+                                            }
+                                          }}
+                                          data-cell={cellKey}
+                                          style={{
+                                            width: '100%',
+                                            height: '100%',
+                                            border: 'none',
+                                            outline: 'none',
+                                            padding: '8px',
+                                            backgroundColor: 'transparent',
+                                            fontSize: '12px',
+                                            fontFamily: '"Segoe UI", Arial, sans-serif',
+                                            lineHeight: '24px',
+                                            ...appliedStyle
+                                          }}
+                                          disabled={isReadOnly}
+                                        />
+                                      );
+
+                                    case 'time':
+                                      return (
+                                        <input
+                                          type="time"
+                                          value={cellValue}
+                                          onChange={(e) => handleCellChange(rowIndex, colIndex, e.target.value)}
+                                          onFocus={() => {
+                                            if (!isFormFill) {
+                                              setSelectedCell(cellKey);
+                                              setShowToolbar(true);
+                                            }
+                                          }}
+                                          onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                              const nextRow = rowIndex + 1;
+                                              if (nextRow < rows) {
+                                                const nextInput = document.querySelector(`input[data-cell="${nextRow}-${colIndex}"]`);
+                                                if (nextInput) nextInput.focus();
+                                              }
+                                            } else if (e.key === 'Tab') {
+                                              e.preventDefault();
+                                              const nextCol = colIndex + 1;
+                                              if (nextCol < cols) {
+                                                const nextInput = document.querySelector(`input[data-cell="${rowIndex}-${nextCol}"]`);
+                                                if (nextInput) nextInput.focus();
+                                              }
+                                            }
+                                          }}
+                                          data-cell={cellKey}
+                                          style={{
+                                            width: '100%',
+                                            height: '100%',
+                                            border: 'none',
+                                            outline: 'none',
+                                            padding: '8px',
+                                            backgroundColor: 'transparent',
+                                            fontSize: '12px',
+                                            fontFamily: '"Segoe UI", Arial, sans-serif',
+                                            lineHeight: '24px',
+                                            ...appliedStyle
+                                          }}
+                                          disabled={isReadOnly}
+                                        />
+                                      );
+
+                                    case 'numeric':
+                                      return (
+                                        <input
+                                          type="number"
+                                          value={cellValue}
+                                          onChange={(e) => handleCellChange(rowIndex, colIndex, e.target.value)}
+                                          onFocus={() => {
+                                            if (!isFormFill) {
+                                              setSelectedCell(cellKey);
+                                              setShowToolbar(true);
+                                            }
+                                          }}
+                                          onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                              const nextRow = rowIndex + 1;
+                                              if (nextRow < rows) {
+                                                const nextInput = document.querySelector(`input[data-cell="${nextRow}-${colIndex}"]`);
+                                                if (nextInput) nextInput.focus();
+                                              }
+                                            } else if (e.key === 'Tab') {
+                                              e.preventDefault();
+                                              const nextCol = colIndex + 1;
+                                              if (nextCol < cols) {
+                                                const nextInput = document.querySelector(`input[data-cell="${rowIndex}-${nextCol}"]`);
+                                                if (nextInput) nextInput.focus();
+                                              }
+                                            }
+                                          }}
+                                          data-cell={cellKey}
+                                          style={{
+                                            width: '100%',
+                                            height: '100%',
+                                            border: 'none',
+                                            outline: 'none',
+                                            padding: '8px',
+                                            backgroundColor: 'transparent',
+                                            fontSize: '12px',
+                                            fontFamily: '"Segoe UI", Arial, sans-serif',
+                                            lineHeight: '24px',
+                                            ...appliedStyle
+                                          }}
+                                          placeholder={isFormFill ? '' : `${getColumnHeader(colIndex)}${rowIndex + 1}`}
+                                          disabled={isReadOnly}
+                                        />
+                                      );
+
+                                    case 'color':
+                                      return (
+                                        <div style={{
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          justifyContent: 'center',
+                                          width: '100%',
+                                          height: '100%',
+                                          padding: '2px'
+                                        }}>
+                                          <input
+                                            type="color"
+                                            value={cellValue || '#000000'}
+                                            onChange={(e) => handleCellChange(rowIndex, colIndex, e.target.value)}
+                                            onFocus={() => {
+                                              if (!isFormFill) {
+                                                setSelectedCell(cellKey);
+                                                setShowToolbar(true);
+                                              }
+                                            }}
+                                            data-cell={cellKey}
+                                            style={{
+                                              width: '30px',
+                                              height: '30px',
+                                              border: '1px solid #ddd',
+                                              borderRadius: '4px',
+                                              cursor: 'pointer'
+                                            }}
+                                            disabled={isReadOnly}
+                                          />
+                                        </div>
+                                      );
+
+                                    case 'image':
+                                      return (
+                                        <div style={{
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          justifyContent: 'center',
+                                          width: '100%',
+                                          height: '100%',
+                                          padding: '2px'
+                                        }}>
+                                          {cellValue ? (
+                                            <img
+                                              src={cellValue}
+                                              alt="Image"
+                                              style={{
+                                                maxWidth: '100%',
+                                                maxHeight: '100%',
+                                                objectFit: 'contain'
+                                              }}
+                                              onError={(e) => {
+                                                e.target.style.display = 'none';
+                                                e.target.nextSibling.style.display = 'block';
+                                              }}
+                                            />
+                                          ) : null}
+                                          <input
+                                            type="text"
+                                            value={cellValue}
+                                            onChange={(e) => handleCellChange(rowIndex, colIndex, e.target.value)}
+                                            onFocus={() => {
+                                              if (!isFormFill) {
+                                                setSelectedCell(cellKey);
+                                                setShowToolbar(true);
+                                              }
+                                            }}
+                                            onKeyDown={(e) => {
+                                              if (e.key === 'Enter') {
+                                                const nextRow = rowIndex + 1;
+                                                if (nextRow < rows) {
+                                                  const nextInput = document.querySelector(`input[data-cell="${nextRow}-${colIndex}"]`);
+                                                  if (nextInput) nextInput.focus();
+                                                }
+                                              } else if (e.key === 'Tab') {
+                                                e.preventDefault();
+                                                const nextCol = colIndex + 1;
+                                                if (nextCol < cols) {
+                                                  const nextInput = document.querySelector(`input[data-cell="${rowIndex}-${nextCol}"]`);
+                                                  if (nextInput) nextInput.focus();
+                                                }
+                                              }
+                                            }}
+                                            data-cell={cellKey}
+                                            style={{
+                                              width: '100%',
+                                              height: '100%',
+                                              border: 'none',
+                                              outline: 'none',
+                                              padding: '8px',
+                                              backgroundColor: 'transparent',
+                                              fontSize: '12px',
+                                              fontFamily: '"Segoe UI", Arial, sans-serif',
+                                              lineHeight: '24px',
+                                              display: cellValue ? 'none' : 'block',
+                                              ...appliedStyle
+                                            }}
+                                            placeholder="Enter image URL..."
+                                            disabled={isReadOnly}
+                                          />
+                                        </div>
+                                      );
+
+                                    case 'richtext':
+                                      return (
+                                        <textarea
+                                          value={cellValue}
+                                          onChange={(e) => handleCellChange(rowIndex, colIndex, e.target.value)}
+                                          onFocus={() => {
+                                            if (!isFormFill) {
+                                              setSelectedCell(cellKey);
+                                              setShowToolbar(true);
+                                            }
+                                          }}
+                                          onKeyDown={(e) => {
+                                            if (e.key === 'Enter' && e.shiftKey) {
+                                              // Allow new lines with Shift+Enter
+                                              return;
+                                            } else if (e.key === 'Enter') {
+                                              e.preventDefault();
+                                              const nextRow = rowIndex + 1;
+                                              if (nextRow < rows) {
+                                                const nextInput = document.querySelector(`input[data-cell="${nextRow}-${colIndex}"]`);
+                                                if (nextInput) nextInput.focus();
+                                              }
+                                            } else if (e.key === 'Tab') {
+                                              e.preventDefault();
+                                              const nextCol = colIndex + 1;
+                                              if (nextCol < cols) {
+                                                const nextInput = document.querySelector(`input[data-cell="${rowIndex}-${nextCol}"]`);
+                                                if (nextInput) nextInput.focus();
+                                              }
+                                            }
+                                          }}
+                                          data-cell={cellKey}
+                                          style={{
+                                            width: '100%',
+                                            height: '100%',
+                                            border: 'none',
+                                            outline: 'none',
+                                            padding: '8px',
+                                            backgroundColor: 'transparent',
+                                            fontSize: '12px',
+                                            fontFamily: '"Segoe UI", Arial, sans-serif',
+                                            resize: 'none',
+                                            overflow: 'hidden',
+                                            ...appliedStyle
+                                          }}
+                                          placeholder={isFormFill ? '' : `${getColumnHeader(colIndex)}${rowIndex + 1}`}
+                                          disabled={isReadOnly}
+                                        />
+                                      );
+
+                                    default: // text
+                                      return (
+                                        isFormFill ? (
+                                          <textarea
+                                            value={cellValue}
+                                            onChange={(e) => {
+                                              handleCellChange(rowIndex, colIndex, e.target.value);
+                                              e.target.style.height = 'auto';
+                                              e.target.style.height = `${e.target.scrollHeight}px`;
+                                            }}
+                                            onFocus={(e) => {
+                                              e.target.style.height = 'auto';
+                                              e.target.style.height = `${e.target.scrollHeight}px`;
+                                            }}
+                                            data-cell={cellKey}
+                                            style={{
+                                              width: '100%',
+                                              minHeight: '32px',
+                                              border: 'none',
+                                              outline: 'none',
+                                              padding: '8px',
+                                              backgroundColor: 'transparent',
+                                              fontSize: '12px',
+                                              fontFamily: '"Segoe UI", Arial, sans-serif',
+                                              whiteSpace: 'pre-wrap',
+                                              wordBreak: 'break-word',
+                                              overflowWrap: 'anywhere',
+                                              resize: 'none',
+                                              lineHeight: '20px',
+                                              ...appliedStyle
+                                            }}
+                                            placeholder={isFormFill ? '' : `${getColumnHeader(colIndex)}${rowIndex + 1}`}
+                                            disabled={isReadOnly}
+                                          />
+                                        ) : (
+                                          <input
+                                            type="text"
+                                            value={cellValue}
+                                            onChange={(e) => handleCellChange(rowIndex, colIndex, e.target.value)}
+                                            onFocus={() => {
+                                              if (!isFormFill) {
+                                                setSelectedCell(cellKey);
+                                                setShowToolbar(true);
+                                              }
+                                            }}
+                                            onKeyDown={(e) => {
+                                              if (e.key === 'Enter') {
+                                                const nextRow = rowIndex + 1;
+                                                if (nextRow < rows) {
+                                                  const nextInput = document.querySelector(`input[data-cell=\"${nextRow}-${colIndex}\"]`);
+                                                  if (nextInput) nextInput.focus();
+                                                }
+                                              } else if (e.key === 'Tab') {
+                                                e.preventDefault();
+                                                const nextCol = colIndex + 1;
+                                                if (nextCol < cols) {
+                                                  const nextInput = document.querySelector(`input[data-cell=\"${rowIndex}-${nextCol}\"]`);
+                                                  if (nextInput) nextInput.focus();
+                                                }
+                                              }
+                                            }}
+                                            data-cell={cellKey}
+                                            style={{
+                                              width: '100%',
+                                              height: '100%',
+                                              border: 'none',
+                                              outline: 'none',
+                                              padding: '8px',
+                                              backgroundColor: 'transparent',
+                                              fontSize: '12px',
                                               fontFamily: '"Segoe UI", Arial, sans-serif',
                                               lineHeight: '24px',
                                               ...appliedStyle
-                                           }}
-                                              placeholder={isFormFill ? '' : `${getColumnHeader(colIndex)}${rowIndex + 1}`}
-                                           disabled={isReadOnly}
-                                         />
-                                       );
-                                     
-                                     case 'color':
-                                       return (
-                                         <div style={{ 
-                                           display: 'flex', 
-                                           alignItems: 'center', 
-                                           justifyContent: 'center',
-                                           width: '100%',
-                                           height: '100%',
-                                           padding: '2px'
-                                         }}>
-                                           <input
-                                             type="color"
-                                             value={cellValue || '#000000'}
-                                             onChange={(e) => handleCellChange(rowIndex, colIndex, e.target.value)}
-                                             onFocus={() => {
-                                               if (!isFormFill) {
-                                                 setSelectedCell(cellKey);
-                                                 setShowToolbar(true);
-                                               }
-                                             }}
-                                             data-cell={cellKey}
-                                             style={{
-                                               width: '30px',
-                                               height: '30px',
-                                               border: '1px solid #ddd',
-                                               borderRadius: '4px',
-                                               cursor: 'pointer'
-                                             }}
-                                             disabled={isReadOnly}
-                                           />
-                                         </div>
-                                       );
-                                     
-                                     case 'image':
-                                       return (
-                                         <div style={{ 
-                                           display: 'flex', 
-                                           alignItems: 'center', 
-                                           justifyContent: 'center',
-                                           width: '100%',
-                                           height: '100%',
-                                           padding: '2px'
-                                         }}>
-                                           {cellValue ? (
-                                             <img
-                                               src={cellValue}
-                                               alt="Image"
-                                               style={{
-                                                 maxWidth: '100%',
-                                                 maxHeight: '100%',
-                                                 objectFit: 'contain'
-                                               }}
-                                               onError={(e) => {
-                                                 e.target.style.display = 'none';
-                                                 e.target.nextSibling.style.display = 'block';
-                                               }}
-                                             />
-                                           ) : null}
-                                           <input
-                                             type="text"
-                                             value={cellValue}
-                                             onChange={(e) => handleCellChange(rowIndex, colIndex, e.target.value)}
-                                             onFocus={() => {
-                                               if (!isFormFill) {
-                                                 setSelectedCell(cellKey);
-                                                 setShowToolbar(true);
-                                               }
-                                             }}
-                                             onKeyDown={(e) => {
-                                               if (e.key === 'Enter') {
-                                                 const nextRow = rowIndex + 1;
-                                                 if (nextRow < rows) {
-                                                   const nextInput = document.querySelector(`input[data-cell="${nextRow}-${colIndex}"]`);
-                                                   if (nextInput) nextInput.focus();
-                                                 }
-                                               } else if (e.key === 'Tab') {
-                                                 e.preventDefault();
-                                                 const nextCol = colIndex + 1;
-                                                 if (nextCol < cols) {
-                                                   const nextInput = document.querySelector(`input[data-cell="${rowIndex}-${nextCol}"]`);
-                                                   if (nextInput) nextInput.focus();
-                                                 }
-                                               }
-                                             }}
-                                             data-cell={cellKey}
-                                             style={{
-                                               width: '100%',
-                                               height: '100%',
-                                               border: 'none',
-                                               outline: 'none',
-                                               padding: '8px',
-                                               backgroundColor: 'transparent',
-                                               fontSize: '12px',
-                                               fontFamily: '"Segoe UI", Arial, sans-serif',
-                                               lineHeight: '24px',
-                                               display: cellValue ? 'none' : 'block'
-                                             }}
-                                             placeholder="Enter image URL..."
-                                             disabled={isReadOnly}
-                                           />
-                                         </div>
-                                       );
-                                     
-                                     case 'richtext':
-                                       return (
-                                          <textarea
-                                           value={cellValue}
-                                           onChange={(e) => handleCellChange(rowIndex, colIndex, e.target.value)}
-                                           onFocus={() => {
-                                             if (!isFormFill) {
-                                               setSelectedCell(cellKey);
-                                               setShowToolbar(true);
-                                             }
-                                           }}
-                                           onKeyDown={(e) => {
-                                             if (e.key === 'Enter' && e.shiftKey) {
-                                               // Allow new lines with Shift+Enter
-                                               return;
-                                             } else if (e.key === 'Enter') {
-                                               e.preventDefault();
-                                               const nextRow = rowIndex + 1;
-                                               if (nextRow < rows) {
-                                                 const nextInput = document.querySelector(`input[data-cell="${nextRow}-${colIndex}"]`);
-                                                 if (nextInput) nextInput.focus();
-                                               }
-                                             } else if (e.key === 'Tab') {
-                                               e.preventDefault();
-                                               const nextCol = colIndex + 1;
-                                               if (nextCol < cols) {
-                                                 const nextInput = document.querySelector(`input[data-cell="${rowIndex}-${nextCol}"]`);
-                                                 if (nextInput) nextInput.focus();
-                                               }
-                                             }
-                                           }}
-                                           data-cell={cellKey}
-                                            style={{
-                                             width: '100%',
-                                             height: '100%',
-                                             border: 'none',
-                                             outline: 'none',
-                                             padding: '8px',
-                                             backgroundColor: 'transparent',
-                                             fontSize: '12px',
-                                              fontFamily: '"Segoe UI", Arial, sans-serif',
-                                              resize: 'none',
-                                              overflow: 'hidden',
-                                              ...appliedStyle
-                                           }}
+                                            }}
                                             placeholder={isFormFill ? '' : `${getColumnHeader(colIndex)}${rowIndex + 1}`}
-                                           disabled={isReadOnly}
-                                         />
-                                       );
-                                     
-                                     default: // text
-                                       return (
-                                         isFormFill ? (
-                                           <textarea
-                                             value={cellValue}
-                                             onChange={(e) => {
-                                               handleCellChange(rowIndex, colIndex, e.target.value);
-                                               e.target.style.height = 'auto';
-                                               e.target.style.height = `${e.target.scrollHeight}px`;
-                                             }}
-                                             onFocus={(e) => {
-                                               e.target.style.height = 'auto';
-                                               e.target.style.height = `${e.target.scrollHeight}px`;
-                                             }}
-                                             data-cell={cellKey}
-                                             style={{
-                                               width: '100%',
-                                               minHeight: '32px',
-                                               border: 'none',
-                                               outline: 'none',
-                                               padding: '8px',
-                                               backgroundColor: 'transparent',
-                                               fontSize: '12px',
-                                               fontFamily: '"Segoe UI", Arial, sans-serif',
-                                               whiteSpace: 'pre-wrap',
-                                               wordBreak: 'break-word',
-                                               overflowWrap: 'anywhere',
-                                               resize: 'none',
-                                               lineHeight: '20px',
-                                               ...appliedStyle
-                                             }}
-                                             placeholder={isFormFill ? '' : `${getColumnHeader(colIndex)}${rowIndex + 1}`}
-                                             disabled={isReadOnly}
-                                           />
-                                         ) : (
-                                           <input
-                                             type="text"
-                                             value={cellValue}
-                                             onChange={(e) => handleCellChange(rowIndex, colIndex, e.target.value)}
-                                             onFocus={() => {
-                                               if (!isFormFill) {
-                                                 setSelectedCell(cellKey);
-                                                 setShowToolbar(true);
-                                               }
-                                             }}
-                                             onKeyDown={(e) => {
-                                               if (e.key === 'Enter') {
-                                                 const nextRow = rowIndex + 1;
-                                                 if (nextRow < rows) {
-                                                   const nextInput = document.querySelector(`input[data-cell=\"${nextRow}-${colIndex}\"]`);
-                                                   if (nextInput) nextInput.focus();
-                                                 }
-                                               } else if (e.key === 'Tab') {
-                                                 e.preventDefault();
-                                                 const nextCol = colIndex + 1;
-                                                 if (nextCol < cols) {
-                                                   const nextInput = document.querySelector(`input[data-cell=\"${rowIndex}-${nextCol}\"]`);
-                                                   if (nextInput) nextInput.focus();
-                                                 }
-                                               }
-                                             }}
-                                             data-cell={cellKey}
-                                             style={{
-                                               width: '100%',
-                                               height: '100%',
-                                               border: 'none',
-                                               outline: 'none',
-                                               padding: '8px',
-                                               backgroundColor: 'transparent',
-                                               fontSize: '12px',
-                                               fontFamily: '"Segoe UI", Arial, sans-serif',
-                                    lineHeight: '24px',
-                                    ...appliedStyle
-                                             }}
-                                              placeholder={isFormFill ? '' : `${getColumnHeader(colIndex)}${rowIndex + 1}`}
-                                             disabled={isReadOnly}
-                                           />
-                                         )
-                                       );
-                                   }
-                                 })()}
-                               </div>
-                             </div>
-                           );
-                         }
-                         
-                         // Regular cell rendering (non-merged)
-                         switch (cellType) {
-                           case 'checkbox':
-                             return (
-                               <div style={{ 
-                                 display: 'flex', 
-                                 alignItems: 'center', 
-                                 justifyContent: 'center',
-                                 width: '100%',
-                                 height: '100%',
-                                 padding: '2px'
-                               }}>
-                                 <input
-                                   type="checkbox"
-                                   checked={cellValue === true || cellValue === 'true'}
-                                   onChange={(e) => handleCellChange(rowIndex, colIndex, e.target.checked)}
-                                   onFocus={() => {
-                                     if (!isFormFill) {
-                                       setSelectedCell(cellKey);
-                                       setShowToolbar(true);
-                                     }
-                                   }}
-                                   data-cell={cellKey}
-                                   style={{
-                                     width: '16px',
-                                     height: '16px',
-                                     cursor: 'pointer',
-                                     accentColor: '#007bff'
-                                   }}
-                                   disabled={isReadOnly}
-                                 />
-                               </div>
-                             );
-                           
-                           case 'dropdown':
-                             return (
-                               <select
-                                 value={cellValue}
-                                 onChange={(e) => handleCellChange(rowIndex, colIndex, e.target.value)}
-                                 onFocus={() => {
-                                   if (!isFormFill) {
-                                     setSelectedCell(cellKey);
-                                     setShowToolbar(true);
-                                   }
-                                 }}
-                                 data-cell={cellKey}
-                                 style={{
-                                   width: '100%',
-                                   height: '100%',
-                                   border: 'none',
-                                   outline: 'none',
-                                   padding: '4px',
-                                   backgroundColor: 'transparent',
-                                   fontSize: '12px',
-                                   fontFamily: '"Segoe UI", Arial, sans-serif',
-                                   cursor: 'pointer'
-                                 }}
-                                 disabled={isReadOnly}
-                               >
-                                 <option value="">Select...</option>
-                                 {cellOptions.map((option, idx) => (
-                                   <option key={idx} value={option}>{option}</option>
-                                 ))}
-                               </select>
-                             );
-                           
-                           case 'autocomplete':
-                             return (
-                               <input
-                                 type="text"
-                                 value={cellValue}
-                                 onChange={(e) => handleCellChange(rowIndex, colIndex, e.target.value)}
-                                 onFocus={() => {
-                                   if (!isFormFill) {
-                                     setSelectedCell(cellKey);
-                                     setShowToolbar(true);
-                                   }
-                                 }}
-                                 onKeyDown={(e) => {
-                                   if (e.key === 'Enter') {
-                                     const nextRow = rowIndex + 1;
-                                     if (nextRow < rows) {
-                                       const nextInput = document.querySelector(`input[data-cell="${nextRow}-${colIndex}"]`);
-                                       if (nextInput) nextInput.focus();
-                                     }
-                                   } else if (e.key === 'Tab') {
-                                     e.preventDefault();
-                                     const nextCol = colIndex + 1;
-                                     if (nextCol < cols) {
-                                       const nextInput = document.querySelector(`input[data-cell="${rowIndex}-${nextCol}"]`);
-                                       if (nextInput) nextInput.focus();
-                                     }
-                                   }
-                                 }}
-                                 data-cell={cellKey}
-                                 style={{
-                                   width: '100%',
-                                   height: '100%',
-                                   border: 'none',
-                                   outline: 'none',
-                                   padding: '8px',
-                                   backgroundColor: 'transparent',
-                                   fontSize: '12px',
-                                   fontFamily: '"Segoe UI", Arial, sans-serif',
-                                   lineHeight: '24px'
-                                 }}
-                                  placeholder={isFormFill ? '' : `${getColumnHeader(colIndex)}${rowIndex + 1}`}
-                                 disabled={isReadOnly}
-                                 list={`autocomplete-${rowIndex}-${colIndex}`}
-                               />
-                             );
-                           
-                           case 'date':
-                             return (
-                               <input
-                                 type="date"
-                                 value={cellValue}
-                                 onChange={(e) => handleCellChange(rowIndex, colIndex, e.target.value)}
-                                 onFocus={() => {
-                                   if (!isFormFill) {
-                                     setSelectedCell(cellKey);
-                                     setShowToolbar(true);
-                                   }
-                                 }}
-                                 onKeyDown={(e) => {
-                                   if (e.key === 'Enter') {
-                                     const nextRow = rowIndex + 1;
-                                     if (nextRow < rows) {
-                                       const nextInput = document.querySelector(`input[data-cell="${nextRow}-${colIndex}"]`);
-                                       if (nextInput) nextInput.focus();
-                                     }
-                                   } else if (e.key === 'Tab') {
-                                     e.preventDefault();
-                                     const nextCol = colIndex + 1;
-                                     if (nextCol < cols) {
-                                       const nextInput = document.querySelector(`input[data-cell="${rowIndex}-${nextCol}"]`);
-                                       if (nextInput) nextInput.focus();
-                                     }
-                                   }
-                                 }}
-                                 data-cell={cellKey}
-                                 style={{
-                                   width: '100%',
-                                   height: '100%',
-                                   border: 'none',
-                                   outline: 'none',
-                                   padding: '8px',
-                                   backgroundColor: 'transparent',
-                                   fontSize: '12px',
-                                   fontFamily: '"Segoe UI", Arial, sans-serif',
-                                   lineHeight: '24px'
-                                 }}
-                                 disabled={isReadOnly}
-                               />
-                             );
-                           
-                           case 'time':
-                             return (
-                               <input
-                                 type="time"
-                                 value={cellValue}
-                                 onChange={(e) => handleCellChange(rowIndex, colIndex, e.target.value)}
-                                 onFocus={() => {
-                                   if (!isFormFill) {
-                                     setSelectedCell(cellKey);
-                                     setShowToolbar(true);
-                                   }
-                                 }}
-                                 onKeyDown={(e) => {
-                                   if (e.key === 'Enter') {
-                                     const nextRow = rowIndex + 1;
-                                     if (nextRow < rows) {
-                                       const nextInput = document.querySelector(`input[data-cell="${nextRow}-${colIndex}"]`);
-                                       if (nextInput) nextInput.focus();
-                                     }
-                                   } else if (e.key === 'Tab') {
-                                     e.preventDefault();
-                                     const nextCol = colIndex + 1;
-                                     if (nextCol < cols) {
-                                       const nextInput = document.querySelector(`input[data-cell="${rowIndex}-${nextCol}"]`);
-                                       if (nextInput) nextInput.focus();
-                                     }
-                                   }
-                                 }}
-                                 data-cell={cellKey}
-                                 style={{
-                                   width: '100%',
-                                   height: '100%',
-                                   border: 'none',
-                                   outline: 'none',
-                                   padding: '8px',
-                                   backgroundColor: 'transparent',
-                                   fontSize: '12px',
-                                   fontFamily: '"Segoe UI", Arial, sans-serif',
-                                   lineHeight: '24px'
-                                 }}
-                                 disabled={isReadOnly}
-                               />
-                             );
-                           
-                           case 'numeric':
-                             return (
-                               <input
-                                 type="number"
-                                 value={cellValue}
-                                 onChange={(e) => handleCellChange(rowIndex, colIndex, e.target.value)}
-                                 onFocus={() => {
-                                   if (!isFormFill) {
-                                     setSelectedCell(cellKey);
-                                     setShowToolbar(true);
-                                   }
-                                 }}
-                                 onKeyDown={(e) => {
-                                   if (e.key === 'Enter') {
-                                     const nextRow = rowIndex + 1;
-                                     if (nextRow < rows) {
-                                       const nextInput = document.querySelector(`input[data-cell="${nextRow}-${colIndex}"]`);
-                                       if (nextInput) nextInput.focus();
-                                     }
-                                   } else if (e.key === 'Tab') {
-                                     e.preventDefault();
-                                     const nextCol = colIndex + 1;
-                                     if (nextCol < cols) {
-                                       const nextInput = document.querySelector(`input[data-cell="${rowIndex}-${nextCol}"]`);
-                                       if (nextInput) nextInput.focus();
-                                     }
-                                   }
-                                 }}
-                                 data-cell={cellKey}
-                                 style={{
-                                   width: '100%',
-                                   height: '100%',
-                                   border: 'none',
-                                   outline: 'none',
-                                   padding: '8px',
-                                   backgroundColor: 'transparent',
-                                   fontSize: '12px',
-                                   fontFamily: '"Segoe UI", Arial, sans-serif',
-                                    lineHeight: '24px',
-                                    ...appliedStyle
-                                 }}
-                                placeholder={isFormFill ? '' : `${getColumnHeader(colIndex)}${rowIndex + 1}`}
-                                 disabled={isReadOnly}
-                               />
-                             );
-                           
-                           case 'color':
-                             return (
-                               <div style={{ 
-                                 display: 'flex', 
-                                 alignItems: 'center', 
-                                 justifyContent: 'center',
-                                 width: '100%',
-                                 height: '100%',
-                                 padding: '2px'
-                               }}>
-                                 <input
-                                   type="color"
-                                   value={cellValue || '#000000'}
-                                   onChange={(e) => handleCellChange(rowIndex, colIndex, e.target.value)}
-                                   onFocus={() => {
-                                     if (!isFormFill) {
-                                       setSelectedCell(cellKey);
-                                       setShowToolbar(true);
-                                     }
-                                   }}
-                                   data-cell={cellKey}
-                                   style={{
-                                     width: '30px',
-                                     height: '30px',
-                                     border: '1px solid #ddd',
-                                     borderRadius: '4px',
-                                     cursor: 'pointer'
-                                   }}
-                                   disabled={isReadOnly}
-                                 />
-                               </div>
-                             );
-                           
-                           case 'image':
-                             return (
-                               <div style={{ 
-                                 display: 'flex', 
-                                 alignItems: 'center', 
-                                 justifyContent: 'center',
-                                 width: '100%',
-                                 height: '100%',
-                                 padding: '2px'
-                               }}>
-                                 {cellValue ? (
-                                   <img
-                                     src={cellValue}
-                                     alt="Image"
-                                     style={{
-                                       maxWidth: '100%',
-                                       maxHeight: '100%',
-                                       objectFit: 'contain'
-                                     }}
-                                     onError={(e) => {
-                                       e.target.style.display = 'none';
-                                       e.target.nextSibling.style.display = 'block';
-                                     }}
-                                   />
-                                 ) : null}
-                                 <input
-                                   type="text"
-                                   value={cellValue}
-                                   onChange={(e) => handleCellChange(rowIndex, colIndex, e.target.value)}
-                                   onFocus={() => {
-                                     if (!isFormFill) {
-                                       setSelectedCell(cellKey);
-                                       setShowToolbar(true);
-                                     }
-                                   }}
-                                   onKeyDown={(e) => {
-                                     if (e.key === 'Enter') {
-                                       const nextRow = rowIndex + 1;
-                                       if (nextRow < rows) {
-                                         const nextInput = document.querySelector(`input[data-cell="${nextRow}-${colIndex}"]`);
-                                         if (nextInput) nextInput.focus();
-                                       }
-                                     } else if (e.key === 'Tab') {
-                                       e.preventDefault();
-                                       const nextCol = colIndex + 1;
-                                       if (nextCol < cols) {
-                                         const nextInput = document.querySelector(`input[data-cell="${rowIndex}-${nextCol}"]`);
-                                         if (nextInput) nextInput.focus();
-                                       }
-                                     }
-                                   }}
-                                   data-cell={cellKey}
-                                   style={{
-                                     width: '100%',
-                                     height: '100%',
-                                     border: 'none',
-                                     outline: 'none',
-                                     padding: '8px',
-                                     backgroundColor: 'transparent',
-                                     fontSize: '12px',
-                                     fontFamily: '"Segoe UI", Arial, sans-serif',
-                                     lineHeight: '24px',
-                                     display: cellValue ? 'none' : 'block'
-                                   }}
-                                   placeholder="Enter image URL..."
-                                   disabled={isReadOnly}
-                                 />
-                               </div>
-                             );
-                           
-                           case 'richtext':
-                             return (
-                              <textarea
-                                 value={cellValue}
-                                 onChange={(e) => handleCellChange(rowIndex, colIndex, e.target.value)}
-                                 onFocus={() => {
-                                   if (!isFormFill) {
-                                     setSelectedCell(cellKey);
-                                     setShowToolbar(true);
-                                   }
-                                 }}
-                                 onKeyDown={(e) => {
-                                   if (e.key === 'Enter' && e.shiftKey) {
-                                     // Allow new lines with Shift+Enter
-                                     return;
-                                   } else if (e.key === 'Enter') {
-                                     e.preventDefault();
-                                     const nextRow = rowIndex + 1;
-                                     if (nextRow < rows) {
-                                       const nextInput = document.querySelector(`input[data-cell="${nextRow}-${colIndex}"]`);
-                                       if (nextInput) nextInput.focus();
-                                     }
-                                   } else if (e.key === 'Tab') {
-                                     e.preventDefault();
-                                     const nextCol = colIndex + 1;
-                                     if (nextCol < cols) {
-                                       const nextInput = document.querySelector(`input[data-cell="${rowIndex}-${nextCol}"]`);
-                                       if (nextInput) nextInput.focus();
-                                     }
-                                   }
-                                 }}
-                                 data-cell={cellKey}
+                                            disabled={isReadOnly}
+                                          />
+                                        )
+                                      );
+                                  }
+                                })()}
+                              </div>
+                            </div>
+                          );
+                        }
+
+                        // Regular cell rendering (non-merged)
+                        switch (cellType) {
+                          case 'checkbox':
+                            return (
+                              <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                width: '100%',
+                                height: '100%',
+                                padding: '2px'
+                              }}>
+                                <input
+                                  type="checkbox"
+                                  checked={cellValue === true || cellValue === 'true'}
+                                  onChange={(e) => handleCellChange(rowIndex, colIndex, e.target.checked)}
+                                  onFocus={() => {
+                                    if (!isFormFill) {
+                                      setSelectedCell(cellKey);
+                                      setShowToolbar(true);
+                                    }
+                                  }}
+                                  data-cell={cellKey}
                                   style={{
-                                   width: '100%',
-                                   height: '100%',
-                                   border: 'none',
-                                   outline: 'none',
-                                   padding: '8px',
-                                   backgroundColor: 'transparent',
-                                   fontSize: '12px',
-                                   fontFamily: '"Segoe UI", Arial, sans-serif',
-                                    resize: 'none',
-                                    overflow: 'hidden',
-                                    ...appliedStyle
-                                 }}
+                                    width: '16px',
+                                    height: '16px',
+                                    cursor: 'pointer',
+                                    accentColor: '#007bff'
+                                  }}
+                                  disabled={isReadOnly}
+                                />
+                              </div>
+                            );
+
+                          case 'dropdown':
+                            return (
+                              <select
+                                value={cellValue}
+                                onChange={(e) => handleCellChange(rowIndex, colIndex, e.target.value)}
+                                onFocus={() => {
+                                  if (!isFormFill) {
+                                    setSelectedCell(cellKey);
+                                    setShowToolbar(true);
+                                  }
+                                }}
+                                data-cell={cellKey}
+                                style={{
+                                  width: '100%',
+                                  height: '100%',
+                                  border: 'none',
+                                  outline: 'none',
+                                  padding: '4px',
+                                  backgroundColor: 'transparent',
+                                  fontSize: '12px',
+                                  fontFamily: '"Segoe UI", Arial, sans-serif',
+                                  cursor: 'pointer',
+                                  ...appliedStyle
+                                }}
+                                disabled={isReadOnly}
+                              >
+                                <option value="">Select...</option>
+                                {cellOptions.map((option, idx) => (
+                                  <option key={idx} value={option}>{option}</option>
+                                ))}
+                              </select>
+                            );
+
+                          case 'autocomplete':
+                            return (
+                              <input
+                                type="text"
+                                value={cellValue}
+                                onChange={(e) => handleCellChange(rowIndex, colIndex, e.target.value)}
+                                onFocus={() => {
+                                  if (!isFormFill) {
+                                    setSelectedCell(cellKey);
+                                    setShowToolbar(true);
+                                  }
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    const nextRow = rowIndex + 1;
+                                    if (nextRow < rows) {
+                                      const nextInput = document.querySelector(`input[data-cell="${nextRow}-${colIndex}"]`);
+                                      if (nextInput) nextInput.focus();
+                                    }
+                                  } else if (e.key === 'Tab') {
+                                    e.preventDefault();
+                                    const nextCol = colIndex + 1;
+                                    if (nextCol < cols) {
+                                      const nextInput = document.querySelector(`input[data-cell="${rowIndex}-${nextCol}"]`);
+                                      if (nextInput) nextInput.focus();
+                                    }
+                                  }
+                                }}
+                                data-cell={cellKey}
+                                style={{
+                                  width: '100%',
+                                  height: '100%',
+                                  border: 'none',
+                                  outline: 'none',
+                                  padding: '8px',
+                                  backgroundColor: 'transparent',
+                                  fontSize: '12px',
+                                  fontFamily: '"Segoe UI", Arial, sans-serif',
+                                  lineHeight: '24px',
+                                  ...appliedStyle
+                                }}
                                 placeholder={isFormFill ? '' : `${getColumnHeader(colIndex)}${rowIndex + 1}`}
-                                 disabled={isReadOnly}
-                               />
-                             );
-                           
-                           default: // text
-                             return (
-                               <input
-                                 type="text"
-                                 value={cellValue}
-                                 onChange={(e) => handleCellChange(rowIndex, colIndex, e.target.value)}
-                                 onFocus={() => {
-                                   if (!isFormFill) {
-                                     setSelectedCell(cellKey);
-                                     setShowToolbar(true);
-                                   }
-                                 }}
-                                 onKeyDown={(e) => {
-                                   if (e.key === 'Enter') {
-                                     const nextRow = rowIndex + 1;
-                                     if (nextRow < rows) {
-                                       const nextInput = document.querySelector(`input[data-cell="${nextRow}-${colIndex}"]`);
-                                       if (nextInput) nextInput.focus();
-                                     }
-                                   } else if (e.key === 'Tab') {
-                                     e.preventDefault();
-                                     const nextCol = colIndex + 1;
-                                     if (nextCol < cols) {
-                                       const nextInput = document.querySelector(`input[data-cell="${rowIndex}-${nextCol}"]`);
-                                       if (nextInput) nextInput.focus();
-                                     }
-                                   }
-                                 }}
-                                 data-cell={cellKey}
-                                 style={{
-                                   width: '100%',
-                                   height: '100%',
-                                   border: 'none',
-                                   outline: 'none',
-                                   padding: '8px',
-                                   backgroundColor: 'transparent',
-                                   fontSize: '12px',
-                                   fontFamily: '"Segoe UI", Arial, sans-serif',
-                                   lineHeight: '24px'
-                                 }}
-                                  placeholder={isFormFill ? '' : `${getColumnHeader(colIndex)}${rowIndex + 1}`}
-                                 disabled={isReadOnly}
-                               />
-                             );
-                         }
-                       })()}
+                                disabled={isReadOnly}
+                                list={`autocomplete-${rowIndex}-${colIndex}`}
+                              />
+                            );
+
+                          case 'date':
+                            return (
+                              <input
+                                type="date"
+                                value={cellValue}
+                                onChange={(e) => handleCellChange(rowIndex, colIndex, e.target.value)}
+                                onFocus={() => {
+                                  if (!isFormFill) {
+                                    setSelectedCell(cellKey);
+                                    setShowToolbar(true);
+                                  }
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    const nextRow = rowIndex + 1;
+                                    if (nextRow < rows) {
+                                      const nextInput = document.querySelector(`input[data-cell="${nextRow}-${colIndex}"]`);
+                                      if (nextInput) nextInput.focus();
+                                    }
+                                  } else if (e.key === 'Tab') {
+                                    e.preventDefault();
+                                    const nextCol = colIndex + 1;
+                                    if (nextCol < cols) {
+                                      const nextInput = document.querySelector(`input[data-cell="${rowIndex}-${nextCol}"]`);
+                                      if (nextInput) nextInput.focus();
+                                    }
+                                  }
+                                }}
+                                data-cell={cellKey}
+                                style={{
+                                  width: '100%',
+                                  height: '100%',
+                                  border: 'none',
+                                  outline: 'none',
+                                  padding: '8px',
+                                  backgroundColor: 'transparent',
+                                  fontSize: '12px',
+                                  fontFamily: '"Segoe UI", Arial, sans-serif',
+                                  lineHeight: '24px',
+                                  ...appliedStyle
+                                }}
+                                disabled={isReadOnly}
+                              />
+                            );
+
+                          case 'time':
+                            return (
+                              <input
+                                type="time"
+                                value={cellValue}
+                                onChange={(e) => handleCellChange(rowIndex, colIndex, e.target.value)}
+                                onFocus={() => {
+                                  if (!isFormFill) {
+                                    setSelectedCell(cellKey);
+                                    setShowToolbar(true);
+                                  }
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    const nextRow = rowIndex + 1;
+                                    if (nextRow < rows) {
+                                      const nextInput = document.querySelector(`input[data-cell="${nextRow}-${colIndex}"]`);
+                                      if (nextInput) nextInput.focus();
+                                    }
+                                  } else if (e.key === 'Tab') {
+                                    e.preventDefault();
+                                    const nextCol = colIndex + 1;
+                                    if (nextCol < cols) {
+                                      const nextInput = document.querySelector(`input[data-cell="${rowIndex}-${nextCol}"]`);
+                                      if (nextInput) nextInput.focus();
+                                    }
+                                  }
+                                }}
+                                data-cell={cellKey}
+                                style={{
+                                  width: '100%',
+                                  height: '100%',
+                                  border: 'none',
+                                  outline: 'none',
+                                  padding: '8px',
+                                  backgroundColor: 'transparent',
+                                  fontSize: '12px',
+                                  fontFamily: '"Segoe UI", Arial, sans-serif',
+                                  lineHeight: '24px',
+                                  ...appliedStyle
+                                }}
+                                disabled={isReadOnly}
+                              />
+                            );
+
+                          case 'numeric':
+                            return (
+                              <input
+                                type="number"
+                                value={cellValue}
+                                onChange={(e) => handleCellChange(rowIndex, colIndex, e.target.value)}
+                                onFocus={() => {
+                                  if (!isFormFill) {
+                                    setSelectedCell(cellKey);
+                                    setShowToolbar(true);
+                                  }
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    const nextRow = rowIndex + 1;
+                                    if (nextRow < rows) {
+                                      const nextInput = document.querySelector(`input[data-cell="${nextRow}-${colIndex}"]`);
+                                      if (nextInput) nextInput.focus();
+                                    }
+                                  } else if (e.key === 'Tab') {
+                                    e.preventDefault();
+                                    const nextCol = colIndex + 1;
+                                    if (nextCol < cols) {
+                                      const nextInput = document.querySelector(`input[data-cell="${rowIndex}-${nextCol}"]`);
+                                      if (nextInput) nextInput.focus();
+                                    }
+                                  }
+                                }}
+                                data-cell={cellKey}
+                                style={{
+                                  width: '100%',
+                                  height: '100%',
+                                  border: 'none',
+                                  outline: 'none',
+                                  padding: '8px',
+                                  backgroundColor: 'transparent',
+                                  fontSize: '12px',
+                                  fontFamily: '"Segoe UI", Arial, sans-serif',
+                                  lineHeight: '24px',
+                                  ...appliedStyle
+                                }}
+                                placeholder={isFormFill ? '' : `${getColumnHeader(colIndex)}${rowIndex + 1}`}
+                                disabled={isReadOnly}
+                              />
+                            );
+
+                          case 'color':
+                            return (
+                              <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                width: '100%',
+                                height: '100%',
+                                padding: '2px'
+                              }}>
+                                <input
+                                  type="color"
+                                  value={cellValue || '#000000'}
+                                  onChange={(e) => handleCellChange(rowIndex, colIndex, e.target.value)}
+                                  onFocus={() => {
+                                    if (!isFormFill) {
+                                      setSelectedCell(cellKey);
+                                      setShowToolbar(true);
+                                    }
+                                  }}
+                                  data-cell={cellKey}
+                                  style={{
+                                    width: '30px',
+                                    height: '30px',
+                                    border: '1px solid #ddd',
+                                    borderRadius: '4px',
+                                    cursor: 'pointer'
+                                  }}
+                                  disabled={isReadOnly}
+                                />
+                              </div>
+                            );
+
+                          case 'image':
+                            return (
+                              <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                width: '100%',
+                                height: '100%',
+                                padding: '2px'
+                              }}>
+                                {cellValue ? (
+                                  <img
+                                    src={cellValue}
+                                    alt="Image"
+                                    style={{
+                                      maxWidth: '100%',
+                                      maxHeight: '100%',
+                                      objectFit: 'contain'
+                                    }}
+                                    onError={(e) => {
+                                      e.target.style.display = 'none';
+                                      e.target.nextSibling.style.display = 'block';
+                                    }}
+                                  />
+                                ) : null}
+                                <input
+                                  type="text"
+                                  value={cellValue}
+                                  onChange={(e) => handleCellChange(rowIndex, colIndex, e.target.value)}
+                                  onFocus={() => {
+                                    if (!isFormFill) {
+                                      setSelectedCell(cellKey);
+                                      setShowToolbar(true);
+                                    }
+                                  }}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                      const nextRow = rowIndex + 1;
+                                      if (nextRow < rows) {
+                                        const nextInput = document.querySelector(`input[data-cell="${nextRow}-${colIndex}"]`);
+                                        if (nextInput) nextInput.focus();
+                                      }
+                                    } else if (e.key === 'Tab') {
+                                      e.preventDefault();
+                                      const nextCol = colIndex + 1;
+                                      if (nextCol < cols) {
+                                        const nextInput = document.querySelector(`input[data-cell="${rowIndex}-${nextCol}"]`);
+                                        if (nextInput) nextInput.focus();
+                                      }
+                                    }
+                                  }}
+                                  data-cell={cellKey}
+                                  style={{
+                                    width: '100%',
+                                    height: '100%',
+                                    border: 'none',
+                                    outline: 'none',
+                                    padding: '8px',
+                                    backgroundColor: 'transparent',
+                                    fontSize: '12px',
+                                    fontFamily: '"Segoe UI", Arial, sans-serif',
+                                    lineHeight: '24px',
+                                    display: cellValue ? 'none' : 'block',
+                                    ...appliedStyle
+                                  }}
+                                  placeholder="Enter image URL..."
+                                  disabled={isReadOnly}
+                                />
+                              </div>
+                            );
+
+                          case 'richtext':
+                            return (
+                              <textarea
+                                value={cellValue}
+                                onChange={(e) => handleCellChange(rowIndex, colIndex, e.target.value)}
+                                onFocus={() => {
+                                  if (!isFormFill) {
+                                    setSelectedCell(cellKey);
+                                    setShowToolbar(true);
+                                  }
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' && e.shiftKey) {
+                                    // Allow new lines with Shift+Enter
+                                    return;
+                                  } else if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    const nextRow = rowIndex + 1;
+                                    if (nextRow < rows) {
+                                      const nextInput = document.querySelector(`input[data-cell="${nextRow}-${colIndex}"]`);
+                                      if (nextInput) nextInput.focus();
+                                    }
+                                  } else if (e.key === 'Tab') {
+                                    e.preventDefault();
+                                    const nextCol = colIndex + 1;
+                                    if (nextCol < cols) {
+                                      const nextInput = document.querySelector(`input[data-cell="${rowIndex}-${nextCol}"]`);
+                                      if (nextInput) nextInput.focus();
+                                    }
+                                  }
+                                }}
+                                data-cell={cellKey}
+                                style={{
+                                  width: '100%',
+                                  height: '100%',
+                                  border: 'none',
+                                  outline: 'none',
+                                  padding: '8px',
+                                  backgroundColor: 'transparent',
+                                  fontSize: '12px',
+                                  fontFamily: '"Segoe UI", Arial, sans-serif',
+                                  resize: 'none',
+                                  overflow: 'hidden',
+                                  ...appliedStyle
+                                }}
+                                placeholder={isFormFill ? '' : `${getColumnHeader(colIndex)}${rowIndex + 1}`}
+                                disabled={isReadOnly}
+                              />
+                            );
+
+                          default: // text
+                            return (
+                              <input
+                                type="text"
+                                value={cellValue}
+                                onChange={(e) => handleCellChange(rowIndex, colIndex, e.target.value)}
+                                onFocus={() => {
+                                  if (!isFormFill) {
+                                    setSelectedCell(cellKey);
+                                    setShowToolbar(true);
+                                  }
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    const nextRow = rowIndex + 1;
+                                    if (nextRow < rows) {
+                                      const nextInput = document.querySelector(`input[data-cell="${nextRow}-${colIndex}"]`);
+                                      if (nextInput) nextInput.focus();
+                                    }
+                                  } else if (e.key === 'Tab') {
+                                    e.preventDefault();
+                                    const nextCol = colIndex + 1;
+                                    if (nextCol < cols) {
+                                      const nextInput = document.querySelector(`input[data-cell="${rowIndex}-${nextCol}"]`);
+                                      if (nextInput) nextInput.focus();
+                                    }
+                                  }
+                                }}
+                                data-cell={cellKey}
+                                style={{
+                                  width: '100%',
+                                  height: '100%',
+                                  border: 'none',
+                                  outline: 'none',
+                                  padding: '8px',
+                                  backgroundColor: 'transparent',
+                                  fontSize: '12px',
+                                  fontFamily: '"Segoe UI", Arial, sans-serif',
+                                  lineHeight: '24px',
+                                  ...appliedStyle
+                                }}
+                                placeholder={isFormFill ? '' : `${getColumnHeader(colIndex)}${rowIndex + 1}`}
+                                disabled={isReadOnly}
+                              />
+                            );
+                        }
+                      })()}
                     </td>
                   );
                 })}
@@ -3036,9 +3090,9 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
             color: '#1976d2',
             maxWidth: '300px',
           }}>
-            
+
           </div>
-          
+
           <div style={{
             position: 'absolute',
             top: '10px',
@@ -3056,77 +3110,105 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
             {/* Inline format bar for text styling */}
             <select
               onChange={(e) => {
-                if (!selectedCell) return;
-                const [r, c] = selectedCell.split('-').map(Number);
-                const key = `${r}-${c}`;
-                const next = { ...(cellStyles[key] || {}), fontSize: e.target.value };
-                const nextMap = { ...cellStyles, [key]: next };
-                setCellStyles(nextMap);
-                updateField({ cellStyles: nextMap });
+                const val = e.target.value;
+                updateStylesForSelection((cur) => ({ ...cur, fontSize: val }));
               }}
-               value={selectedCell ? ((cellStyles[selectedCell] && cellStyles[selectedCell].fontSize) || '12px') : '12px'}
+              value={selectedCell ? ((cellStyles[selectedCell] && cellStyles[selectedCell].fontSize) || '12px') : '12px'}
               style={{ padding: '4px', borderRadius: 4 }}
               title="Font size"
             >
-              {['12px','14px','16px','18px','20px'].map(s => <option key={s} value={s}>{s}</option>)}
+              {['12px', '14px', '16px', '18px', '20px'].map(s => <option key={s} value={s}>{s}</option>)}
             </select>
             <input
               type="color"
               title="Font color"
               onChange={(e) => {
-                if (!selectedCell) return;
-                const [r, c] = selectedCell.split('-').map(Number);
-                const key = `${r}-${c}`;
-                const next = { ...(cellStyles[key] || {}), color: e.target.value };
-                const nextMap = { ...cellStyles, [key]: next };
-                setCellStyles(nextMap);
-                updateField({ cellStyles: nextMap });
+                const val = e.target.value;
+                updateStylesForSelection((cur) => ({ ...cur, color: val }));
               }}
-               value={selectedCell ? ((cellStyles[selectedCell] && cellStyles[selectedCell].color) || '#000000') : '#000000'}
+              value={selectedCell ? ((cellStyles[selectedCell] && cellStyles[selectedCell].color) || '#000000') : '#000000'}
               style={{ width: 36, height: 32, padding: 0, border: '1px solid #ddd', borderRadius: 4 }}
             />
+            <span style={{ fontSize: '10px', color: '#666', marginLeft: '2px' }}>Text</span>
+            <input
+              type="color"
+              title="Cell background color"
+              onChange={(e) => {
+                const val = e.target.value;
+                updateStylesForSelection((cur) => ({ ...cur, backgroundColor: val }));
+              }}
+              value={selectedCell ? ((cellStyles[selectedCell] && cellStyles[selectedCell].backgroundColor) || '#ffffff') : '#ffffff'}
+              style={{ width: 36, height: 32, padding: 0, border: '1px solid #ddd', borderRadius: 4 }}
+            />
+            <span style={{ fontSize: '10px', color: '#666', marginLeft: '2px' }}>BG</span>
             <button
               onClick={() => {
-                if (!selectedCell) return;
-                const [r, c] = selectedCell.split('-').map(Number);
-                const key = `${r}-${c}`;
-                const cur = cellStyles[key] || {};
-                const next = { ...cur, fontWeight: cur.fontWeight === 'bold' ? 'normal' : 'bold' };
-                const nextMap = { ...cellStyles, [key]: next };
-                setCellStyles(nextMap);
-                updateField({ cellStyles: nextMap });
+                updateStylesForSelection((cur) => ({ ...cur, fontWeight: cur.fontWeight === 'bold' ? 'normal' : 'bold' }));
               }}
               style={{ padding: '6px 10px' }}
               title="Bold"
             >B</button>
             <button
               onClick={() => {
-                if (!selectedCell) return;
-                const [r, c] = selectedCell.split('-').map(Number);
-                const key = `${r}-${c}`;
-                const cur = cellStyles[key] || {};
-                const next = { ...cur, fontStyle: cur.fontStyle === 'italic' ? 'normal' : 'italic' };
-                const nextMap = { ...cellStyles, [key]: next };
-                setCellStyles(nextMap);
-                updateField({ cellStyles: nextMap });
+                updateStylesForSelection((cur) => ({ ...cur, fontStyle: cur.fontStyle === 'italic' ? 'normal' : 'italic' }));
               }}
               style={{ padding: '6px 10px', fontStyle: 'italic' }}
               title="Italic"
             >I</button>
             <button
               onClick={() => {
-                if (!selectedCell) return;
-                const [r, c] = selectedCell.split('-').map(Number);
-                const key = `${r}-${c}`;
-                const cur = cellStyles[key] || {};
-                const next = { ...cur, textDecoration: cur.textDecoration === 'underline' ? 'none' : 'underline' };
-                const nextMap = { ...cellStyles, [key]: next };
-                setCellStyles(nextMap);
-                updateField({ cellStyles: nextMap });
+                updateStylesForSelection((cur) => ({ ...cur, textDecoration: cur.textDecoration === 'underline' ? 'none' : 'underline' }));
               }}
               style={{ padding: '6px 10px', textDecoration: 'underline' }}
               title="Underline"
             >U</button>
+            <button
+              onClick={() => {
+                updateStylesForSelection((cur) => ({ ...cur, textDecoration: cur.textDecoration === 'line-through' ? 'none' : 'line-through' }));
+              }}
+              style={{ padding: '6px 10px', textDecoration: 'line-through' }}
+              title="Strikethrough"
+            >S</button>
+            <button
+              onClick={() => {
+                updateStylesForSelection((cur) => ({ ...cur, textAlign: 'left' }));
+              }}
+              style={{ padding: '6px 10px' }}
+              title="Align Left"
+            >⟸</button>
+            <button
+              onClick={() => {
+                updateStylesForSelection((cur) => ({ ...cur, textAlign: 'center' }));
+              }}
+              style={{ padding: '6px 10px' }}
+              title="Align Center"
+            >⟷</button>
+            <button
+              onClick={() => {
+                updateStylesForSelection((cur) => ({ ...cur, textAlign: 'right' }));
+              }}
+              style={{ padding: '6px 10px' }}
+              title="Align Right"
+            >⟹</button>
+            <select
+              onChange={(e) => {
+                const val = e.target.value;
+                updateStylesForSelection((cur) => ({ ...cur, fontFamily: val }));
+              }}
+              value={selectedCell ? ((cellStyles[selectedCell] && cellStyles[selectedCell].fontFamily) || '"Segoe UI", Arial, sans-serif') : '"Segoe UI", Arial, sans-serif'}
+              style={{ padding: '4px', borderRadius: 4, minWidth: '120px' }}
+              title="Font family"
+            >
+              <option value='"Segoe UI", Arial, sans-serif'>Segoe UI</option>
+              <option value="Arial, sans-serif">Arial</option>
+              <option value="Helvetica, sans-serif">Helvetica</option>
+              <option value="Times New Roman, serif">Times New Roman</option>
+              <option value="Georgia, serif">Georgia</option>
+              <option value="Verdana, sans-serif">Verdana</option>
+              <option value="Courier New, monospace">Courier New</option>
+              <option value="Impact, sans-serif">Impact</option>
+              <option value="Comic Sans MS, cursive">Comic Sans MS</option>
+            </select>
             <button
               onClick={() => {
                 if (selectedCell) {
@@ -3272,93 +3354,93 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
                 if (selectedRange) {
                   const { startRow, startCol, endRow, endCol } = selectedRange;
                   console.log('🔗 Merging cells:', { startRow, startCol, endRow, endCol });
-                setMerge(startRow, startCol, endRow, endCol);
+                  setMerge(startRow, startCol, endRow, endCol);
                 } else {
                   console.log('❌ No range selected for merge');
-              }
-            }}
-            disabled={!selectedRange}
-            style={{
-              padding: '6px 12px',
-              backgroundColor: !selectedRange ? '#6c757d' : '#17a2b8',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: !selectedRange ? 'not-allowed' : 'pointer',
-              fontSize: '12px'
-            }}
-              title={!selectedRange ? 
-                "Select a range first: Click a cell, then Shift+Click another cell, or drag to select" : 
+                }
+              }}
+              disabled={!selectedRange}
+              style={{
+                padding: '6px 12px',
+                backgroundColor: !selectedRange ? '#6c757d' : '#17a2b8',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: !selectedRange ? 'not-allowed' : 'pointer',
+                fontSize: '12px'
+              }}
+              title={!selectedRange ?
+                "Select a range first: Click a cell, then Shift+Click another cell, or drag to select" :
                 `Merge ${selectedRange ? `${selectedRange.endRow - selectedRange.startRow + 1}×${selectedRange.endCol - selectedRange.startCol + 1}` : ''} cells`
               }
-          >
-            🔗 Merge
-          </button>
-          <button
-            onClick={() => {
-              if (selectedCell) {
-                const [rowIndex, colIndex] = selectedCell.split('-').map(Number);
-                removeMerge(rowIndex, colIndex);
-              }
-            }}
-            disabled={!selectedCell}
-            style={{
-              padding: '6px 12px',
-              backgroundColor: !selectedCell ? '#6c757d' : '#fd7e14',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: !selectedCell ? 'not-allowed' : 'pointer',
-              fontSize: '12px'
-            }}
-            title="Unmerge Selected Cell"
-          >
-            🔓 Unmerge
-          </button>
-          <button
-            onClick={destroyMerged}
-            style={{ padding: '6px 12px', backgroundColor: '#6f42c1', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}
-            title="Remove All Merges">🗑️ Clear Merges</button>
-
-          <button onClick={() => {
-            if (selectedRange && dragStart) {
-              const startCellValue = data[dragStart.row]?.[dragStart.col] || '';
-              if (startCellValue !== '') {
-                const newData = [...data];
-                for (let r = selectedRange.startRow; r <= selectedRange.endRow; r++) {
-                  for (let c = selectedRange.startCol; c <= selectedRange.endCol; c++) {
-                    if (r === dragStart.row && c === dragStart.col) continue;
-                    if (!newData[r]) newData[r] = [];
-                    newData[r][c] = startCellValue;
-                  }
+            >
+              🔗 Merge
+            </button>
+            <button
+              onClick={() => {
+                if (selectedCell) {
+                  const [rowIndex, colIndex] = selectedCell.split('-').map(Number);
+                  removeMerge(rowIndex, colIndex);
                 }
-                setData(newData);
-                addToHistory(newData);
-                updateField({ data: newData });
-              }
-            }
-          }}
-          disabled={!selectedRange || !dragStart}
-          style={{ 
-            padding: '6px 12px', 
-            backgroundColor: !selectedRange || !dragStart ? '#6c757d' : '#20c997', 
-            color: 'white', 
-            border: 'none', 
-            borderRadius: '4px', 
-            cursor: !selectedRange || !dragStart ? 'not-allowed' : 'pointer', 
-            fontSize: '12px' 
-          }}
-          title="Fill Series - Copy data from start cell to selected range">🔄 Fill Series</button>
+              }}
+              disabled={!selectedCell}
+              style={{
+                padding: '6px 12px',
+                backgroundColor: !selectedCell ? '#6c757d' : '#fd7e14',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: !selectedCell ? 'not-allowed' : 'pointer',
+                fontSize: '12px'
+              }}
+              title="Unmerge Selected Cell"
+            >
+              🔓 Unmerge
+            </button>
+            <button
+              onClick={destroyMerged}
+              style={{ padding: '6px 12px', backgroundColor: '#6f42c1', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}
+              title="Remove All Merges">🗑️ Clear Merges</button>
 
-          <button onClick={copyData}
-            style={{ padding: '6px 12px', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}
-            title="Copy Selected Data">📋 Copy</button>
-        </div>
+            <button onClick={() => {
+              if (selectedRange && dragStart) {
+                const startCellValue = data[dragStart.row]?.[dragStart.col] || '';
+                if (startCellValue !== '') {
+                  const newData = [...data];
+                  for (let r = selectedRange.startRow; r <= selectedRange.endRow; r++) {
+                    for (let c = selectedRange.startCol; c <= selectedRange.endCol; c++) {
+                      if (r === dragStart.row && c === dragStart.col) continue;
+                      if (!newData[r]) newData[r] = [];
+                      newData[r][c] = startCellValue;
+                    }
+                  }
+                  setData(newData);
+                  addToHistory(newData);
+                  updateField({ data: newData });
+                }
+              }
+            }}
+              disabled={!selectedRange || !dragStart}
+              style={{
+                padding: '6px 12px',
+                backgroundColor: !selectedRange || !dragStart ? '#6c757d' : '#20c997',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: !selectedRange || !dragStart ? 'not-allowed' : 'pointer',
+                fontSize: '12px'
+              }}
+              title="Fill Series - Copy data from start cell to selected range">🔄 Fill Series</button>
+
+            <button onClick={copyData}
+              style={{ padding: '6px 12px', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}
+              title="Copy Selected Data">📋 Copy</button>
+          </div>
         </>
       )}
 
 
-      
+
       {/* Datalist for autocomplete */}
       {Array.from({ length: cols }, (_, colIndex) => (
         <datalist key={colIndex} id={`autocomplete-${colIndex}`}>
@@ -3367,7 +3449,7 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
           ))}
         </datalist>
       ))}
-      
+
       {/* Datalist for row autocomplete */}
       {Array.from({ length: rows }, (_, rowIndex) => (
         Array.from({ length: cols }, (_, colIndex) => (
