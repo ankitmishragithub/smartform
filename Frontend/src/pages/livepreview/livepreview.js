@@ -1527,10 +1527,13 @@ export default function LivePreview({ fields, values, onChange, folderName }) {
   if (node.type === "jspreadsheetCE4") {
     return (
       <div key={node.id} style={{ marginBottom: "1rem" }}>
-        <JSpreadsheetCE4Component 
-          field={node} 
+        <JSpreadsheetCE4Component
+          field={node}
           value={values[node.id]}
           onChange={(updatedField) => {
+            // For jSpreadsheetCE4, the updatedField contains complete data including mergedCells
+            // We need to store this complete object, not just the data
+            console.log("📊 Live preview received jSpreadsheetCE4 data:", updatedField);
             handlePreviewChange(node.id, updatedField);
           }}
           isFormFill={true}

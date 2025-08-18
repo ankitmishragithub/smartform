@@ -15,22 +15,50 @@ import './response-reports.css';
 const FormDisplayComponent = ({ form, response, hideTitles = false }) => {
   // Helper function to check if a cell is merged
   const isCellMerged = (rowIndex, colIndex, mergedCells = []) => {
-    return mergedCells?.some(merge => 
-      merge.startRow <= rowIndex && 
-      merge.endRow >= rowIndex && 
-      merge.startCol <= colIndex && 
-      merge.endCol >= colIndex
-    ) || false;
+    if (Array.isArray(mergedCells)) {
+      return mergedCells?.some(merge => 
+        merge.startRow <= rowIndex && 
+        merge.endRow >= rowIndex && 
+        merge.startCol <= colIndex && 
+        merge.endCol >= colIndex
+      ) || false;
+    } else if (mergedCells && typeof mergedCells === 'object') {
+      // Object-based structure (for jSpreadsheet CE v4)
+      const mergeArray = Object.values(mergedCells);
+      return mergeArray?.some(merge => 
+        merge.startRow <= rowIndex && 
+        merge.endRow >= rowIndex && 
+        merge.startCol <= colIndex && 
+        merge.endCol >= colIndex
+      ) || false;
+    }
+    return false;
   };
 
   // Helper function to get merge info
   const getMergeInfo = (rowIndex, colIndex, mergedCells = []) => {
-    const merge = mergedCells?.find(merge => 
-      merge.startRow <= rowIndex && 
-      merge.endRow >= rowIndex && 
-      merge.startCol <= colIndex && 
-      merge.endCol >= colIndex
-    );
+    // Handle both array and object-based mergedCells
+    let merge = null;
+    
+    if (Array.isArray(mergedCells)) {
+      // Array-based structure (for regular spreadsheets)
+      merge = mergedCells.find(merge => 
+        merge.startRow <= rowIndex && 
+        merge.endRow >= rowIndex && 
+        merge.startCol <= colIndex && 
+        merge.endCol >= colIndex
+      );
+    } else if (mergedCells && typeof mergedCells === 'object') {
+      // Object-based structure (for jSpreadsheet CE v4)
+      // Convert object values to array and find matching merge
+      const mergeArray = Object.values(mergedCells);
+      merge = mergeArray.find(merge => 
+        merge.startRow <= rowIndex && 
+        merge.endRow >= rowIndex && 
+        merge.startCol <= colIndex && 
+        merge.endCol >= colIndex
+      );
+    }
     
     if (!merge) return { isStartCell: false, isContinuation: false };
     
@@ -261,6 +289,14 @@ const FormDisplayComponent = ({ form, response, hideTitles = false }) => {
         </div>
       );
     }
+    
+    if (node.type === "jspreadsheetCE4") {
+      return (
+        <div key={node.id} className="form-group mb-3">
+          {renderReadOnlyJSpreadsheetCE4(node, response.answers[node.id])}
+        </div>
+      );
+    }
 
     return (
       <div key={node.id} className="form-group mb-3">
@@ -381,6 +417,112 @@ const FormDisplayComponent = ({ form, response, hideTitles = false }) => {
                     
                     const { content, styles } = getCellDisplay(cell);
                     const isMerged = isCellMerged(rowIndex, colIndex, value.sheets[0].mergedCells);
+                    
+                    return (
+                      <td 
+                        key={colIndex} 
+                        rowSpan={mergeInfo.rowSpan || 1}
+                        colSpan={mergeInfo.colSpan || 1}
+                        style={{
+                          padding: "8px",
+                          border: "1px solid #e5e7eb",
+                          minHeight: "40px",
+                          backgroundColor: isMerged ? "rgba(102, 126, 234, 0.1)" : (styles.backgroundColor || "transparent"),
+                          ...styles
+                        }}>
+                        {content || ""}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  };
+
+  const renderReadOnlyJSpreadsheetCE4 = (field, value) => {
+    if (!value || !value.data) {
+      return (
+        <div>
+          <Label className="form-label fw-bold text-dark mb-2">
+            {field.label}
+          </Label>
+          <div className="form-control-plaintext" style={{
+            padding: "0.75rem",
+            backgroundColor: "#f8f9fa",
+            borderRadius: "6px",
+            border: "1px solid #e9ecef",
+            minHeight: "2.5rem",
+            display: "flex",
+            alignItems: "center"
+          }}>
+            <span style={{ color: "#6c757d", fontStyle: "italic" }}>No spreadsheet data</span>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div>
+        <Label className="form-label fw-bold text-dark mb-2">
+          {field.label}
+        </Label>
+        <div style={{
+          border: "1px solid #e5e7eb",
+          borderRadius: "8px",
+          overflow: "auto",
+          backgroundColor: "white"
+        }}>
+          <table style={{
+            width: "100%",
+            borderCollapse: "collapse",
+            fontSize: "14px"
+          }}>
+            <thead>
+              <tr style={{ backgroundColor: "#f8f9fa" }}>
+                {value.data[0] && value.data[0].map((cell, colIndex) => (
+                  <th key={colIndex} style={{
+                    padding: "8px",
+                    border: "1px solid #e5e7eb",
+                    fontWeight: "600",
+                    textAlign: "left",
+                    minWidth: "120px"
+                  }}>
+                    {`Column ${colIndex + 1}`}
+                  </th>
+                  ))}
+                </tr>
+            </thead>
+            <tbody>
+              {value.data && value.data.map((row, rowIndex) => (
+                <tr key={rowIndex}>
+                  {row && row.map((cell, colIndex) => {
+                    const mergeInfo = getMergeInfo(rowIndex, colIndex, value.mergedCells);
+                    
+                    // Skip rendering continuation cells in merged ranges
+                    if (mergeInfo.isContinuation) {
+                      return null;
+                    }
+                    
+                    // Get cell content and formatting
+                    const getCellDisplay = (cell) => {
+                      if (typeof cell === 'object' && cell !== null) {
+                        return {
+                          content: cell.content || '',
+                          styles: cell.formatting || {}
+                        };
+                      }
+                      return {
+                        content: cell || '',
+                        styles: {}
+                      };
+                      };
+                    
+                    const { content, styles } = getCellDisplay(cell);
+                    const isMerged = isCellMerged(rowIndex, colIndex, value.mergedCells);
                     
                     return (
                       <td 
@@ -711,22 +853,50 @@ export default function AllSubmissions() {
 
   // Helper function to check if a cell is merged
   const isCellMerged = (rowIndex, colIndex, mergedCells = []) => {
-    return mergedCells?.some(merge => 
-      merge.startRow <= rowIndex && 
-      merge.endRow >= rowIndex && 
-      merge.startCol <= colIndex && 
-      merge.endCol >= colIndex
-    ) || false;
+    if (Array.isArray(mergedCells)) {
+      return mergedCells?.some(merge => 
+        merge.startRow <= rowIndex && 
+        merge.endRow >= rowIndex && 
+        merge.startCol <= colIndex && 
+        merge.endCol >= colIndex
+      ) || false;
+    } else if (mergedCells && typeof mergedCells === 'object') {
+      // Object-based structure (for jSpreadsheet CE v4)
+      const mergeArray = Object.values(mergedCells);
+      return mergeArray?.some(merge => 
+        merge.startRow <= rowIndex && 
+        merge.endRow >= rowIndex && 
+        merge.startCol <= colIndex && 
+        merge.endCol >= colIndex
+      ) || false;
+    }
+    return false;
   };
 
   // Helper function to get merge info
   const getMergeInfo = (rowIndex, colIndex, mergedCells = []) => {
-    const merge = mergedCells?.find(merge => 
-      merge.startRow <= rowIndex && 
-      merge.endRow >= rowIndex && 
-      merge.startCol <= colIndex && 
-      merge.endCol >= colIndex
-    );
+    // Handle both array and object-based mergedCells
+    let merge = null;
+    
+    if (Array.isArray(mergedCells)) {
+      // Array-based structure (for regular spreadsheets)
+      merge = mergedCells.find(merge => 
+        merge.startRow <= rowIndex && 
+        merge.endRow >= rowIndex && 
+        merge.startCol <= colIndex && 
+        merge.endCol >= colIndex
+      );
+    } else if (mergedCells && typeof mergedCells === 'object') {
+      // Object-based structure (for jSpreadsheet CE v4)
+      // Convert object values to array and find matching merge
+      const mergeArray = Object.values(mergedCells);
+      merge = mergeArray.find(merge => 
+        merge.startRow <= rowIndex && 
+        merge.endRow >= rowIndex && 
+        merge.startCol <= colIndex && 
+        merge.endCol >= colIndex
+      );
+    }
     
     if (!merge) return { isStartCell: false, isContinuation: false };
     
