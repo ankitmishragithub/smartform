@@ -113,7 +113,7 @@ const Homepage = () => {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
             <h3 style={{ margin: 0, color: "#1f2937" }}>
               <i className="ni ni-list text-primary" style={{ marginRight: 8 }}></i>
-              Forms Submitted on Selected Date
+              Recent Forms
             </h3>
             <div>
               <label style={{ marginRight: 8, color: "#4b5563", fontWeight: 600 }}>Date:</label>
@@ -167,7 +167,7 @@ const Homepage = () => {
                       whiteSpace: "nowrap",
                     }}
                   >
-                    Resubmit
+                    Re-Fill
                   </button>
                 </div>
               ))}
@@ -179,6 +179,10 @@ const Homepage = () => {
       </div>
 
       {/* Existing forms grid */}
+      <h5 style={{ margin: 0, color: "#1f2937" }}>
+              <i className="ni ni-list text-primary" style={{ marginRight: 8 }}></i>
+              Frequent Forms
+            </h5>
       <div
         style={{
           display: "grid",

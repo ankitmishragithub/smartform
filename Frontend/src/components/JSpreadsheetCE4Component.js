@@ -1,23 +1,23 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
-import '../css/jspreadsheet-ce4.css';
+import React, { useEffect, useState, useRef, useCallback } from "react";
+import "../css/jspreadsheet-ce4.css";
 
 // Column Type Configuration Modal Component
 const ColumnTypeModal = ({ columnIndex, currentType, currentOptions, onSave, onCancel }) => {
-  const [type, setType] = useState(currentType || 'text');
+  const [type, setType] = useState(currentType || "text");
   const [options, setOptions] = useState(currentOptions || []);
-  const [newOption, setNewOption] = useState('');
-  const [colorValue, setColorValue] = useState('#000000');
-  const [dateFormat, setDateFormat] = useState('YYYY-MM-DD');
-  const [timeFormat, setTimeFormat] = useState('HH:mm');
-  const [numberFormat, setNumberFormat] = useState('decimal');
-  const [minValue, setMinValue] = useState('');
-  const [maxValue, setMaxValue] = useState('');
+  const [newOption, setNewOption] = useState("");
+  const [colorValue, setColorValue] = useState("#000000");
+  const [dateFormat, setDateFormat] = useState("YYYY-MM-DD");
+  const [timeFormat, setTimeFormat] = useState("HH:mm");
+  const [numberFormat, setNumberFormat] = useState("decimal");
+  const [minValue, setMinValue] = useState("");
+  const [maxValue, setMaxValue] = useState("");
   const [rowRange, setRowRange] = useState({ start: 0, end: 0 });
 
   const addOption = () => {
     if (newOption.trim() && !options.includes(newOption.trim())) {
       setOptions([...options, newOption.trim()]);
-      setNewOption('');
+      setNewOption("");
     }
   };
 
@@ -29,21 +29,21 @@ const ColumnTypeModal = ({ columnIndex, currentType, currentOptions, onSave, onC
     const config = { type, rowRange };
 
     switch (type) {
-      case 'dropdown':
-      case 'autocomplete':
+      case "dropdown":
+      case "autocomplete":
         config.dropdownOptions = options;
         config.autocompleteOptions = options;
         break;
-      case 'color':
+      case "color":
         config.defaultColor = colorValue;
         break;
-      case 'date':
+      case "date":
         config.dateFormat = dateFormat;
         break;
-      case 'time':
+      case "time":
         config.timeFormat = timeFormat;
         break;
-      case 'numeric':
+      case "numeric":
         config.numberFormat = numberFormat;
         config.minValue = minValue;
         config.maxValue = maxValue;
@@ -56,38 +56,46 @@ const ColumnTypeModal = ({ columnIndex, currentType, currentOptions, onSave, onC
   };
 
   return (
-    <div style={{
-      position: 'fixed',
-      top: 0, left: 0, right: 0, bottom: 0,
-      backgroundColor: 'rgba(0,0,0,0.5)',
-      display: 'flex', justifyContent: 'center',
-      alignItems: 'flex-start',
-      overflowY: 'auto',
-      padding: '40px 16px',
-      zIndex: 3000,
-    }}>
-      <div style={{
-        backgroundColor: 'white',
-        borderRadius: '8px',
-        padding: '20px',
-        width: 'min(90vw, 900px)',
-        maxHeight: 'none',
-        margin: '0 auto',
-        boxShadow: '0 4px 20px rgba(0,0,0,0.15)'
-      }}>
-        <h3 style={{ margin: '0 0 15px 0', color: '#333', fontSize: '18px' }}>
+    <div
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: "rgba(0,0,0,0.5)",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "flex-start",
+        overflowY: "auto",
+        padding: "40px 16px",
+        zIndex: 3000,
+      }}
+    >
+      <div
+        style={{
+          backgroundColor: "white",
+          borderRadius: "8px",
+          padding: "20px",
+          width: "min(90vw, 900px)",
+          maxHeight: "none",
+          margin: "0 auto",
+          boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
+        }}
+      >
+        <h3 style={{ margin: "0 0 15px 0", color: "#333", fontSize: "18px" }}>
           🔧 Configure Column {String.fromCharCode(65 + columnIndex)} Type
         </h3>
 
         {/* Column Type Selection */}
-        <div style={{ marginBottom: '20px' }}>
-          <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#555' }}>
+        <div style={{ marginBottom: "20px" }}>
+          <label style={{ display: "block", marginBottom: "8px", fontWeight: "bold", color: "#555" }}>
             Column Type:
           </label>
           <select
             value={type}
             onChange={(e) => setType(e.target.value)}
-            style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px', fontSize: '14px' }}
+            style={{ width: "100%", padding: "8px", border: "1px solid #ddd", borderRadius: "4px", fontSize: "14px" }}
           >
             <option value="text">📝 Text</option>
             <option value="numeric">🔢 Numeric</option>
@@ -102,52 +110,62 @@ const ColumnTypeModal = ({ columnIndex, currentType, currentOptions, onSave, onC
           </select>
         </div>
 
-        <div style={{ marginBottom: '20px' }}>
-          <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#555' }}>
+        <div style={{ marginBottom: "20px" }}>
+          <label style={{ display: "block", marginBottom: "8px", fontWeight: "bold", color: "#555" }}>
             Row Range (Apply to rows):
           </label>
-          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
             <div style={{ flex: 1 }}>
-              <label style={{ display: 'block', marginBottom: '5px', fontSize: '12px', color: '#666' }}>
+              <label style={{ display: "block", marginBottom: "5px", fontSize: "12px", color: "#666" }}>
                 From Row:
               </label>
               <input
                 type="number"
                 value={rowRange.start}
-                onChange={(e) => setRowRange(prev => ({ ...prev, start: parseInt(e.target.value) || 0 }))}
+                onChange={(e) => setRowRange((prev) => ({ ...prev, start: parseInt(e.target.value) || 0 }))}
                 min="0"
-                style={{ width: '100%', padding: '6px', border: '1px solid #ddd', borderRadius: '4px', fontSize: '12px' }}
+                style={{
+                  width: "100%",
+                  padding: "6px",
+                  border: "1px solid #ddd",
+                  borderRadius: "4px",
+                  fontSize: "12px",
+                }}
                 placeholder="0"
               />
             </div>
             <div style={{ flex: 1 }}>
-              <label style={{ display: 'block', marginBottom: '5px', fontSize: '12px', color: '#666' }}>
-                To Row:
-              </label>
+              <label style={{ display: "block", marginBottom: "5px", fontSize: "12px", color: "#666" }}>To Row:</label>
               <input
                 type="number"
                 value={rowRange.end}
-                onChange={(e) => setRowRange(prev => ({ ...prev, end: parseInt(e.target.value) || 0 }))}
+                onChange={(e) => setRowRange((prev) => ({ ...prev, end: parseInt(e.target.value) || 0 }))}
                 min="0"
-                style={{ width: '100%', padding: '6px', border: '1px solid #ddd', borderRadius: '4px', fontSize: '12px' }}
+                style={{
+                  width: "100%",
+                  padding: "6px",
+                  border: "1px solid #ddd",
+                  borderRadius: "4px",
+                  fontSize: "12px",
+                }}
                 placeholder="0"
               />
             </div>
           </div>
-          <div style={{ marginTop: '5px', fontSize: '11px', color: '#666', fontStyle: 'italic' }}>
+          <div style={{ marginTop: "5px", fontSize: "11px", color: "#666", fontStyle: "italic" }}>
             Leave both as 0 to apply to all rows in the column
           </div>
         </div>
 
         {/* Type-specific options */}
-        {(type === 'dropdown' || type === 'autocomplete') && (
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#555' }}>
-              {type === 'dropdown' ? 'Dropdown' : 'Autocomplete'} Options:
+        {(type === "dropdown" || type === "autocomplete") && (
+          <div style={{ marginBottom: "20px" }}>
+            <label style={{ display: "block", marginBottom: "8px", fontWeight: "bold", color: "#555" }}>
+              {type === "dropdown" ? "Dropdown" : "Autocomplete"} Options:
             </label>
 
             {options.map((option, index) => (
-              <div key={index} style={{ display: 'flex', marginBottom: '8px', alignItems: 'center' }}>
+              <div key={index} style={{ display: "flex", marginBottom: "8px", alignItems: "center" }}>
                 <input
                   type="text"
                   value={option}
@@ -158,24 +176,24 @@ const ColumnTypeModal = ({ columnIndex, currentType, currentOptions, onSave, onC
                   }}
                   style={{
                     flex: 1,
-                    padding: '8px',
-                    border: '1px solid #ddd',
-                    borderRadius: '4px',
-                    fontSize: '14px'
+                    padding: "8px",
+                    border: "1px solid #ddd",
+                    borderRadius: "4px",
+                    fontSize: "14px",
                   }}
                   placeholder={`Option ${index + 1}`}
                 />
                 <button
                   onClick={() => removeOption(index)}
                   style={{
-                    marginLeft: '8px',
-                    padding: '8px 12px',
-                    backgroundColor: '#f44336',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    fontSize: '12px'
+                    marginLeft: "8px",
+                    padding: "8px 12px",
+                    backgroundColor: "#f44336",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                    fontSize: "12px",
                   }}
                 >
                   🗑️
@@ -183,32 +201,32 @@ const ColumnTypeModal = ({ columnIndex, currentType, currentOptions, onSave, onC
               </div>
             ))}
 
-            <div style={{ display: 'flex' }}>
+            <div style={{ display: "flex" }}>
               <input
                 type="text"
                 value={newOption}
                 onChange={(e) => setNewOption(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && addOption()}
+                onKeyPress={(e) => e.key === "Enter" && addOption()}
                 style={{
                   flex: 1,
-                  padding: '8px',
-                  border: '1px solid #ddd',
-                  borderRadius: '4px',
-                  fontSize: '14px'
+                  padding: "8px",
+                  border: "1px solid #ddd",
+                  borderRadius: "4px",
+                  fontSize: "14px",
                 }}
                 placeholder="Add new option..."
               />
               <button
                 onClick={addOption}
                 style={{
-                  marginLeft: '8px',
-                  padding: '8px 15px',
-                  backgroundColor: '#4caf50',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  fontSize: '14px'
+                  marginLeft: "8px",
+                  padding: "8px 15px",
+                  backgroundColor: "#4caf50",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "4px",
+                  cursor: "pointer",
+                  fontSize: "14px",
                 }}
               >
                 ➕ Add
@@ -217,9 +235,9 @@ const ColumnTypeModal = ({ columnIndex, currentType, currentOptions, onSave, onC
           </div>
         )}
 
-        {type === 'color' && (
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#555' }}>
+        {type === "color" && (
+          <div style={{ marginBottom: "20px" }}>
+            <label style={{ display: "block", marginBottom: "8px", fontWeight: "bold", color: "#555" }}>
               Default Color:
             </label>
             <input
@@ -227,29 +245,29 @@ const ColumnTypeModal = ({ columnIndex, currentType, currentOptions, onSave, onC
               value={colorValue}
               onChange={(e) => setColorValue(e.target.value)}
               style={{
-                width: '100px',
-                height: '40px',
-                border: '1px solid #ddd',
-                borderRadius: '4px'
+                width: "100px",
+                height: "40px",
+                border: "1px solid #ddd",
+                borderRadius: "4px",
               }}
             />
           </div>
         )}
 
-        {type === 'date' && (
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#555' }}>
+        {type === "date" && (
+          <div style={{ marginBottom: "20px" }}>
+            <label style={{ display: "block", marginBottom: "8px", fontWeight: "bold", color: "#555" }}>
               Date Format:
             </label>
             <select
               value={dateFormat}
               onChange={(e) => setDateFormat(e.target.value)}
               style={{
-                width: '100%',
-                padding: '8px',
-                border: '1px solid #ddd',
-                borderRadius: '4px',
-                fontSize: '14px'
+                width: "100%",
+                padding: "8px",
+                border: "1px solid #ddd",
+                borderRadius: "4px",
+                fontSize: "14px",
               }}
             >
               <option value="YYYY-MM-DD">YYYY-MM-DD</option>
@@ -260,20 +278,20 @@ const ColumnTypeModal = ({ columnIndex, currentType, currentOptions, onSave, onC
           </div>
         )}
 
-        {type === 'time' && (
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#555' }}>
+        {type === "time" && (
+          <div style={{ marginBottom: "20px" }}>
+            <label style={{ display: "block", marginBottom: "8px", fontWeight: "bold", color: "#555" }}>
               Time Format:
             </label>
             <select
               value={timeFormat}
               onChange={(e) => setTimeFormat(e.target.value)}
               style={{
-                width: '100%',
-                padding: '8px',
-                border: '1px solid #ddd',
-                borderRadius: '4px',
-                fontSize: '14px'
+                width: "100%",
+                padding: "8px",
+                border: "1px solid #ddd",
+                borderRadius: "4px",
+                fontSize: "14px",
               }}
             >
               <option value="HH:mm">24-hour (HH:mm)</option>
@@ -284,20 +302,20 @@ const ColumnTypeModal = ({ columnIndex, currentType, currentOptions, onSave, onC
           </div>
         )}
 
-        {type === 'numeric' && (
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#555' }}>
+        {type === "numeric" && (
+          <div style={{ marginBottom: "20px" }}>
+            <label style={{ display: "block", marginBottom: "8px", fontWeight: "bold", color: "#555" }}>
               Number Format:
             </label>
             <select
               value={numberFormat}
               onChange={(e) => setNumberFormat(e.target.value)}
               style={{
-                width: '100%',
-                padding: '8px',
-                border: '1px solid #ddd',
-                borderRadius: '4px',
-                fontSize: '14px'
+                width: "100%",
+                padding: "8px",
+                border: "1px solid #ddd",
+                borderRadius: "4px",
+                fontSize: "14px",
               }}
             >
               <option value="decimal">Decimal</option>
@@ -306,9 +324,9 @@ const ColumnTypeModal = ({ columnIndex, currentType, currentOptions, onSave, onC
               <option value="percentage">Percentage</option>
             </select>
 
-            <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+            <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
               <div style={{ flex: 1 }}>
-                <label style={{ display: 'block', marginBottom: '5px', fontSize: '12px', color: '#666' }}>
+                <label style={{ display: "block", marginBottom: "5px", fontSize: "12px", color: "#666" }}>
                   Min Value:
                 </label>
                 <input
@@ -316,17 +334,17 @@ const ColumnTypeModal = ({ columnIndex, currentType, currentOptions, onSave, onC
                   value={minValue}
                   onChange={(e) => setMinValue(e.target.value)}
                   style={{
-                    width: '100%',
-                    padding: '6px',
-                    border: '1px solid #ddd',
-                    borderRadius: '4px',
-                    fontSize: '12px'
+                    width: "100%",
+                    padding: "6px",
+                    border: "1px solid #ddd",
+                    borderRadius: "4px",
+                    fontSize: "12px",
                   }}
                   placeholder="No limit"
                 />
               </div>
               <div style={{ flex: 1 }}>
-                <label style={{ display: 'block', marginBottom: '5px', fontSize: '12px', color: '#666' }}>
+                <label style={{ display: "block", marginBottom: "5px", fontSize: "12px", color: "#666" }}>
                   Max Value:
                 </label>
                 <input
@@ -334,11 +352,11 @@ const ColumnTypeModal = ({ columnIndex, currentType, currentOptions, onSave, onC
                   value={maxValue}
                   onChange={(e) => setMaxValue(e.target.value)}
                   style={{
-                    width: '100%',
-                    padding: '6px',
-                    border: '1px solid #ddd',
-                    borderRadius: '4px',
-                    fontSize: '12px'
+                    width: "100%",
+                    padding: "6px",
+                    border: "1px solid #ddd",
+                    borderRadius: "4px",
+                    fontSize: "12px",
                   }}
                   placeholder="No limit"
                 />
@@ -347,17 +365,17 @@ const ColumnTypeModal = ({ columnIndex, currentType, currentOptions, onSave, onC
           </div>
         )}
 
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}>
           <button
             onClick={onCancel}
             style={{
-              padding: '10px 20px',
-              backgroundColor: '#6c757d',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '14px'
+              padding: "10px 20px",
+              backgroundColor: "#6c757d",
+              color: "white",
+              border: "none",
+              borderRadius: "4px",
+              cursor: "pointer",
+              fontSize: "14px",
             }}
           >
             Cancel
@@ -365,13 +383,13 @@ const ColumnTypeModal = ({ columnIndex, currentType, currentOptions, onSave, onC
           <button
             onClick={handleSave}
             style={{
-              padding: '10px 20px',
-              backgroundColor: '#007bff',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '14px'
+              padding: "10px 20px",
+              backgroundColor: "#007bff",
+              color: "white",
+              border: "none",
+              borderRadius: "4px",
+              cursor: "pointer",
+              fontSize: "14px",
             }}
           >
             💾 Save Configuration
@@ -384,21 +402,21 @@ const ColumnTypeModal = ({ columnIndex, currentType, currentOptions, onSave, onC
 
 // Row Type Configuration Modal Component
 const RowTypeModal = ({ rowIndex, currentType, currentOptions, onSave, onCancel }) => {
-  const [type, setType] = useState(currentType || 'text');
+  const [type, setType] = useState(currentType || "text");
   const [options, setOptions] = useState(currentOptions || []);
-  const [newOption, setNewOption] = useState('');
-  const [colorValue, setColorValue] = useState('#000000');
-  const [dateFormat, setDateFormat] = useState('YYYY-MM-DD');
-  const [timeFormat, setTimeFormat] = useState('HH:mm');
-  const [numberFormat, setNumberFormat] = useState('decimal');
-  const [minValue, setMinValue] = useState('');
-  const [maxValue, setMaxValue] = useState('');
+  const [newOption, setNewOption] = useState("");
+  const [colorValue, setColorValue] = useState("#000000");
+  const [dateFormat, setDateFormat] = useState("YYYY-MM-DD");
+  const [timeFormat, setTimeFormat] = useState("HH:mm");
+  const [numberFormat, setNumberFormat] = useState("decimal");
+  const [minValue, setMinValue] = useState("");
+  const [maxValue, setMaxValue] = useState("");
   const [colRange, setColRange] = useState({ start: 0, end: 0 });
 
   const addOption = () => {
     if (newOption.trim() && !options.includes(newOption.trim())) {
       setOptions([...options, newOption.trim()]);
-      setNewOption('');
+      setNewOption("");
     }
   };
 
@@ -409,21 +427,21 @@ const RowTypeModal = ({ rowIndex, currentType, currentOptions, onSave, onCancel 
   const handleSave = () => {
     const config = { type, colRange };
     switch (type) {
-      case 'dropdown':
-      case 'autocomplete':
+      case "dropdown":
+      case "autocomplete":
         config.dropdownOptions = options;
         config.autocompleteOptions = options;
         break;
-      case 'color':
+      case "color":
         config.defaultColor = colorValue;
         break;
-      case 'date':
+      case "date":
         config.dateFormat = dateFormat;
         break;
-      case 'time':
+      case "time":
         config.timeFormat = timeFormat;
         break;
-      case 'numeric':
+      case "numeric":
         config.numberFormat = numberFormat;
         config.minValue = minValue;
         config.maxValue = maxValue;
@@ -435,41 +453,42 @@ const RowTypeModal = ({ rowIndex, currentType, currentOptions, onSave, onCancel 
   };
 
   return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(0,0,0,0.5)',
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      zIndex: 1000,
-    }}>
-      <div style={{
-        backgroundColor: 'white',
-        borderRadius: '8px',
-        padding: '20px',
-        minWidth: '500px',
-        maxWidth: '600px',
-        maxHeight: '80vh',
-        overflowY: 'auto',
-        boxShadow: '0 4px 20px rgba(0,0,0,0.15)'
-      }}>
-        <h3 style={{ margin: '0 0 15px 0', color: '#333', fontSize: '18px' }}>
-          🔧 Configure Row {rowIndex + 1} Type
-        </h3>
+    <div
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: "rgba(0,0,0,0.5)",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "flex-start",
+        overflowY: "auto",
+        padding: "40px 16px",
+        zIndex: 3000,
+      }}
+    >
+      <div
+        style={{
+          backgroundColor: "white",
+          borderRadius: "8px",
+          padding: "20px",
+          width: "min(90vw, 900px)",
+          maxHeight: "none",
+          margin: "0 auto",
+          boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
+        }}
+      >
+        <h3 style={{ margin: "0 0 15px 0", color: "#333", fontSize: "18px" }}>🔧 Configure Row {rowIndex + 1} Type</h3>
 
         {/* Row Type Selection */}
-        <div style={{ marginBottom: '20px' }}>
-          <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#555' }}>
-            Row Type:
-          </label>
+        <div style={{ marginBottom: "20px" }}>
+          <label style={{ display: "block", marginBottom: "8px", fontWeight: "bold", color: "#555" }}>Row Type:</label>
           <select
             value={type}
             onChange={(e) => setType(e.target.value)}
-            style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px', fontSize: '14px' }}
+            style={{ width: "100%", padding: "8px", border: "1px solid #ddd", borderRadius: "4px", fontSize: "14px" }}
           >
             <option value="text">📝 Text</option>
             <option value="numeric">🔢 Numeric</option>
@@ -484,52 +503,64 @@ const RowTypeModal = ({ rowIndex, currentType, currentOptions, onSave, onCancel 
           </select>
         </div>
 
-        <div style={{ marginBottom: '20px' }}>
-          <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#555' }}>
+        <div style={{ marginBottom: "20px" }}>
+          <label style={{ display: "block", marginBottom: "8px", fontWeight: "bold", color: "#555" }}>
             Column Range (Apply to columns):
           </label>
-          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
             <div style={{ flex: 1 }}>
-              <label style={{ display: 'block', marginBottom: '5px', fontSize: '12px', color: '#666' }}>
+              <label style={{ display: "block", marginBottom: "5px", fontSize: "12px", color: "#666" }}>
                 From Column:
               </label>
               <input
                 type="number"
                 value={colRange.start}
-                onChange={(e) => setColRange(prev => ({ ...prev, start: parseInt(e.target.value) || 0 }))}
+                onChange={(e) => setColRange((prev) => ({ ...prev, start: parseInt(e.target.value) || 0 }))}
                 min="0"
-                style={{ width: '100%', padding: '6px', border: '1px solid #ddd', borderRadius: '4px', fontSize: '12px' }}
+                style={{
+                  width: "100%",
+                  padding: "6px",
+                  border: "1px solid #ddd",
+                  borderRadius: "4px",
+                  fontSize: "12px",
+                }}
                 placeholder="0"
               />
             </div>
             <div style={{ flex: 1 }}>
-              <label style={{ display: 'block', marginBottom: '5px', fontSize: '12px', color: '#666' }}>
+              <label style={{ display: "block", marginBottom: "5px", fontSize: "12px", color: "#666" }}>
                 To Column:
               </label>
               <input
                 type="number"
                 value={colRange.end}
-                onChange={(e) => setColRange(prev => ({ ...prev, end: parseInt(e.target.value) || 0 }))}
+                onChange={(e) => setColRange((prev) => ({ ...prev, end: parseInt(e.target.value) || 0 }))}
                 min="0"
-                style={{ width: '100%', padding: '6px', border: '1px solid #ddd', borderRadius: '4px', fontSize: '12px' }}
+                style={{
+                  width: "100%",
+                  padding: "6px",
+                  border: "1px solid #ddd",
+                  borderRadius: "4px",
+                  fontSize: "12px",
+                }}
                 placeholder="0"
               />
             </div>
           </div>
-          <div style={{ marginTop: '5px', fontSize: '11px', color: '#666', fontStyle: 'italic' }}>
+          <div style={{ marginTop: "5px", fontSize: "11px", color: "#666", fontStyle: "italic" }}>
             Leave both as 0 to apply to all columns in the row
           </div>
         </div>
 
         {/* Type-specific options */}
-        {(type === 'dropdown' || type === 'autocomplete') && (
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#555' }}>
-              {type === 'dropdown' ? 'Dropdown' : 'Autocomplete'} Options:
+        {(type === "dropdown" || type === "autocomplete") && (
+          <div style={{ marginBottom: "20px" }}>
+            <label style={{ display: "block", marginBottom: "8px", fontWeight: "bold", color: "#555" }}>
+              {type === "dropdown" ? "Dropdown" : "Autocomplete"} Options:
             </label>
 
             {options.map((option, index) => (
-              <div key={index} style={{ display: 'flex', marginBottom: '8px', alignItems: 'center' }}>
+              <div key={index} style={{ display: "flex", marginBottom: "8px", alignItems: "center" }}>
                 <input
                   type="text"
                   value={option}
@@ -540,24 +571,24 @@ const RowTypeModal = ({ rowIndex, currentType, currentOptions, onSave, onCancel 
                   }}
                   style={{
                     flex: 1,
-                    padding: '8px',
-                    border: '1px solid #ddd',
-                    borderRadius: '4px',
-                    fontSize: '14px'
+                    padding: "8px",
+                    border: "1px solid #ddd",
+                    borderRadius: "4px",
+                    fontSize: "14px",
                   }}
                   placeholder={`Option ${index + 1}`}
                 />
                 <button
                   onClick={() => removeOption(index)}
                   style={{
-                    marginLeft: '8px',
-                    padding: '8px 12px',
-                    backgroundColor: '#f44336',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    fontSize: '12px'
+                    marginLeft: "8px",
+                    padding: "8px 12px",
+                    backgroundColor: "#f44336",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                    fontSize: "12px",
                   }}
                 >
                   🗑️
@@ -565,32 +596,32 @@ const RowTypeModal = ({ rowIndex, currentType, currentOptions, onSave, onCancel 
               </div>
             ))}
 
-            <div style={{ display: 'flex' }}>
+            <div style={{ display: "flex" }}>
               <input
                 type="text"
                 value={newOption}
                 onChange={(e) => setNewOption(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && addOption()}
+                onKeyPress={(e) => e.key === "Enter" && addOption()}
                 style={{
                   flex: 1,
-                  padding: '8px',
-                  border: '1px solid #ddd',
-                  borderRadius: '4px',
-                  fontSize: '14px'
+                  padding: "8px",
+                  border: "1px solid #ddd",
+                  borderRadius: "4px",
+                  fontSize: "14px",
                 }}
                 placeholder="Add new option..."
               />
               <button
                 onClick={addOption}
                 style={{
-                  marginLeft: '8px',
-                  padding: '8px 15px',
-                  backgroundColor: '#4caf50',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  fontSize: '14px'
+                  marginLeft: "8px",
+                  padding: "8px 15px",
+                  backgroundColor: "#4caf50",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "4px",
+                  cursor: "pointer",
+                  fontSize: "14px",
                 }}
               >
                 ➕ Add
@@ -599,9 +630,9 @@ const RowTypeModal = ({ rowIndex, currentType, currentOptions, onSave, onCancel 
           </div>
         )}
 
-        {type === 'color' && (
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#555' }}>
+        {type === "color" && (
+          <div style={{ marginBottom: "20px" }}>
+            <label style={{ display: "block", marginBottom: "8px", fontWeight: "bold", color: "#555" }}>
               Default Color:
             </label>
             <input
@@ -609,29 +640,29 @@ const RowTypeModal = ({ rowIndex, currentType, currentOptions, onSave, onCancel 
               value={colorValue}
               onChange={(e) => setColorValue(e.target.value)}
               style={{
-                width: '100px',
-                height: '40px',
-                border: '1px solid #ddd',
-                borderRadius: '4px'
+                width: "100px",
+                height: "40px",
+                border: "1px solid #ddd",
+                borderRadius: "4px",
               }}
             />
           </div>
         )}
 
-        {type === 'date' && (
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#555' }}>
+        {type === "date" && (
+          <div style={{ marginBottom: "20px" }}>
+            <label style={{ display: "block", marginBottom: "8px", fontWeight: "bold", color: "#555" }}>
               Date Format:
             </label>
             <select
               value={dateFormat}
               onChange={(e) => setDateFormat(e.target.value)}
               style={{
-                width: '100%',
-                padding: '8px',
-                border: '1px solid #ddd',
-                borderRadius: '4px',
-                fontSize: '14px'
+                width: "100%",
+                padding: "8px",
+                border: "1px solid #ddd",
+                borderRadius: "4px",
+                fontSize: "14px",
               }}
             >
               <option value="YYYY-MM-DD">YYYY-MM-DD</option>
@@ -642,20 +673,20 @@ const RowTypeModal = ({ rowIndex, currentType, currentOptions, onSave, onCancel 
           </div>
         )}
 
-        {type === 'time' && (
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#555' }}>
+        {type === "time" && (
+          <div style={{ marginBottom: "20px" }}>
+            <label style={{ display: "block", marginBottom: "8px", fontWeight: "bold", color: "#555" }}>
               Time Format:
             </label>
             <select
               value={timeFormat}
               onChange={(e) => setTimeFormat(e.target.value)}
               style={{
-                width: '100%',
-                padding: '8px',
-                border: '1px solid #ddd',
-                borderRadius: '4px',
-                fontSize: '14px'
+                width: "100%",
+                padding: "8px",
+                border: "1px solid #ddd",
+                borderRadius: "4px",
+                fontSize: "14px",
               }}
             >
               <option value="HH:mm">24-hour (HH:mm)</option>
@@ -666,20 +697,20 @@ const RowTypeModal = ({ rowIndex, currentType, currentOptions, onSave, onCancel 
           </div>
         )}
 
-        {type === 'numeric' && (
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#555' }}>
+        {type === "numeric" && (
+          <div style={{ marginBottom: "20px" }}>
+            <label style={{ display: "block", marginBottom: "8px", fontWeight: "bold", color: "#555" }}>
               Number Format:
             </label>
             <select
               value={numberFormat}
               onChange={(e) => setNumberFormat(e.target.value)}
               style={{
-                width: '100%',
-                padding: '8px',
-                border: '1px solid #ddd',
-                borderRadius: '4px',
-                fontSize: '14px'
+                width: "100%",
+                padding: "8px",
+                border: "1px solid #ddd",
+                borderRadius: "4px",
+                fontSize: "14px",
               }}
             >
               <option value="decimal">Decimal</option>
@@ -688,9 +719,9 @@ const RowTypeModal = ({ rowIndex, currentType, currentOptions, onSave, onCancel 
               <option value="percentage">Percentage</option>
             </select>
 
-            <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+            <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
               <div style={{ flex: 1 }}>
-                <label style={{ display: 'block', marginBottom: '5px', fontSize: '12px', color: '#666' }}>
+                <label style={{ display: "block", marginBottom: "5px", fontSize: "12px", color: "#666" }}>
                   Min Value:
                 </label>
                 <input
@@ -698,17 +729,17 @@ const RowTypeModal = ({ rowIndex, currentType, currentOptions, onSave, onCancel 
                   value={minValue}
                   onChange={(e) => setMinValue(e.target.value)}
                   style={{
-                    width: '100%',
-                    padding: '6px',
-                    border: '1px solid #ddd',
-                    borderRadius: '4px',
-                    fontSize: '12px'
+                    width: "100%",
+                    padding: "6px",
+                    border: "1px solid #ddd",
+                    borderRadius: "4px",
+                    fontSize: "12px",
                   }}
                   placeholder="No limit"
                 />
               </div>
               <div style={{ flex: 1 }}>
-                <label style={{ display: 'block', marginBottom: '5px', fontSize: '12px', color: '#666' }}>
+                <label style={{ display: "block", marginBottom: "5px", fontSize: "12px", color: "#666" }}>
                   Max Value:
                 </label>
                 <input
@@ -716,11 +747,11 @@ const RowTypeModal = ({ rowIndex, currentType, currentOptions, onSave, onCancel 
                   value={maxValue}
                   onChange={(e) => setMaxValue(e.target.value)}
                   style={{
-                    width: '100%',
-                    padding: '6px',
-                    border: '1px solid #ddd',
-                    borderRadius: '4px',
-                    fontSize: '12px'
+                    width: "100%",
+                    padding: "6px",
+                    border: "1px solid #ddd",
+                    borderRadius: "4px",
+                    fontSize: "12px",
                   }}
                   placeholder="No limit"
                 />
@@ -729,17 +760,17 @@ const RowTypeModal = ({ rowIndex, currentType, currentOptions, onSave, onCancel 
           </div>
         )}
 
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}>
           <button
             onClick={onCancel}
             style={{
-              padding: '10px 20px',
-              backgroundColor: '#6c757d',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '14px'
+              padding: "10px 20px",
+              backgroundColor: "#6c757d",
+              color: "white",
+              border: "none",
+              borderRadius: "4px",
+              cursor: "pointer",
+              fontSize: "14px",
             }}
           >
             Cancel
@@ -747,13 +778,13 @@ const RowTypeModal = ({ rowIndex, currentType, currentOptions, onSave, onCancel 
           <button
             onClick={handleSave}
             style={{
-              padding: '10px 20px',
-              backgroundColor: '#007bff',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '14px'
+              padding: "10px 20px",
+              backgroundColor: "#007bff",
+              color: "white",
+              border: "none",
+              borderRadius: "4px",
+              cursor: "pointer",
+              fontSize: "14px",
             }}
           >
             💾 Save Configuration
@@ -790,113 +821,127 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
   const [rowTypeModalData, setRowTypeModalData] = useState(null);
   const tableRef = useRef(null);
 
-  const [tableRemountKey, setTableRemountKey] = useState(0);
-  useEffect(() => {
-    setTableRemountKey(k => k + 1);
-  }, [cellTypes, rowTypes, cellDropdowns, rowDropdowns, mergedCells, cellStyles]);
-
-
   // Initialize data based on field configuration
   useEffect(() => {
     const rows = field?.rows || field?.defaultRows || 5;
     const cols = field?.cols || field?.defaultCols || 5;
 
-    // DATA: in form-fill read data from value, else from field
     let initialData;
-    if (isFormFill) {
-      const v = Array.isArray(value) ? { data: value } : (value || {});
-      if (Array.isArray(v.data)) {
-        initialData = v.data;
-      } else if (Array.isArray(field?.data)) {
-        initialData = field.data;
-      } else {
-        initialData = Array.from({ length: rows }, () => Array.from({ length: cols }, () => ''));
-      }
+    if (isFormFill && value) {
+      initialData = value.data || value || [];
+    } else if (field?.data && field.data.length > 0) {
+      initialData = field.data;
     } else {
-      if (Array.isArray(field?.data)) {
-        initialData = field.data;
-      } else {
-        initialData = Array.from({ length: rows }, () => Array.from({ length: cols }, () => ''));
+      initialData = [];
+      for (let i = 0; i < rows; i++) {
+        const row = [];
+        for (let j = 0; j < cols; j++) {
+          row.push("");
+        }
+        initialData.push(row);
       }
     }
 
     setData(initialData);
-    setHistory([{
-      data: initialData,
-      cellStyles: field?.cellStyles || {},
-      mergedCells: field?.mergedCells || {},
-      cellTypes: field?.cellTypes || {},
-      cellDropdowns: field?.cellDropdowns || {},
-      rowTypes: field?.rowTypes || {},
-      rowDropdowns: field?.rowDropdowns || {},
-      columnWidths: field?.columnWidths || {},
-      rowHeights: field?.rowHeights || {}
-    }]);
+    setHistory([initialData]);
     setHistoryStep(0);
 
-    // CONFIG: always from field so preview keeps types/styles/merges
-    const cfg = field || {};
-    setCellStyles(cfg.cellStyles || {});
-    setMergedCells(cfg.mergedCells || {});
-    setCellTypes(cfg.cellTypes || {});
-    setCellDropdowns(cfg.cellDropdowns || {});
-    setRowTypes(cfg.rowTypes || {});
-    setRowDropdowns(cfg.rowDropdowns || {});
-    setColumnWidths(cfg.columnWidths || {});
-    setRowHeights(cfg.rowHeights || {});
-    setIsReadOnly(!!cfg.readOnly);
+    // Prefer value-provided config during form fill; fall back to field config
+    const source = isFormFill && value && typeof value === "object" ? value : field || {};
+
+    // Debug logging for initialization
+    console.log(`🔧 JSpreadsheetCE4 initializing - isFormFill: ${isFormFill}`);
+    console.log(`🔧 Source data:`, source);
+    console.log(`🔧 Source mergedCells:`, source?.mergedCells);
+
+    if (source?.cellStyles) setCellStyles(source.cellStyles);
+    if (source?.mergedCells) {
+      console.log(`🔧 Setting mergedCells:`, source.mergedCells);
+      setMergedCells(source.mergedCells);
+    }
+    if (source?.cellTypes) setCellTypes(source.cellTypes);
+    if (source?.cellDropdowns) setCellDropdowns(source.cellDropdowns);
+    if (source?.rowTypes) setRowTypes(source.rowTypes);
+    if (source?.rowDropdowns) setRowDropdowns(source.rowDropdowns);
+    if (source?.columnWidths) setColumnWidths(source.columnWidths);
+    if (source?.rowHeights) setRowHeights(source.rowHeights);
+    if (source?.readOnly) setIsReadOnly(source.readOnly);
   }, [field, value, isFormFill]);
 
   // Update field with all current state
-  // Update field with all current state (always send full payload in form-fill)
-  const buildPayload = (overrides = {}) => ({
-    data,
-    cellStyles,
-    mergedCells,
-    cellTypes,
-    cellDropdowns,
-    rowTypes,
-    rowDropdowns,
-    columnWidths,
-    rowHeights,
-    readOnly: isReadOnly,
-    ...overrides,
-  });
-
   const updateField = (updates = {}) => {
-    if (!onChange) return;
-    const payload = buildPayload(updates);
-    if (isFormFill) {
-      onChange(payload);           // <— send object, not just data array
-    } else {
-      onChange({ ...field, ...payload });
+    if (onChange) {
+      if (isFormFill) {
+        // In form fill mode, pass complete data including merged cells
+        const formData = {
+          data: data,
+          cellStyles: cellStyles,
+          mergedCells: mergedCells,
+          cellTypes: cellTypes,
+          cellDropdowns: cellDropdowns,
+          rowTypes: rowTypes,
+          rowDropdowns: rowDropdowns,
+          columnWidths: columnWidths,
+          rowHeights: rowHeights,
+          ...updates,
+        };
+        onChange(formData);
+      } else {
+        const updatedField = {
+          ...field,
+          data: data,
+          cellStyles: cellStyles,
+          mergedCells: mergedCells,
+          cellTypes: cellTypes,
+          cellDropdowns: cellDropdowns,
+          rowTypes: rowTypes,
+          rowDropdowns: rowDropdowns,
+          columnWidths: columnWidths,
+          rowHeights: rowHeights,
+          ...updates,
+        };
+        onChange(updatedField);
+      }
     }
   };
 
-
   // Add to history for undo/redo
-  const addToHistory = useCallback((newData) => {
-    const currentState = {
-      data: newData,
-      cellStyles: cellStyles,
-      mergedCells: mergedCells,
-      cellTypes: cellTypes,
-      cellDropdowns: cellDropdowns,
-      rowTypes: rowTypes,
-      rowDropdowns: rowDropdowns,
-      columnWidths: columnWidths,
-      rowHeights: rowHeights
-    };
+  const addToHistory = useCallback(
+    (newData) => {
+      const currentState = {
+        data: newData,
+        cellStyles: cellStyles,
+        mergedCells: mergedCells,
+        cellTypes: cellTypes,
+        cellDropdowns: cellDropdowns,
+        rowTypes: rowTypes,
+        rowDropdowns: rowDropdowns,
+        columnWidths: columnWidths,
+        rowHeights: rowHeights,
+      };
 
-    const newHistory = history.slice(0, historyStep + 1);
-    newHistory.push(currentState);
-    if (newHistory.length > 50) {
-      newHistory.shift();
-    } else {
-      setHistoryStep(historyStep + 1);
-    }
-    setHistory(newHistory);
-  }, [history, historyStep, cellStyles, mergedCells, cellTypes, cellDropdowns, rowTypes, rowDropdowns, columnWidths, rowHeights]);
+      const newHistory = history.slice(0, historyStep + 1);
+      newHistory.push(currentState);
+      if (newHistory.length > 50) {
+        newHistory.shift();
+      } else {
+        setHistoryStep(historyStep + 1);
+      }
+      setHistory(newHistory);
+    },
+    [
+      history,
+      historyStep,
+      cellStyles,
+      mergedCells,
+      cellTypes,
+      cellDropdowns,
+      rowTypes,
+      rowDropdowns,
+      columnWidths,
+      rowHeights,
+    ]
+  );
 
   // Undo function
   const undo = useCallback(() => {
@@ -922,7 +967,7 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
         rowTypes: previousState.rowTypes,
         rowDropdowns: previousState.rowDropdowns,
         columnWidths: previousState.columnWidths,
-        rowHeights: previousState.rowHeights
+        rowHeights: previousState.rowHeights,
       });
     }
   }, [historyStep, history, updateField]);
@@ -951,7 +996,7 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
         rowTypes: nextState.rowTypes,
         rowDropdowns: nextState.rowDropdowns,
         columnWidths: nextState.columnWidths,
-        rowHeights: nextState.rowHeights
+        rowHeights: nextState.rowHeights,
       });
     }
   }, [historyStep, history, updateField]);
@@ -998,14 +1043,14 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
 
     let insertPosition = data.length;
     if (selectedCell) {
-      const [rowIndex] = selectedCell.split('-').map(Number);
+      const [rowIndex] = selectedCell.split("-").map(Number);
       insertPosition = rowIndex;
     } else if (selectedRange) {
       insertPosition = selectedRange.startRow;
     }
 
     const currentCols = Math.max(data[0]?.length || 0, field?.cols || field?.defaultCols || 5);
-    const newRow = new Array(currentCols).fill('');
+    const newRow = new Array(currentCols).fill("");
 
     const newData = [...data];
     newData.splice(insertPosition, 0, newRow);
@@ -1013,7 +1058,7 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
     setData(newData);
     updateField({
       data: newData,
-      rows: newData.length
+      rows: newData.length,
     });
   };
 
@@ -1026,26 +1071,26 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
 
     let insertPosition = data[0]?.length || 0;
     if (selectedCell) {
-      const [, colIndex] = selectedCell.split('-').map(Number);
+      const [, colIndex] = selectedCell.split("-").map(Number);
       insertPosition = colIndex;
     } else if (selectedRange) {
       insertPosition = selectedRange.startCol;
     }
 
-    const newData = data.map(row => {
+    const newData = data.map((row) => {
       const newRow = [...row];
-      newRow.splice(insertPosition, 0, '');
+      newRow.splice(insertPosition, 0, "");
       return newRow;
     });
 
     if (newData.length === 0) {
-      newData.push(new Array(1).fill(''));
+      newData.push(new Array(1).fill(""));
     }
 
     setData(newData);
     updateField({
       data: newData,
-      cols: newData[0]?.length || 1
+      cols: newData[0]?.length || 1,
     });
   };
 
@@ -1063,17 +1108,17 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
         rowsToDelete.add(r);
       }
     } else if (selectedCell) {
-      const [rowIndex] = selectedCell.split('-').map(Number);
+      const [rowIndex] = selectedCell.split("-").map(Number);
       rowsToDelete.add(rowIndex);
     }
 
     if (rowsToDelete.size === 0) return;
 
     if (rowsToDelete.size >= data.length) {
-      setData([new Array(Math.max(data[0]?.length || 0, 1)).fill('')]);
+      setData([new Array(Math.max(data[0]?.length || 0, 1)).fill("")]);
       updateField({
-        data: [new Array(Math.max(data[0]?.length || 0, 1)).fill('')],
-        rows: 1
+        data: [new Array(Math.max(data[0]?.length || 0, 1)).fill("")],
+        rows: 1,
       });
       return;
     }
@@ -1082,7 +1127,7 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
     setData(newData);
     updateField({
       data: newData,
-      rows: newData.length
+      rows: newData.length,
     });
   };
 
@@ -1100,42 +1145,38 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
         colsToDelete.add(c);
       }
     } else if (selectedCell) {
-      const [, colIndex] = selectedCell.split('-').map(Number);
+      const [, colIndex] = selectedCell.split("-").map(Number);
       colsToDelete.add(colIndex);
     }
 
     if (colsToDelete.size === 0) return;
 
     if (colsToDelete.size >= (data[0]?.length || 1)) {
-      const newData = data.map(() => ['']);
+      const newData = data.map(() => [""]);
       setData(newData);
       updateField({
         data: newData,
-        cols: 1
+        cols: 1,
       });
       return;
     }
 
-    const newData = data.map(row =>
-      row.filter((_, index) => !colsToDelete.has(index))
-    );
+    const newData = data.map((row) => row.filter((_, index) => !colsToDelete.has(index)));
 
     setData(newData);
     updateField({
       data: newData,
-      cols: newData[0]?.length || 1
+      cols: newData[0]?.length || 1,
     });
   };
 
   // Export to CSV
   const exportToCSV = () => {
-    const csvContent = data.map(row =>
-      row.map(cell => `"${cell || ''}"`).join(',')
-    ).join('\n');
+    const csvContent = data.map((row) => row.map((cell) => `"${cell || ""}"`).join(",")).join("\n");
 
-    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const blob = new Blob([csvContent], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
+    const link = document.createElement("a");
     link.href = url;
     link.download = `jspreadsheet-ce4_${new Date().getTime()}.csv`;
     link.click();
@@ -1147,9 +1188,7 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
     const reader = new FileReader();
     reader.onload = (e) => {
       const csv = e.target.result;
-      const rows = csv.split('\n').map(row =>
-        row.split(',').map(cell => cell.replace(/^"|"$/g, ''))
-      );
+      const rows = csv.split("\n").map((row) => row.split(",").map((cell) => cell.replace(/^"|"$/g, "")));
       setData(rows);
       addToHistory(rows);
       updateField({ data: rows });
@@ -1160,30 +1199,28 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
   // Copy data to clipboard
   const copyData = async () => {
     try {
-      let copyText = '';
+      let copyText = "";
 
       if (selectedRange) {
         const { startRow, endRow, startCol, endCol } = selectedRange;
         for (let r = startRow; r <= endRow; r++) {
           const rowData = [];
           for (let c = startCol; c <= endCol; c++) {
-            rowData.push(data[r]?.[c] || '');
+            rowData.push(data[r]?.[c] || "");
           }
-          copyText += rowData.join('\t') + '\n';
+          copyText += rowData.join("\t") + "\n";
         }
 
         await navigator.clipboard.writeText(copyText.trim());
-        console.log('📋 Copied range to clipboard');
-
+        console.log("📋 Copied range to clipboard");
       } else if (selectedCell) {
-        const [row, col] = selectedCell.split('-').map(Number);
-        copyText = data[row]?.[col] || '';
+        const [row, col] = selectedCell.split("-").map(Number);
+        copyText = data[row]?.[col] || "";
         await navigator.clipboard.writeText(copyText);
-        console.log('📋 Copied cell to clipboard');
+        console.log("📋 Copied cell to clipboard");
       }
-
     } catch (error) {
-      console.error('❌ Copy failed:', error);
+      console.error("❌ Copy failed:", error);
     }
   };
 
@@ -1192,13 +1229,13 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
     try {
       const clipboardText = await navigator.clipboard.readText();
       if (!clipboardText) {
-        console.log('📋 Clipboard is empty');
+        console.log("📋 Clipboard is empty");
         return;
       }
 
       const newData = [...data];
-      const pasteRows = clipboardText.trim().split('\n');
-      const pasteCells = pasteRows.map(row => row.split('\t'));
+      const pasteRows = clipboardText.trim().split("\n");
+      const pasteCells = pasteRows.map((row) => row.split("\t"));
 
       if (selectedRange) {
         const { startRow, endRow, startCol, endCol } = selectedRange;
@@ -1207,20 +1244,20 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
           for (let c = startCol; c <= endCol; c++) {
             const pasteRowIdx = (r - startRow) % pasteCells.length;
             const pasteCellIdx = (c - startCol) % pasteCells[pasteRowIdx].length;
-            let pasteValue = pasteCells[pasteRowIdx][pasteCellIdx] || '';
+            let pasteValue = pasteCells[pasteRowIdx][pasteCellIdx] || "";
 
             while (newData.length <= r) {
-              newData.push(new Array(Math.max(cols, c + 1)).fill(''));
+              newData.push(new Array(Math.max(cols, c + 1)).fill(""));
             }
             while (newData[r].length <= c) {
-              newData[r].push('');
+              newData[r].push("");
             }
 
             newData[r][c] = pasteValue;
           }
         }
       } else if (selectedCell) {
-        const [startRow, startCol] = selectedCell.split('-').map(Number);
+        const [startRow, startCol] = selectedCell.split("-").map(Number);
 
         pasteCells.forEach((rowCells, rowOffset) => {
           rowCells.forEach((cell, colOffset) => {
@@ -1228,10 +1265,10 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
             const targetCol = startCol + colOffset;
 
             while (newData.length <= targetRow) {
-              newData.push(new Array(Math.max(cols, targetCol + 1)).fill(''));
+              newData.push(new Array(Math.max(cols, targetCol + 1)).fill(""));
             }
             while (newData[targetRow].length <= targetCol) {
-              newData[targetRow].push('');
+              newData[targetRow].push("");
             }
 
             newData[targetRow][targetCol] = cell;
@@ -1242,9 +1279,8 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
       setData(newData);
       addToHistory(newData);
       updateField({ data: newData });
-
     } catch (error) {
-      console.error('❌ Paste failed:', error);
+      console.error("❌ Paste failed:", error);
     }
   };
 
@@ -1253,7 +1289,7 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
     // Check if shift key is pressed for range selection
     if (e.shiftKey && selectedCell) {
       // Create a range from the previously selected cell to the current cell
-      const [prevRow, prevCol] = selectedCell.split('-').map(Number);
+      const [prevRow, prevCol] = selectedCell.split("-").map(Number);
       const startRow = Math.min(prevRow, rowIndex);
       const endRow = Math.max(prevRow, rowIndex);
       const startCol = Math.min(prevCol, colIndex);
@@ -1284,8 +1320,8 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
   const handleMouseUp = () => {
     if (isSelecting && dragStart && selectedRange) {
       // Auto-fill feature: copy data from start cell to all cells in range
-      const startCellValue = data[dragStart.row]?.[dragStart.col] || '';
-      if (startCellValue !== '') {
+      const startCellValue = data[dragStart.row]?.[dragStart.col] || "";
+      if (startCellValue !== "") {
         const newData = [...data];
         for (let r = selectedRange.startRow; r <= selectedRange.endRow; r++) {
           for (let c = selectedRange.startCol; c <= selectedRange.endCol; c++) {
@@ -1312,7 +1348,7 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
       startRow: rowIndex,
       endRow: rowIndex,
       startCol: 0,
-      endCol: maxCols - 1
+      endCol: maxCols - 1,
     });
     setSelectedCell(null);
     setShowToolbar(true);
@@ -1326,7 +1362,7 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
       startRow: 0,
       endRow: maxRows - 1,
       startCol: colIndex,
-      endCol: colIndex
+      endCol: colIndex,
     });
     setSelectedCell(null);
     setShowToolbar(true);
@@ -1336,8 +1372,7 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
   const isCellInRange = (rowIndex, colIndex) => {
     if (!selectedRange) return false;
     const { startRow, endRow, startCol, endCol } = selectedRange;
-    return rowIndex >= startRow && rowIndex <= endRow &&
-      colIndex >= startCol && colIndex <= endCol;
+    return rowIndex >= startRow && rowIndex <= endRow && colIndex >= startCol && colIndex <= endCol;
   };
 
   // Column Type Management Functions
@@ -1363,18 +1398,18 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
       const cellKey = `${rowIndex}-${colIndex}`;
       newCellTypes[cellKey] = type;
 
-      if (type === 'checkbox' && !data[rowIndex]?.[colIndex]) {
+      if (type === "checkbox" && !data[rowIndex]?.[colIndex]) {
         const newData = [...data];
         if (!newData[rowIndex]) newData[rowIndex] = [];
         newData[rowIndex][colIndex] = false;
         setData(newData);
       }
 
-      if (type === 'dropdown' && options.dropdownOptions) {
+      if (type === "dropdown" && options.dropdownOptions) {
         newCellDropdowns[cellKey] = options.dropdownOptions;
       }
 
-      if (type === 'autocomplete' && options.autocompleteOptions) {
+      if (type === "autocomplete" && options.autocompleteOptions) {
         newCellDropdowns[cellKey] = options.autocompleteOptions;
       }
     }
@@ -1406,7 +1441,7 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
   const getColumnType = (colIndex) => {
     // Get type from first cell in column
     const cellKey = `0-${colIndex}`;
-    return cellTypes[cellKey] || 'text';
+    return cellTypes[cellKey] || "text";
   };
 
   const getColumnOptions = (colIndex) => {
@@ -1438,18 +1473,18 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
       const cellKey = `${rowIndex}-${colIndex}`;
       newRowTypes[cellKey] = type;
 
-      if (type === 'checkbox' && !data[rowIndex]?.[colIndex]) {
+      if (type === "checkbox" && !data[rowIndex]?.[colIndex]) {
         const newData = [...data];
         if (!newData[rowIndex]) newData[rowIndex] = [];
         newData[rowIndex][colIndex] = false;
         setData(newData);
       }
 
-      if (type === 'dropdown' && options.dropdownOptions) {
+      if (type === "dropdown" && options.dropdownOptions) {
         newRowDropdowns[cellKey] = options.dropdownOptions;
       }
 
-      if (type === 'autocomplete' && options.autocompleteOptions) {
+      if (type === "autocomplete" && options.autocompleteOptions) {
         newRowDropdowns[cellKey] = options.autocompleteOptions;
       }
     }
@@ -1481,7 +1516,7 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
   const getRowType = (rowIndex) => {
     // Get type from first cell in row
     const cellKey = `${rowIndex}-0`;
-    return rowTypes[cellKey] || 'text';
+    return rowTypes[cellKey] || "text";
   };
 
   const getRowOptions = (rowIndex) => {
@@ -1505,7 +1540,7 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
     }
 
     // Default to text
-    return 'text';
+    return "text";
   };
 
   // Enhanced getCellOptions function that checks both column and row options
@@ -1566,7 +1601,7 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
 
   // Merged Cells Management Functions
   const setMerge = (startRow, startCol, endRow, endCol) => {
-    console.log('🔗 setMerge called with:', { startRow, startCol, endRow, endCol });
+    console.log("🔗 setMerge called with:", { startRow, startCol, endRow, endCol });
 
     // Save current state to history before making changes
     addToHistory(data);
@@ -1574,8 +1609,8 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
     const mergeKey = `${startRow}-${startCol}`;
     const newMergedCells = { ...mergedCells };
 
-    console.log('🔗 Current mergedCells:', mergedCells);
-    console.log('🔗 New mergeKey:', mergeKey);
+    console.log("🔗 Current mergedCells:", mergedCells);
+    console.log("🔗 New mergeKey:", mergeKey);
 
     // Remove any existing merges that overlap with the new merge
     const overlappingMerges = Object.entries(newMergedCells).filter(([key, merge]) => {
@@ -1585,7 +1620,7 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
       return !noOverlap;
     });
 
-    console.log('🔗 Overlapping merges to remove:', overlappingMerges);
+    console.log("🔗 Overlapping merges to remove:", overlappingMerges);
 
     overlappingMerges.forEach(([key]) => {
       delete newMergedCells[key];
@@ -1594,26 +1629,28 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
     // Add the new merge
     newMergedCells[mergeKey] = { startRow, startCol, endRow, endCol };
 
-    console.log('🔗 Final mergedCells:', newMergedCells);
+    console.log("🔗 Final mergedCells:", newMergedCells);
+    console.log("🔗 Total merges after operation:", Object.keys(newMergedCells).length);
 
     setMergedCells(newMergedCells);
     updateField({ mergedCells: newMergedCells });
 
-    console.log('🔗 Merge operation completed');
+    console.log("🔗 Merge operation completed");
   };
 
   const getMerge = (rowIndex, colIndex) => {
     // Check if this cell is the start of a merge
     const mergeKey = `${rowIndex}-${colIndex}`;
     if (mergedCells[mergeKey]) {
+      console.log(`🎯 getMerge(${rowIndex},${colIndex}): Found start merge`, mergedCells[mergeKey]);
       return mergedCells[mergeKey];
     }
 
     // Check if this cell is part of any merge
     for (const [key, merge] of Object.entries(mergedCells)) {
       const { startRow, startCol, endRow, endCol } = merge;
-      if (rowIndex >= startRow && rowIndex <= endRow &&
-        colIndex >= startCol && colIndex <= endCol) {
+      if (rowIndex >= startRow && rowIndex <= endRow && colIndex >= startCol && colIndex <= endCol) {
+        console.log(`🎯 getMerge(${rowIndex},${colIndex}): Found part of merge ${key}`, merge);
         return merge;
       }
     }
@@ -1638,15 +1675,13 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
     // Check if this cell is part of any merge
     for (const [key, merge] of Object.entries(newMergedCells)) {
       const { startRow, startCol, endRow, endCol } = merge;
-      if (rowIndex >= startRow && rowIndex <= endRow &&
-        colIndex >= startCol && colIndex <= endCol) {
+      if (rowIndex >= startRow && rowIndex <= endRow && colIndex >= startCol && colIndex <= endCol) {
         delete newMergedCells[key];
         setMergedCells(newMergedCells);
         updateField({ mergedCells: newMergedCells });
         return true;
       }
     }
-
     return false;
   };
 
@@ -1671,7 +1706,7 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
     if (rowIndex === startRow && colIndex === startCol) {
       return {
         rowSpan: endRow - startRow + 1,
-        colSpan: endCol - startCol + 1
+        colSpan: endCol - startCol + 1,
       };
     }
 
@@ -1681,7 +1716,6 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
   const rows = Math.max(data.length, field?.rows || field?.defaultRows || 5);
   const cols = Math.max(data[0]?.length || 0, field?.cols || field?.defaultCols || 5);
 
-  // Apply style updates to selected cell or selected range
   const updateStylesForSelection = (mergeFn) => {
     let nextMap = { ...cellStyles };
     if (selectedRange) {
@@ -1707,17 +1741,46 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
     updateField({ cellStyles: nextMap });
   };
 
+
   return (
-    <div className="jspreadsheet-ce4-container" style={{
-      width: '100%',
-      height: isFormFill ? 'auto' : '400px',
-      position: 'relative',
-      paddingTop: showToolbar && !isFormFill ? 100 : 0,
-      border: isFormFill ? '1px solid #e5e7eb' : '2px solid #007bff',
-      borderRadius: isFormFill ? '12px' : '8px',
-      overflow: 'hidden',
-      backgroundColor: '#fff'
-    }} onMouseUp={handleMouseUp}>
+    <div
+      className="jspreadsheet-ce4-container"
+      style={{
+        width: "100%",
+        height: isFormFill ? "auto" : "400px",
+        position: "relative",
+        paddingTop: showToolbar && !isFormFill ? 100 : 0,
+        border: isFormFill ? "1px solid #e5e7eb" : "2px solid #007bff",
+        borderRadius: isFormFill ? "12px" : "8px",
+        overflow: "hidden",
+        backgroundColor: "#fff",
+      }}
+      onMouseUp={handleMouseUp}
+    >
+      {/* CSS for form fill mode to prevent height expansion while allowing merges */}
+      {isFormFill && (
+        <style>
+          {`
+            .form-fill-cell {
+              height: ${getRowHeight(0)}px !important;
+              max-height: ${getRowHeight(0)}px !important;
+              overflow: hidden !important;
+              vertical-align: top !important;
+            }
+            .form-fill-cell > div {
+              height: auto !important;
+              max-height: ${getRowHeight(0) - 12}px !important;
+              overflow: hidden !important;
+            }
+            .form-fill-cell input,
+            .form-fill-cell select,
+            .form-fill-cell textarea {
+              height: auto !important;
+              max-height: ${getRowHeight(0) - 16}px !important;
+            }
+          `}
+        </style>
+      )}
 
       {/* Column Type Configuration Modal */}
       {showColumnTypeModal && columnTypeModalData && (
@@ -1743,17 +1806,19 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
 
       {/* Header */}
       {!isFormFill && (
-        <div style={{
-          padding: '8px',
-          backgroundColor: '#e3f2fd',
-          fontSize: '14px',
-          fontWeight: 'bold',
-          color: '#1976d2',
-          textAlign: 'center',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center'
-        }}>
+        <div
+          style={{
+            padding: "8px",
+            backgroundColor: "#e3f2fd",
+            fontSize: "14px",
+            fontWeight: "bold",
+            color: "#1976d2",
+            textAlign: "center",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
           {/* <div style={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
             <button
               onClick={() => setIsReadOnly(!isReadOnly)}
@@ -1808,83 +1873,93 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
       )}
 
       {/* Autocomplete Datalists */}
-      {!isFormFill && Array.from({ length: cols }, (_, colIndex) => {
-        const cellType = getColumnType(colIndex);
-        const options = getColumnOptions(colIndex);
+      {!isFormFill &&
+        Array.from({ length: cols }, (_, colIndex) => {
+          const cellType = getColumnType(colIndex);
+          const options = getColumnOptions(colIndex);
 
-        if (cellType === 'autocomplete' && options.length > 0) {
-          return (
-            <datalist key={`autocomplete-${colIndex}`} id={`autocomplete-${colIndex}`}>
-              {options.map((option, idx) => (
-                <option key={idx} value={option} />
-              ))}
-            </datalist>
-          );
-        }
-        return null;
-      })}
+          if (cellType === "autocomplete" && options.length > 0) {
+            return (
+              <datalist key={`autocomplete-${colIndex}`} id={`autocomplete-${colIndex}`}>
+                {options.map((option, idx) => (
+                  <option key={idx} value={option} />
+                ))}
+              </datalist>
+            );
+          }
+          return null;
+        })}
 
       {/* Enhanced Spreadsheet Table */}
-      <div style={{
-        overflowX: 'auto',
-        overflowY: isFormFill ? 'visible' : 'auto',
-        maxHeight: isFormFill ? undefined : '280px',
-        border: isFormFill ? '1px solid #e5e7eb' : '1px solid #ddd',
-        borderRadius: isFormFill ? 12 : 0,
-        background: '#fff'
-      }}>
-        <table key={tableRemountKey} ref={tableRef} style={{
-
-          width: '100%',
-          borderCollapse: isFormFill ? 'collapse' : 'separate',
-          borderSpacing: '0',
-          fontSize: '12px',
-          fontFamily: '"Segoe UI", Arial, sans-serif',
-          userSelect: 'none',
-          backgroundColor: '#ffffff',
-          border: isFormFill ? '1px solid #e5e7eb' : '1px solid #9c9c9c',
-          tableLayout: 'fixed',
-          boxShadow: isFormFill ? '0 8px 24px rgba(0,0,0,0.06)' : undefined,
+      <div
+        style={{
+          overflowX: "auto",
+          overflowY: isFormFill ? "visible" : "auto",
+          maxHeight: isFormFill ? undefined : "280px",
+          border: isFormFill ? "1px solid #e5e7eb" : "1px solid #ddd",
           borderRadius: isFormFill ? 12 : 0,
-          overflow: 'hidden'
-        }}>
+          background: "#fff",
+        }}
+      >
+        <table
+          ref={tableRef}
+          style={{
+            width: "100%",
+            borderCollapse: isFormFill ? "collapse" : "separate",
+            borderSpacing: "0",
+            fontSize: "12px",
+            fontFamily: '"Segoe UI", Arial, sans-serif',
+            userSelect: "none",
+            backgroundColor: "#ffffff",
+            border: isFormFill ? "1px solid #e5e7eb" : "1px solid #9c9c9c",
+            tableLayout: "fixed",
+            boxShadow: isFormFill ? "0 8px 24px rgba(0,0,0,0.06)" : undefined,
+            borderRadius: isFormFill ? 12 : 0,
+            overflow: "hidden",
+          }}
+        >
           {!isFormFill && (
             <thead>
               <tr>
-                <th style={{
-                  width: '30px',
-                  height: '40px',
-                  backgroundColor: '#f2f2f2',
-                  border: '1px solid #d4d4d4',
-                  borderTop: '1px solid #9c9c9c',
-                  borderLeft: '1px solid #9c9c9c',
-                  borderBottom: '2px solid #8a8a8a',
-                  borderRight: '1px solid #d4d4d4',
-                  fontSize: '12px',
-                  fontWeight: 'normal',
-                  color: '#262626',
-                  position: 'sticky',
-                  top: 0,
-                  zIndex: 10,
-                  cursor: 'pointer',
-                  textAlign: 'center',
-                  padding: '2px 1px',
-                  backgroundImage: 'linear-gradient(to bottom, #ffffff 0%, #f0f0f0 100%)',
-                  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.8)'
-                }}
-                  onClick={!isFormFill ? () => {
-                    const maxRows = Math.max(data.length, 1);
-                    const maxCols = Math.max(data[0]?.length || 0, 1);
-                    setSelectedRange({
-                      startRow: 0,
-                      endRow: maxRows - 1,
-                      startCol: 0,
-                      endCol: maxCols - 1
-                    });
-                    setSelectedCell(null);
-                    setShowToolbar(true);
-                  } : undefined}
-                  title={isFormFill ? "jSpreadsheet CE v4" : "Select All"}
+                <th
+                  style={{
+                    width: "30px",
+                    height: "40px",
+                    backgroundColor: "#f2f2f2",
+                    border: "1px solid #d4d4d4",
+                    borderTop: "1px solid #9c9c9c",
+                    borderLeft: "1px solid #9c9c9c",
+                    borderBottom: "2px solid #8a8a8a",
+                    borderRight: "1px solid #d4d4d4",
+                    fontSize: "12px",
+                    fontWeight: "normal",
+                    color: "#262626",
+                    position: "sticky",
+                    top: 0,
+                    zIndex: 10,
+                    cursor: "pointer",
+                    textAlign: "center",
+                    padding: "2px 1px",
+                    backgroundImage: "linear-gradient(to bottom, #ffffff 0%, #f0f0f0 100%)",
+                    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.8)",
+                  }}
+                  onClick={
+                    !isFormFill
+                      ? () => {
+                          const maxRows = Math.max(data.length, 1);
+                          const maxCols = Math.max(data[0]?.length || 0, 1);
+                          setSelectedRange({
+                            startRow: 0,
+                            endRow: maxRows - 1,
+                            startCol: 0,
+                            endCol: maxCols - 1,
+                          });
+                          setSelectedCell(null);
+                          setShowToolbar(true);
+                        }
+                      : undefined
+                  }
+                  title={isFormFill ? "" : "Select All"}
                 >
                   ⊞
                 </th>
@@ -1894,71 +1969,69 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
                     style={{
                       minWidth: `${getColumnWidth(colIndex)}px`,
                       width: `${getColumnWidth(colIndex)}px`,
-                      height: '40px',
-                      backgroundColor: selectedRange &&
-                        selectedRange.startCol <= colIndex &&
-                        selectedRange.endCol >= colIndex ? '#d4e6f8' : '#f2f2f2',
-                      backgroundImage: selectedRange &&
-                        selectedRange.startCol <= colIndex &&
-                        selectedRange.endCol >= colIndex
-                        ? 'linear-gradient(to bottom, #e8f1fd 0%, #c4daf8 100%)'
-                        : 'linear-gradient(to bottom, #ffffff 0%, #f0f0f0 100%)',
-                      border: '1px solid #d4d4d4',
-                      borderTop: '1px solid #9c9c9c',
-                      borderBottom: '2px solid #8a8a8a',
-                      borderLeft: '1px solid #d4d4d4',
-                      borderRight: '1px solid #d4d4d4',
-                      padding: '2px 4px',
-                      fontWeight: 'normal',
-                      fontSize: '12px',
-                      color: '#262626',
-                      position: 'sticky',
+                      height: "40px",
+                      backgroundColor:
+                        selectedRange && selectedRange.startCol <= colIndex && selectedRange.endCol >= colIndex
+                          ? "#d4e6f8"
+                          : "#f2f2f2",
+                      backgroundImage:
+                        selectedRange && selectedRange.startCol <= colIndex && selectedRange.endCol >= colIndex
+                          ? "linear-gradient(to bottom, #e8f1fd 0%, #c4daf8 100%)"
+                          : "linear-gradient(to bottom, #ffffff 0%, #f0f0f0 100%)",
+                      border: "1px solid #d4d4d4",
+                      borderTop: "1px solid #9c9c9c",
+                      borderBottom: "2px solid #8a8a8a",
+                      borderLeft: "1px solid #d4d4d4",
+                      borderRight: "1px solid #d4d4d4",
+                      padding: "2px 4px",
+                      fontWeight: "normal",
+                      fontSize: "12px",
+                      color: "#262626",
+                      position: "sticky",
                       top: 0,
                       zIndex: 10,
-                      cursor: 'pointer',
-                      userSelect: 'none',
-                      textAlign: 'center',
-                      boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.8)',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap'
+                      cursor: "pointer",
+                      userSelect: "none",
+                      textAlign: "center",
+                      boxShadow: "inset 0 1px 0 rgba(255,255,255,0.8)",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
                     }}
                     onClick={(e) => !isFormFill && handleColumnHeaderClick(colIndex, e)}
                     title={isFormFill ? undefined : `Select Column ${getColumnHeader(colIndex)}`}
                   >
                     {!isFormFill && (
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
+                      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "2px" }}>
                         <span>{getColumnHeader(colIndex)}</span>
-                        <span style={{ fontSize: '10px', color: '#666', fontWeight: 'normal' }}>
-                          {getColumnType(colIndex) !== 'text' ? getColumnType(colIndex) : ''}
+                        <span style={{ fontSize: "10px", color: "#666", fontWeight: "normal" }}>
+                          {getColumnType(colIndex) !== "text" ? getColumnType(colIndex) : ""}
                         </span>
                         {/* Show range info if type is applied to specific rows */}
                         {(() => {
                           const type = getColumnType(colIndex);
-                          if (type === 'text') return null;
+                          if (type === "text") return null;
 
                           // Find the range for this column type
-                          let rangeInfo = '';
+                          let rangeInfo = "";
                           for (let r = 0; r < rows; r++) {
                             const cellKey = `${r}-${colIndex}`;
                             if (cellTypes[cellKey] === type) {
-                              if (rangeInfo === '') {
+                              if (rangeInfo === "") {
                                 rangeInfo = `R${r + 1}`;
                               } else {
-                                const lastRow = rangeInfo.split('-')[1] || rangeInfo.split('R')[1];
+                                const lastRow = rangeInfo.split("-")[1] || rangeInfo.split("R")[1];
                                 if (r + 1 > parseInt(lastRow)) {
-                                  rangeInfo = rangeInfo.includes('-') ?
-                                    rangeInfo.split('-')[0] + `-${r + 1}` :
-                                    `${rangeInfo}-${r + 1}`;
+                                  rangeInfo = rangeInfo.includes("-")
+                                    ? rangeInfo.split("-")[0] + `-${r + 1}`
+                                    : `${rangeInfo}-${r + 1}`;
                                 }
                               }
                             }
                           }
 
                           return rangeInfo ? (
-                            <span style={{ fontSize: '8px', color: '#999', fontStyle: 'italic' }}>
-                              {rangeInfo}
-                            </span>
+                            <span style={{ fontSize: "8px", color: "#999", fontStyle: "italic" }}>{rangeInfo}</span>
                           ) : null;
                         })()}
                       </div>
@@ -1972,67 +2045,66 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
             {Array.from({ length: rows }, (_, rowIndex) => (
               <tr key={rowIndex}>
                 {!isFormFill && (
-                  <td style={{
-                    width: '30px',
-                    height: `${getRowHeight(rowIndex)}px`,
-                    backgroundColor: selectedRange &&
-                      selectedRange.startRow <= rowIndex &&
-                      selectedRange.endRow >= rowIndex ? '#d4e6f8' : '#f2f2f2',
-                    backgroundImage: selectedRange &&
-                      selectedRange.startRow <= rowIndex &&
-                      selectedRange.endRow >= rowIndex
-                      ? 'linear-gradient(to bottom, #e8f1fd 0%, #c4daf8 100%)'
-                      : 'linear-gradient(to bottom, #ffffff 0%, #f0f0f0 100%)',
-                    border: '1px solid #d4d4d4',
-                    borderLeft: '1px solid #9c9c9c',
-                    borderRight: '2px solid #8a8a8a',
-                    borderTop: '1px solid #d4d4d4',
-                    borderBottom: '1px solid #d4d4d4',
-                    textAlign: 'center',
-                    fontSize: '12px',
-                    fontWeight: 'normal',
-                    color: '#262626',
-                    position: 'sticky',
-                    left: 0,
-                    zIndex: 5,
-                    cursor: 'pointer',
-                    userSelect: 'none',
-                    padding: '1px 2px',
-                    boxShadow: 'inset 0 0 1px rgba(255,255,255,0.8)',
-                    lineHeight: '36px'
-                  }}
+                  <td
+                    style={{
+                      width: "30px",
+                      height: `${getRowHeight(rowIndex)}px`,
+                      backgroundColor:
+                        selectedRange && selectedRange.startRow <= rowIndex && selectedRange.endRow >= rowIndex
+                          ? "#d4e6f8"
+                          : "#f2f2f2",
+                      backgroundImage:
+                        selectedRange && selectedRange.startRow <= rowIndex && selectedRange.endRow >= rowIndex
+                          ? "linear-gradient(to bottom, #e8f1fd 0%, #c4daf8 100%)"
+                          : "linear-gradient(to bottom, #ffffff 0%, #f0f0f0 100%)",
+                      border: "1px solid #d4d4d4",
+                      borderLeft: "1px solid #9c9c9c",
+                      borderRight: "2px solid #8a8a8a",
+                      borderTop: "1px solid #d4d4d4",
+                      borderBottom: "1px solid #d4d4d4",
+                      textAlign: "center",
+                      fontSize: "12px",
+                      fontWeight: "normal",
+                      color: "#262626",
+                      position: "sticky",
+                      left: 0,
+                      zIndex: 5,
+                      cursor: "pointer",
+                      userSelect: "none",
+                      padding: "1px 2px",
+                      boxShadow: "inset 0 0 1px rgba(255,255,255,0.8)",
+                      lineHeight: "36px",
+                    }}
                     onClick={(e) => handleRowHeaderClick(rowIndex, e)}
                     title={`Select Row ${rowIndex + 1}`}
                   >
                     {!isFormFill && (
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
+                      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "2px" }}>
                         <span>{rowIndex + 1}</span>
-                        <span style={{ fontSize: '10px', color: '#666', fontWeight: 'normal' }}>
-                          {getRowType(rowIndex) !== 'text' ? getRowType(rowIndex) : ''}
+                        <span style={{ fontSize: "10px", color: "#666", fontWeight: "normal" }}>
+                          {getRowType(rowIndex) !== "text" ? getRowType(rowIndex) : ""}
                         </span>
                         {(() => {
                           const type = getRowType(rowIndex);
-                          if (type === 'text') return null;
-                          let rangeInfo = '';
+                          if (type === "text") return null;
+                          let rangeInfo = "";
                           for (let c = 0; c < cols; c++) {
                             const cellKey = `${rowIndex}-${c}`;
                             if (rowTypes[cellKey] === type) {
-                              if (rangeInfo === '') {
+                              if (rangeInfo === "") {
                                 rangeInfo = `${getColumnHeader(c)}`;
                               } else {
-                                const lastCol = rangeInfo.split('-')[1] || rangeInfo;
+                                const lastCol = rangeInfo.split("-")[1] || rangeInfo;
                                 if (c > getColumnHeader(lastCol).charCodeAt(0) - 65) {
-                                  rangeInfo = rangeInfo.includes('-') ?
-                                    rangeInfo.split('-')[0] + `-${getColumnHeader(c)}` :
-                                    `${rangeInfo}-${getColumnHeader(c)}`;
+                                  rangeInfo = rangeInfo.includes("-")
+                                    ? rangeInfo.split("-")[0] + `-${getColumnHeader(c)}`
+                                    : `${rangeInfo}-${getColumnHeader(c)}`;
                                 }
                               }
                             }
                           }
                           return rangeInfo ? (
-                            <span style={{ fontSize: '8px', color: '#999', fontStyle: 'italic' }}>
-                              {rangeInfo}
-                            </span>
+                            <span style={{ fontSize: "8px", color: "#999", fontStyle: "italic" }}>{rangeInfo}</span>
                           ) : null;
                         })()}
                       </div>
@@ -2044,34 +2116,59 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
                   const isSelected = selectedCell === cellKey;
                   const isInRange = isCellInRange(rowIndex, colIndex);
 
+                  // Debug: Log every cell being processed
+                  console.log(`📋 Processing cell ${rowIndex}-${colIndex}`);
+
                   // Check if this cell is part of a merge
                   const merge = getMerge(rowIndex, colIndex);
                   const isMergeStart = isMergeStartCell(rowIndex, colIndex);
 
+                  // Debug logging for merge detection
+                  if (merge) {
+                    console.log(`🔍 Cell ${rowIndex}-${colIndex}: merge=${JSON.stringify(merge)}, isMergeStart=${isMergeStart}`);
+                  } else {
+                    console.log(`⚪ Cell ${rowIndex}-${colIndex}: no merge`);
+                  }
+
                   // Skip rendering if this cell is part of a merge but not the start
                   if (merge && !isMergeStart) {
-                    return null;
+                    console.log(`⏭️ Skipping cell ${rowIndex}-${colIndex} (part of merge but not start)`);
+                    // Return hidden td instead of null to avoid React reconciliation issues
+                    return <td key={colIndex} style={{ display: 'none' }} />;
+                  }
+
+                  // Debug: Log when we're about to render a merge start cell
+                  if (merge && isMergeStart) {
+                    console.log(`✅ Rendering merge start cell ${rowIndex}-${colIndex}:`, merge);
                   }
 
                   // Get merge span for the start cell
                   const { rowSpan, colSpan } = getMergeSpan(rowIndex, colIndex);
 
                   const baseCellStyle = {
-                    width: colSpan > 1 ? `${getColumnWidth(colIndex) * colSpan}px` : `${getColumnWidth(colIndex)}px`,
-                    minWidth: colSpan > 1 ? `${getColumnWidth(colIndex) * colSpan}px` : `${getColumnWidth(colIndex)}px`,
-                    height: `${getRowHeight(rowIndex)}px`,
-                    minHeight: `${getRowHeight(rowIndex)}px`,
-                    border: merge ? '2px solid #17a2b8' :
-                      isSelected ? '2px solid #007bff' :
-                        isInRange ? '1px solid #70ad47' : '1px solid #d4d4d4',
-                    padding: '0',
-                    backgroundColor: merge ? '#ffffff' :
-                      dragStart && dragStart.row === rowIndex && dragStart.col === colIndex ? '#fff3cd' :
-                        isInRange ? '#e2efda' : '#ffffff',
-                    position: 'relative',
-                    verticalAlign: 'top',
-                    boxSizing: 'border-box',
-                    textAlign: 'center'
+                    // In canvas mode, let colSpan handle width; in form fill, use CSS width
+                    width: isFormFill && colSpan > 1 ? `${getColumnWidth(colIndex) * colSpan}px` : `${getColumnWidth(colIndex)}px`,
+                    minWidth: isFormFill && colSpan > 1 ? `${getColumnWidth(colIndex) * colSpan}px` : `${getColumnWidth(colIndex)}px`,
+                    height: rowSpan > 1 ? `${getRowHeight(rowIndex) * rowSpan}px` : `${getRowHeight(rowIndex)}px`,
+                    border: merge
+                      ? "2px solid #17a2b8"
+                      : isSelected
+                      ? "2px solid #007bff"
+                      : isInRange
+                      ? "1px solid #70ad47"
+                      : "1px solid #d4d4d4",
+                    padding: "0",
+                    backgroundColor: merge
+                      ? "#ffffff"
+                      : dragStart && dragStart.row === rowIndex && dragStart.col === colIndex
+                      ? "#fff3cd"
+                      : isInRange
+                      ? "#e2efda"
+                      : "#ffffff",
+                    position: "relative",
+                    verticalAlign: "top",
+                    boxSizing: "border-box",
+                    textAlign: "center",
                   };
 
                   return (
@@ -2079,19 +2176,26 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
                       key={colIndex}
                       rowSpan={rowSpan}
                       colSpan={colSpan}
+                      className={isFormFill ? "form-fill-cell" : ""}
                       style={{
                         ...baseCellStyle,
-                        border: isFormFill ? '1px solid #e5e7eb' : baseCellStyle.border,
-                        padding: isFormFill ? '6px' : baseCellStyle.padding,
-                        textAlign: isFormFill ? 'left' : baseCellStyle.textAlign,
-                        backgroundColor: isFormFill ? '#fff' : baseCellStyle.backgroundColor
+                        border: isFormFill ? "1px solid #e5e7eb" : baseCellStyle.border,
+                        padding: isFormFill ? "6px" : baseCellStyle.padding,
+                        textAlign: isFormFill ? "left" : baseCellStyle.textAlign,
+                        backgroundColor: isFormFill ? "#fff" : baseCellStyle.backgroundColor,
+                        verticalAlign: isFormFill ? "top" : baseCellStyle.verticalAlign,
+                        ...(isFormFill && {
+                          height: `${getRowHeight(0)}px`,
+                          maxHeight: `${getRowHeight(0)}px`,
+                          overflow: "hidden",
+                        }),
                       }}
                       onMouseDown={(e) => !isFormFill && handleCellMouseDown(rowIndex, colIndex, e)}
                       onMouseEnter={() => !isFormFill && handleCellMouseEnter(rowIndex, colIndex)}
                     >
                       {(() => {
                         const cellType = getCellType(rowIndex, colIndex);
-                        const cellValue = data[rowIndex]?.[colIndex] || '';
+                        const cellValue = data[rowIndex]?.[colIndex] || "";
                         const cellOptions = getCellOptions(rowIndex, colIndex);
                         const styleKey = `${rowIndex}-${colIndex}`;
                         const appliedStyle = cellStyles[styleKey] || {};
@@ -2099,45 +2203,56 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
                         // Show merge info for merged cells
                         if (merge) {
                           return (
-                            <div style={{
-                              display: 'flex',
-                              flexDirection: 'column',
-                              alignItems: 'stretch',
-                              justifyContent: 'flex-start',
-                              width: '100%',
-                              height: '100%',
-                              padding: '4px',
-                              position: 'relative',
-                              textAlign: 'left'
-                            }}>
-                              <div style={{
-                                position: 'absolute',
-                                top: '2px',
-                                right: '2px',
-                                fontSize: '10px',
-                                color: '#666',
-                                backgroundColor: '#e9ecef',
-                                padding: '1px 3px',
-                                borderRadius: '2px'
-                              }}>
-                                {rowSpan > 1 && colSpan > 1 ? `${rowSpan}×${colSpan}` :
-                                  rowSpan > 1 ? `${rowSpan}R` : `${colSpan}C`}
+                            <div
+                              style={{
+                                display: "flex",
+                                flexDirection: "column",
+                                alignItems: "stretch",
+                                justifyContent: "flex-start",
+                                width: "100%",
+                                height: isFormFill ? "auto" : "100%",
+                                maxHeight: isFormFill ? `${getRowHeight(0) - 12}px` : "none",
+                                padding: "4px",
+                                position: "relative",
+                                textAlign: "left",
+                                overflow: isFormFill ? "hidden" : "visible",
+                              }}
+                            >
+                              <div
+                                style={{
+                                  position: "absolute",
+                                  top: "2px",
+                                  right: "2px",
+                                  fontSize: "10px",
+                                  color: "#666",
+                                  backgroundColor: "#e9ecef",
+                                  padding: "1px 3px",
+                                  borderRadius: "2px",
+                                }}
+                              >
+                                {rowSpan > 1 && colSpan > 1
+                                  ? `${rowSpan}×${colSpan}`
+                                  : rowSpan > 1
+                                  ? `${rowSpan}R`
+                                  : `${colSpan}C`}
                               </div>
-                              <div style={{ marginTop: '12px' }}>
+                              <div style={{ marginTop: "12px" }}>
                                 {(() => {
                                   switch (cellType) {
-                                    case 'checkbox':
+                                    case "checkbox":
                                       return (
-                                        <div style={{
-                                          display: 'flex',
-                                          alignItems: 'center',
-                                          justifyContent: 'center',
-                                          width: '100%',
-                                          height: '100%'
-                                        }}>
+                                        <div
+                                          style={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                            width: "100%",
+                                            height: "100%",
+                                          }}
+                                        >
                                           <input
                                             type="checkbox"
-                                            checked={cellValue === true || cellValue === 'true'}
+                                            checked={cellValue === true || cellValue === "true"}
                                             onChange={(e) => handleCellChange(rowIndex, colIndex, e.target.checked)}
                                             onFocus={() => {
                                               if (!isFormFill) {
@@ -2147,17 +2262,17 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
                                             }}
                                             data-cell={cellKey}
                                             style={{
-                                              width: '16px',
-                                              height: '16px',
-                                              cursor: 'pointer',
-                                              accentColor: '#007bff'
+                                              width: "16px",
+                                              height: "16px",
+                                              cursor: "pointer",
+                                              accentColor: "#007bff",
                                             }}
                                             disabled={isReadOnly}
                                           />
                                         </div>
                                       );
 
-                                    case 'dropdown':
+                                    case "dropdown":
                                       return (
                                         <select
                                           value={cellValue}
@@ -2170,27 +2285,29 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
                                           }}
                                           data-cell={cellKey}
                                           style={{
-                                            width: '100%',
-                                            height: '100%',
-                                            border: 'none',
-                                            outline: 'none',
-                                            padding: '4px',
-                                            backgroundColor: 'transparent',
-                                            fontSize: '12px',
+                                            width: "100%",
+                                            height: "100%",
+                                            border: "none",
+                                            outline: "none",
+                                            padding: "4px",
+                                            backgroundColor: "transparent",
+                                            fontSize: "12px",
                                             fontFamily: '"Segoe UI", Arial, sans-serif',
-                                            cursor: 'pointer',
-                                            ...appliedStyle
+                                            cursor: "pointer",
+                                            ...appliedStyle,
                                           }}
                                           disabled={isReadOnly}
                                         >
                                           <option value="">Select...</option>
                                           {cellOptions.map((option, idx) => (
-                                            <option key={idx} value={option}>{option}</option>
+                                            <option key={idx} value={option}>
+                                              {option}
+                                            </option>
                                           ))}
                                         </select>
                                       );
 
-                                    case 'autocomplete':
+                                    case "autocomplete":
                                       return (
                                         <input
                                           type="text"
@@ -2203,41 +2320,45 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
                                             }
                                           }}
                                           onKeyDown={(e) => {
-                                            if (e.key === 'Enter') {
+                                            if (e.key === "Enter") {
                                               const nextRow = rowIndex + 1;
                                               if (nextRow < rows) {
-                                                const nextInput = document.querySelector(`input[data-cell="${nextRow}-${colIndex}"]`);
+                                                const nextInput = document.querySelector(
+                                                  `input[data-cell="${nextRow}-${colIndex}"]`
+                                                );
                                                 if (nextInput) nextInput.focus();
                                               }
-                                            } else if (e.key === 'Tab') {
+                                            } else if (e.key === "Tab") {
                                               e.preventDefault();
                                               const nextCol = colIndex + 1;
                                               if (nextCol < cols) {
-                                                const nextInput = document.querySelector(`input[data-cell="${rowIndex}-${nextCol}"]`);
+                                                const nextInput = document.querySelector(
+                                                  `input[data-cell="${rowIndex}-${nextCol}"]`
+                                                );
                                                 if (nextInput) nextInput.focus();
                                               }
                                             }
                                           }}
                                           data-cell={cellKey}
                                           style={{
-                                            width: '100%',
-                                            height: '100%',
-                                            border: 'none',
-                                            outline: 'none',
-                                            padding: '8px',
-                                            backgroundColor: 'transparent',
-                                            fontSize: '12px',
+                                            width: "100%",
+                                            height: "100%",
+                                            border: "none",
+                                            outline: "none",
+                                            padding: "8px",
+                                            backgroundColor: "transparent",
+                                            fontSize: "12px",
                                             fontFamily: '"Segoe UI", Arial, sans-serif',
-                                            lineHeight: '24px',
-                                            ...appliedStyle
+                                            lineHeight: "24px",
+                                            ...appliedStyle,
                                           }}
-                                          placeholder={isFormFill ? '' : `${getColumnHeader(colIndex)}${rowIndex + 1}`}
+                                          placeholder={isFormFill ? "" : `${getColumnHeader(colIndex)}${rowIndex + 1}`}
                                           disabled={isReadOnly}
                                           list={`autocomplete-${rowIndex}-${colIndex}`}
                                         />
                                       );
 
-                                    case 'date':
+                                    case "date":
                                       return (
                                         <input
                                           type="date"
@@ -2250,39 +2371,43 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
                                             }
                                           }}
                                           onKeyDown={(e) => {
-                                            if (e.key === 'Enter') {
+                                            if (e.key === "Enter") {
                                               const nextRow = rowIndex + 1;
                                               if (nextRow < rows) {
-                                                const nextInput = document.querySelector(`input[data-cell="${nextRow}-${colIndex}"]`);
+                                                const nextInput = document.querySelector(
+                                                  `input[data-cell="${nextRow}-${colIndex}"]`
+                                                );
                                                 if (nextInput) nextInput.focus();
                                               }
-                                            } else if (e.key === 'Tab') {
+                                            } else if (e.key === "Tab") {
                                               e.preventDefault();
                                               const nextCol = colIndex + 1;
                                               if (nextCol < cols) {
-                                                const nextInput = document.querySelector(`input[data-cell="${rowIndex}-${nextCol}"]`);
+                                                const nextInput = document.querySelector(
+                                                  `input[data-cell="${rowIndex}-${nextCol}"]`
+                                                );
                                                 if (nextInput) nextInput.focus();
                                               }
                                             }
                                           }}
                                           data-cell={cellKey}
                                           style={{
-                                            width: '100%',
-                                            height: '100%',
-                                            border: 'none',
-                                            outline: 'none',
-                                            padding: '8px',
-                                            backgroundColor: 'transparent',
-                                            fontSize: '12px',
+                                            width: "100%",
+                                            height: "100%",
+                                            border: "none",
+                                            outline: "none",
+                                            padding: "8px",
+                                            backgroundColor: "transparent",
+                                            fontSize: "12px",
                                             fontFamily: '"Segoe UI", Arial, sans-serif',
-                                            lineHeight: '24px',
-                                            ...appliedStyle
+                                            lineHeight: "24px",
+                                            ...appliedStyle,
                                           }}
                                           disabled={isReadOnly}
                                         />
                                       );
 
-                                    case 'time':
+                                    case "time":
                                       return (
                                         <input
                                           type="time"
@@ -2295,39 +2420,43 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
                                             }
                                           }}
                                           onKeyDown={(e) => {
-                                            if (e.key === 'Enter') {
+                                            if (e.key === "Enter") {
                                               const nextRow = rowIndex + 1;
                                               if (nextRow < rows) {
-                                                const nextInput = document.querySelector(`input[data-cell="${nextRow}-${colIndex}"]`);
+                                                const nextInput = document.querySelector(
+                                                  `input[data-cell="${nextRow}-${colIndex}"]`
+                                                );
                                                 if (nextInput) nextInput.focus();
                                               }
-                                            } else if (e.key === 'Tab') {
+                                            } else if (e.key === "Tab") {
                                               e.preventDefault();
                                               const nextCol = colIndex + 1;
                                               if (nextCol < cols) {
-                                                const nextInput = document.querySelector(`input[data-cell="${rowIndex}-${nextCol}"]`);
+                                                const nextInput = document.querySelector(
+                                                  `input[data-cell="${rowIndex}-${nextCol}"]`
+                                                );
                                                 if (nextInput) nextInput.focus();
                                               }
                                             }
                                           }}
                                           data-cell={cellKey}
                                           style={{
-                                            width: '100%',
-                                            height: '100%',
-                                            border: 'none',
-                                            outline: 'none',
-                                            padding: '8px',
-                                            backgroundColor: 'transparent',
-                                            fontSize: '12px',
+                                            width: "100%",
+                                            height: "100%",
+                                            border: "none",
+                                            outline: "none",
+                                            padding: "8px",
+                                            backgroundColor: "transparent",
+                                            fontSize: "12px",
                                             fontFamily: '"Segoe UI", Arial, sans-serif',
-                                            lineHeight: '24px',
-                                            ...appliedStyle
+                                            lineHeight: "24px",
+                                            ...appliedStyle,
                                           }}
                                           disabled={isReadOnly}
                                         />
                                       );
 
-                                    case 'numeric':
+                                    case "numeric":
                                       return (
                                         <input
                                           type="number"
@@ -2340,52 +2469,58 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
                                             }
                                           }}
                                           onKeyDown={(e) => {
-                                            if (e.key === 'Enter') {
+                                            if (e.key === "Enter") {
                                               const nextRow = rowIndex + 1;
                                               if (nextRow < rows) {
-                                                const nextInput = document.querySelector(`input[data-cell="${nextRow}-${colIndex}"]`);
+                                                const nextInput = document.querySelector(
+                                                  `input[data-cell="${nextRow}-${colIndex}"]`
+                                                );
                                                 if (nextInput) nextInput.focus();
                                               }
-                                            } else if (e.key === 'Tab') {
+                                            } else if (e.key === "Tab") {
                                               e.preventDefault();
                                               const nextCol = colIndex + 1;
                                               if (nextCol < cols) {
-                                                const nextInput = document.querySelector(`input[data-cell="${rowIndex}-${nextCol}"]`);
+                                                const nextInput = document.querySelector(
+                                                  `input[data-cell="${rowIndex}-${nextCol}"]`
+                                                );
                                                 if (nextInput) nextInput.focus();
                                               }
                                             }
                                           }}
                                           data-cell={cellKey}
                                           style={{
-                                            width: '100%',
-                                            height: '100%',
-                                            border: 'none',
-                                            outline: 'none',
-                                            padding: '8px',
-                                            backgroundColor: 'transparent',
-                                            fontSize: '12px',
+                                            width: "100%",
+                                            height: "100%",
+                                            border: "none",
+                                            outline: "none",
+                                            padding: "8px",
+                                            backgroundColor: "transparent",
+                                            fontSize: "12px",
                                             fontFamily: '"Segoe UI", Arial, sans-serif',
-                                            lineHeight: '24px',
-                                            ...appliedStyle
+                                            lineHeight: "24px",
+                                            ...appliedStyle,
                                           }}
-                                          placeholder={isFormFill ? '' : `${getColumnHeader(colIndex)}${rowIndex + 1}`}
+                                          placeholder={isFormFill ? "" : `${getColumnHeader(colIndex)}${rowIndex + 1}`}
                                           disabled={isReadOnly}
                                         />
                                       );
 
-                                    case 'color':
+                                    case "color":
                                       return (
-                                        <div style={{
-                                          display: 'flex',
-                                          alignItems: 'center',
-                                          justifyContent: 'center',
-                                          width: '100%',
-                                          height: '100%',
-                                          padding: '2px'
-                                        }}>
+                                        <div
+                                          style={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                            width: "100%",
+                                            height: "100%",
+                                            padding: "2px",
+                                          }}
+                                        >
                                           <input
                                             type="color"
-                                            value={cellValue || '#000000'}
+                                            value={cellValue || "#000000"}
                                             onChange={(e) => handleCellChange(rowIndex, colIndex, e.target.value)}
                                             onFocus={() => {
                                               if (!isFormFill) {
@@ -2395,39 +2530,41 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
                                             }}
                                             data-cell={cellKey}
                                             style={{
-                                              width: '30px',
-                                              height: '30px',
-                                              border: '1px solid #ddd',
-                                              borderRadius: '4px',
-                                              cursor: 'pointer'
+                                              width: "30px",
+                                              height: "30px",
+                                              border: "1px solid #ddd",
+                                              borderRadius: "4px",
+                                              cursor: "pointer",
                                             }}
                                             disabled={isReadOnly}
                                           />
                                         </div>
                                       );
 
-                                    case 'image':
+                                    case "image":
                                       return (
-                                        <div style={{
-                                          display: 'flex',
-                                          alignItems: 'center',
-                                          justifyContent: 'center',
-                                          width: '100%',
-                                          height: '100%',
-                                          padding: '2px'
-                                        }}>
+                                        <div
+                                          style={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                            width: "100%",
+                                            height: "100%",
+                                            padding: "2px",
+                                          }}
+                                        >
                                           {cellValue ? (
                                             <img
                                               src={cellValue}
                                               alt="Image"
                                               style={{
-                                                maxWidth: '100%',
-                                                maxHeight: '100%',
-                                                objectFit: 'contain'
+                                                maxWidth: "100%",
+                                                maxHeight: "100%",
+                                                objectFit: "contain",
                                               }}
                                               onError={(e) => {
-                                                e.target.style.display = 'none';
-                                                e.target.nextSibling.style.display = 'block';
+                                                e.target.style.display = "none";
+                                                e.target.nextSibling.style.display = "block";
                                               }}
                                             />
                                           ) : null}
@@ -2442,34 +2579,37 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
                                               }
                                             }}
                                             onKeyDown={(e) => {
-                                              if (e.key === 'Enter') {
+                                              if (e.key === "Enter") {
                                                 const nextRow = rowIndex + 1;
                                                 if (nextRow < rows) {
-                                                  const nextInput = document.querySelector(`input[data-cell="${nextRow}-${colIndex}"]`);
+                                                  const nextInput = document.querySelector(
+                                                    `input[data-cell="${nextRow}-${colIndex}"]`
+                                                  );
                                                   if (nextInput) nextInput.focus();
                                                 }
-                                              } else if (e.key === 'Tab') {
+                                              } else if (e.key === "Tab") {
                                                 e.preventDefault();
                                                 const nextCol = colIndex + 1;
                                                 if (nextCol < cols) {
-                                                  const nextInput = document.querySelector(`input[data-cell="${rowIndex}-${nextCol}"]`);
+                                                  const nextInput = document.querySelector(
+                                                    `input[data-cell="${rowIndex}-${nextCol}"]`
+                                                  );
                                                   if (nextInput) nextInput.focus();
                                                 }
                                               }
                                             }}
                                             data-cell={cellKey}
                                             style={{
-                                              width: '100%',
-                                              height: '100%',
-                                              border: 'none',
-                                              outline: 'none',
-                                              padding: '8px',
-                                              backgroundColor: 'transparent',
-                                              fontSize: '12px',
+                                              width: "100%",
+                                              height: "100%",
+                                              border: "none",
+                                              outline: "none",
+                                              padding: "8px",
+                                              backgroundColor: "transparent",
+                                              fontSize: "12px",
                                               fontFamily: '"Segoe UI", Arial, sans-serif',
-                                              lineHeight: '24px',
-                                              display: cellValue ? 'none' : 'block',
-                                              ...appliedStyle
+                                              lineHeight: "24px",
+                                              display: cellValue ? "none" : "block",
                                             }}
                                             placeholder="Enter image URL..."
                                             disabled={isReadOnly}
@@ -2477,7 +2617,7 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
                                         </div>
                                       );
 
-                                    case 'richtext':
+                                    case "richtext":
                                       return (
                                         <textarea
                                           value={cellValue}
@@ -2489,122 +2629,128 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
                                             }
                                           }}
                                           onKeyDown={(e) => {
-                                            if (e.key === 'Enter' && e.shiftKey) {
+                                            if (e.key === "Enter" && e.shiftKey) {
                                               // Allow new lines with Shift+Enter
                                               return;
-                                            } else if (e.key === 'Enter') {
+                                            } else if (e.key === "Enter") {
                                               e.preventDefault();
                                               const nextRow = rowIndex + 1;
                                               if (nextRow < rows) {
-                                                const nextInput = document.querySelector(`input[data-cell="${nextRow}-${colIndex}"]`);
+                                                const nextInput = document.querySelector(
+                                                  `input[data-cell="${nextRow}-${colIndex}"]`
+                                                );
                                                 if (nextInput) nextInput.focus();
                                               }
-                                            } else if (e.key === 'Tab') {
+                                            } else if (e.key === "Tab") {
                                               e.preventDefault();
                                               const nextCol = colIndex + 1;
                                               if (nextCol < cols) {
-                                                const nextInput = document.querySelector(`input[data-cell="${rowIndex}-${nextCol}"]`);
+                                                const nextInput = document.querySelector(
+                                                  `input[data-cell="${rowIndex}-${nextCol}"]`
+                                                );
                                                 if (nextInput) nextInput.focus();
                                               }
                                             }
                                           }}
                                           data-cell={cellKey}
                                           style={{
-                                            width: '100%',
-                                            height: '100%',
-                                            border: 'none',
-                                            outline: 'none',
-                                            padding: '8px',
-                                            backgroundColor: 'transparent',
-                                            fontSize: '12px',
+                                            width: "100%",
+                                            height: "100%",
+                                            border: "none",
+                                            outline: "none",
+                                            padding: "8px",
+                                            backgroundColor: "transparent",
+                                            fontSize: "12px",
                                             fontFamily: '"Segoe UI", Arial, sans-serif',
-                                            resize: 'none',
-                                            overflow: 'hidden',
-                                            ...appliedStyle
+                                            resize: "none",
+                                            overflow: "hidden",
+                                            ...appliedStyle,
                                           }}
-                                          placeholder={isFormFill ? '' : `${getColumnHeader(colIndex)}${rowIndex + 1}`}
+                                          placeholder={isFormFill ? "" : `${getColumnHeader(colIndex)}${rowIndex + 1}`}
                                           disabled={isReadOnly}
                                         />
                                       );
 
                                     default: // text
-                                      return (
-                                        isFormFill ? (
-                                          <textarea
-                                            value={cellValue}
-                                            onChange={(e) => {
-                                              handleCellChange(rowIndex, colIndex, e.target.value);
-                                              e.target.style.height = 'auto';
-                                              e.target.style.height = `${e.target.scrollHeight}px`;
-                                            }}
-                                            onFocus={(e) => {
-                                              e.target.style.height = 'auto';
-                                              e.target.style.height = `${e.target.scrollHeight}px`;
-                                            }}
-                                            data-cell={cellKey}
-                                            style={{
-                                              width: '100%',
-                                              minHeight: '32px',
-                                              border: 'none',
-                                              outline: 'none',
-                                              padding: '8px',
-                                              backgroundColor: 'transparent',
-                                              fontSize: '12px',
-                                              fontFamily: '"Segoe UI", Arial, sans-serif',
-                                              whiteSpace: 'pre-wrap',
-                                              wordBreak: 'break-word',
-                                              overflowWrap: 'anywhere',
-                                              resize: 'none',
-                                              lineHeight: '20px',
-                                              ...appliedStyle
-                                            }}
-                                            placeholder={isFormFill ? '' : `${getColumnHeader(colIndex)}${rowIndex + 1}`}
-                                            disabled={isReadOnly}
-                                          />
-                                        ) : (
-                                          <input
-                                            type="text"
-                                            value={cellValue}
-                                            onChange={(e) => handleCellChange(rowIndex, colIndex, e.target.value)}
-                                            onFocus={() => {
-                                              if (!isFormFill) {
-                                                setSelectedCell(cellKey);
-                                                setShowToolbar(true);
+                                      return isFormFill ? (
+                                        <textarea
+                                          value={cellValue}
+                                          onChange={(e) => {
+                                            handleCellChange(rowIndex, colIndex, e.target.value);
+                                            e.target.style.height = "auto";
+                                            e.target.style.height = `${e.target.scrollHeight}px`;
+                                          }}
+                                          onFocus={(e) => {
+                                            e.target.style.height = "auto";
+                                            e.target.style.height = `${e.target.scrollHeight}px`;
+                                          }}
+                                          data-cell={cellKey}
+                                          style={{
+                                            width: "100%",
+                                            minHeight: "32px",
+                                            border: "none",
+                                            outline: "none",
+                                            padding: "8px",
+                                            backgroundColor: "transparent",
+                                            fontSize: "12px",
+                                            fontFamily: '"Segoe UI", Arial, sans-serif',
+                                            whiteSpace: "pre-wrap",
+                                            wordBreak: "break-word",
+                                            overflowWrap: "anywhere",
+                                            resize: "none",
+                                            lineHeight: "20px",
+                                            ...appliedStyle,
+                                          }}
+                                          placeholder={isFormFill ? "" : `${getColumnHeader(colIndex)}${rowIndex + 1}`}
+                                          disabled={isReadOnly}
+                                        />
+                                      ) : (
+                                        <input
+                                          type="text"
+                                          value={cellValue}
+                                          onChange={(e) => handleCellChange(rowIndex, colIndex, e.target.value)}
+                                          onFocus={() => {
+                                            if (!isFormFill) {
+                                              setSelectedCell(cellKey);
+                                              setShowToolbar(true);
+                                            }
+                                          }}
+                                          onKeyDown={(e) => {
+                                            if (e.key === "Enter") {
+                                              const nextRow = rowIndex + 1;
+                                              if (nextRow < rows) {
+                                                const nextInput = document.querySelector(
+                                                  `input[data-cell=\"${nextRow}-${colIndex}\"]`
+                                                );
+                                                if (nextInput) nextInput.focus();
                                               }
-                                            }}
-                                            onKeyDown={(e) => {
-                                              if (e.key === 'Enter') {
-                                                const nextRow = rowIndex + 1;
-                                                if (nextRow < rows) {
-                                                  const nextInput = document.querySelector(`input[data-cell=\"${nextRow}-${colIndex}\"]`);
-                                                  if (nextInput) nextInput.focus();
-                                                }
-                                              } else if (e.key === 'Tab') {
-                                                e.preventDefault();
-                                                const nextCol = colIndex + 1;
-                                                if (nextCol < cols) {
-                                                  const nextInput = document.querySelector(`input[data-cell=\"${rowIndex}-${nextCol}\"]`);
-                                                  if (nextInput) nextInput.focus();
-                                                }
+                                            } else if (e.key === "Tab") {
+                                              e.preventDefault();
+                                              const nextCol = colIndex + 1;
+                                              if (nextCol < cols) {
+                                                const nextInput = document.querySelector(
+                                                  `input[data-cell=\"${rowIndex}-${nextCol}\"]`
+                                                );
+                                                if (nextInput) nextInput.focus();
                                               }
-                                            }}
-                                            data-cell={cellKey}
-                                            style={{
-                                              width: '100%',
-                                              height: '100%',
-                                              border: 'none',
-                                              outline: 'none',
-                                              padding: '8px',
-                                              backgroundColor: 'transparent',
-                                              fontSize: '12px',
-                                              fontFamily: '"Segoe UI", Arial, sans-serif',
-                                              lineHeight: '24px',
-                                              ...appliedStyle
-                                            }}
-                                            placeholder={isFormFill ? '' : `${getColumnHeader(colIndex)}${rowIndex + 1}`}
-                                            disabled={isReadOnly}
-                                          />
-                                        )
+                                            }
+                                          }}
+                                          data-cell={cellKey}
+                                          style={{
+                                            width: "100%",
+                                            height: "100%",
+                                            border: "none",
+                                            outline: "none",
+                                            padding: "8px",
+                                            backgroundColor: "transparent",
+                                            fontSize: "12px",
+                                            fontFamily: '"Segoe UI", Arial, sans-serif',
+                                            lineHeight: "24px",
+                                            ...appliedStyle,
+                                          }}
+                                          placeholder={isFormFill ? "" : `${getColumnHeader(colIndex)}${rowIndex + 1}`}
+                                          disabled={isReadOnly}
+                                        />
                                       );
                                   }
                                 })()}
@@ -2615,19 +2761,21 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
 
                         // Regular cell rendering (non-merged)
                         switch (cellType) {
-                          case 'checkbox':
+                          case "checkbox":
                             return (
-                              <div style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                width: '100%',
-                                height: '100%',
-                                padding: '2px'
-                              }}>
+                              <div
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  width: "100%",
+                                  height: "100%",
+                                  padding: "2px",
+                                }}
+                              >
                                 <input
                                   type="checkbox"
-                                  checked={cellValue === true || cellValue === 'true'}
+                                  checked={cellValue === true || cellValue === "true"}
                                   onChange={(e) => handleCellChange(rowIndex, colIndex, e.target.checked)}
                                   onFocus={() => {
                                     if (!isFormFill) {
@@ -2637,17 +2785,17 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
                                   }}
                                   data-cell={cellKey}
                                   style={{
-                                    width: '16px',
-                                    height: '16px',
-                                    cursor: 'pointer',
-                                    accentColor: '#007bff'
+                                    width: "16px",
+                                    height: "16px",
+                                    cursor: "pointer",
+                                    accentColor: "#007bff",
                                   }}
                                   disabled={isReadOnly}
                                 />
                               </div>
                             );
 
-                          case 'dropdown':
+                          case "dropdown":
                             return (
                               <select
                                 value={cellValue}
@@ -2660,27 +2808,28 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
                                 }}
                                 data-cell={cellKey}
                                 style={{
-                                  width: '100%',
-                                  height: '100%',
-                                  border: 'none',
-                                  outline: 'none',
-                                  padding: '4px',
-                                  backgroundColor: 'transparent',
-                                  fontSize: '12px',
+                                  width: "100%",
+                                  height: "100%",
+                                  border: "none",
+                                  outline: "none",
+                                  padding: "4px",
+                                  backgroundColor: "transparent",
+                                  fontSize: "12px",
                                   fontFamily: '"Segoe UI", Arial, sans-serif',
-                                  cursor: 'pointer',
-                                  ...appliedStyle
+                                  cursor: "pointer",
                                 }}
                                 disabled={isReadOnly}
                               >
                                 <option value="">Select...</option>
                                 {cellOptions.map((option, idx) => (
-                                  <option key={idx} value={option}>{option}</option>
+                                  <option key={idx} value={option}>
+                                    {option}
+                                  </option>
                                 ))}
                               </select>
                             );
 
-                          case 'autocomplete':
+                          case "autocomplete":
                             return (
                               <input
                                 type="text"
@@ -2693,41 +2842,44 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
                                   }
                                 }}
                                 onKeyDown={(e) => {
-                                  if (e.key === 'Enter') {
+                                  if (e.key === "Enter") {
                                     const nextRow = rowIndex + 1;
                                     if (nextRow < rows) {
-                                      const nextInput = document.querySelector(`input[data-cell="${nextRow}-${colIndex}"]`);
+                                      const nextInput = document.querySelector(
+                                        `input[data-cell="${nextRow}-${colIndex}"]`
+                                      );
                                       if (nextInput) nextInput.focus();
                                     }
-                                  } else if (e.key === 'Tab') {
+                                  } else if (e.key === "Tab") {
                                     e.preventDefault();
                                     const nextCol = colIndex + 1;
                                     if (nextCol < cols) {
-                                      const nextInput = document.querySelector(`input[data-cell="${rowIndex}-${nextCol}"]`);
+                                      const nextInput = document.querySelector(
+                                        `input[data-cell="${rowIndex}-${nextCol}"]`
+                                      );
                                       if (nextInput) nextInput.focus();
                                     }
                                   }
                                 }}
                                 data-cell={cellKey}
                                 style={{
-                                  width: '100%',
-                                  height: '100%',
-                                  border: 'none',
-                                  outline: 'none',
-                                  padding: '8px',
-                                  backgroundColor: 'transparent',
-                                  fontSize: '12px',
+                                  width: "100%",
+                                  height: "100%",
+                                  border: "none",
+                                  outline: "none",
+                                  padding: "8px",
+                                  backgroundColor: "transparent",
+                                  fontSize: "12px",
                                   fontFamily: '"Segoe UI", Arial, sans-serif',
-                                  lineHeight: '24px',
-                                  ...appliedStyle
+                                  lineHeight: "24px",
                                 }}
-                                placeholder={isFormFill ? '' : `${getColumnHeader(colIndex)}${rowIndex + 1}`}
+                                placeholder={isFormFill ? "" : `${getColumnHeader(colIndex)}${rowIndex + 1}`}
                                 disabled={isReadOnly}
                                 list={`autocomplete-${rowIndex}-${colIndex}`}
                               />
                             );
 
-                          case 'date':
+                          case "date":
                             return (
                               <input
                                 type="date"
@@ -2740,39 +2892,42 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
                                   }
                                 }}
                                 onKeyDown={(e) => {
-                                  if (e.key === 'Enter') {
+                                  if (e.key === "Enter") {
                                     const nextRow = rowIndex + 1;
                                     if (nextRow < rows) {
-                                      const nextInput = document.querySelector(`input[data-cell="${nextRow}-${colIndex}"]`);
+                                      const nextInput = document.querySelector(
+                                        `input[data-cell="${nextRow}-${colIndex}"]`
+                                      );
                                       if (nextInput) nextInput.focus();
                                     }
-                                  } else if (e.key === 'Tab') {
+                                  } else if (e.key === "Tab") {
                                     e.preventDefault();
                                     const nextCol = colIndex + 1;
                                     if (nextCol < cols) {
-                                      const nextInput = document.querySelector(`input[data-cell="${rowIndex}-${nextCol}"]`);
+                                      const nextInput = document.querySelector(
+                                        `input[data-cell="${rowIndex}-${nextCol}"]`
+                                      );
                                       if (nextInput) nextInput.focus();
                                     }
                                   }
                                 }}
                                 data-cell={cellKey}
                                 style={{
-                                  width: '100%',
-                                  height: '100%',
-                                  border: 'none',
-                                  outline: 'none',
-                                  padding: '8px',
-                                  backgroundColor: 'transparent',
-                                  fontSize: '12px',
+                                  width: "100%",
+                                  height: "100%",
+                                  border: "none",
+                                  outline: "none",
+                                  padding: "8px",
+                                  backgroundColor: "transparent",
+                                  fontSize: "12px",
                                   fontFamily: '"Segoe UI", Arial, sans-serif',
-                                  lineHeight: '24px',
-                                  ...appliedStyle
+                                  lineHeight: "24px",
                                 }}
                                 disabled={isReadOnly}
                               />
                             );
 
-                          case 'time':
+                          case "time":
                             return (
                               <input
                                 type="time"
@@ -2785,39 +2940,42 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
                                   }
                                 }}
                                 onKeyDown={(e) => {
-                                  if (e.key === 'Enter') {
+                                  if (e.key === "Enter") {
                                     const nextRow = rowIndex + 1;
                                     if (nextRow < rows) {
-                                      const nextInput = document.querySelector(`input[data-cell="${nextRow}-${colIndex}"]`);
+                                      const nextInput = document.querySelector(
+                                        `input[data-cell="${nextRow}-${colIndex}"]`
+                                      );
                                       if (nextInput) nextInput.focus();
                                     }
-                                  } else if (e.key === 'Tab') {
+                                  } else if (e.key === "Tab") {
                                     e.preventDefault();
                                     const nextCol = colIndex + 1;
                                     if (nextCol < cols) {
-                                      const nextInput = document.querySelector(`input[data-cell="${rowIndex}-${nextCol}"]`);
+                                      const nextInput = document.querySelector(
+                                        `input[data-cell="${rowIndex}-${nextCol}"]`
+                                      );
                                       if (nextInput) nextInput.focus();
                                     }
                                   }
                                 }}
                                 data-cell={cellKey}
                                 style={{
-                                  width: '100%',
-                                  height: '100%',
-                                  border: 'none',
-                                  outline: 'none',
-                                  padding: '8px',
-                                  backgroundColor: 'transparent',
-                                  fontSize: '12px',
+                                  width: "100%",
+                                  height: "100%",
+                                  border: "none",
+                                  outline: "none",
+                                  padding: "8px",
+                                  backgroundColor: "transparent",
+                                  fontSize: "12px",
                                   fontFamily: '"Segoe UI", Arial, sans-serif',
-                                  lineHeight: '24px',
-                                  ...appliedStyle
+                                  lineHeight: "24px",
                                 }}
                                 disabled={isReadOnly}
                               />
                             );
 
-                          case 'numeric':
+                          case "numeric":
                             return (
                               <input
                                 type="number"
@@ -2830,52 +2988,58 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
                                   }
                                 }}
                                 onKeyDown={(e) => {
-                                  if (e.key === 'Enter') {
+                                  if (e.key === "Enter") {
                                     const nextRow = rowIndex + 1;
                                     if (nextRow < rows) {
-                                      const nextInput = document.querySelector(`input[data-cell="${nextRow}-${colIndex}"]`);
+                                      const nextInput = document.querySelector(
+                                        `input[data-cell="${nextRow}-${colIndex}"]`
+                                      );
                                       if (nextInput) nextInput.focus();
                                     }
-                                  } else if (e.key === 'Tab') {
+                                  } else if (e.key === "Tab") {
                                     e.preventDefault();
                                     const nextCol = colIndex + 1;
                                     if (nextCol < cols) {
-                                      const nextInput = document.querySelector(`input[data-cell="${rowIndex}-${nextCol}"]`);
+                                      const nextInput = document.querySelector(
+                                        `input[data-cell="${rowIndex}-${nextCol}"]`
+                                      );
                                       if (nextInput) nextInput.focus();
                                     }
                                   }
                                 }}
                                 data-cell={cellKey}
                                 style={{
-                                  width: '100%',
-                                  height: '100%',
-                                  border: 'none',
-                                  outline: 'none',
-                                  padding: '8px',
-                                  backgroundColor: 'transparent',
-                                  fontSize: '12px',
+                                  width: "100%",
+                                  height: "100%",
+                                  border: "none",
+                                  outline: "none",
+                                  padding: "8px",
+                                  backgroundColor: "transparent",
+                                  fontSize: "12px",
                                   fontFamily: '"Segoe UI", Arial, sans-serif',
-                                  lineHeight: '24px',
-                                  ...appliedStyle
+                                  lineHeight: "24px",
+                                  ...appliedStyle,
                                 }}
-                                placeholder={isFormFill ? '' : `${getColumnHeader(colIndex)}${rowIndex + 1}`}
+                                placeholder={isFormFill ? "" : `${getColumnHeader(colIndex)}${rowIndex + 1}`}
                                 disabled={isReadOnly}
                               />
                             );
 
-                          case 'color':
+                          case "color":
                             return (
-                              <div style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                width: '100%',
-                                height: '100%',
-                                padding: '2px'
-                              }}>
+                              <div
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  width: "100%",
+                                  height: "100%",
+                                  padding: "2px",
+                                }}
+                              >
                                 <input
                                   type="color"
-                                  value={cellValue || '#000000'}
+                                  value={cellValue || "#000000"}
                                   onChange={(e) => handleCellChange(rowIndex, colIndex, e.target.value)}
                                   onFocus={() => {
                                     if (!isFormFill) {
@@ -2885,39 +3049,41 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
                                   }}
                                   data-cell={cellKey}
                                   style={{
-                                    width: '30px',
-                                    height: '30px',
-                                    border: '1px solid #ddd',
-                                    borderRadius: '4px',
-                                    cursor: 'pointer'
+                                    width: "30px",
+                                    height: "30px",
+                                    border: "1px solid #ddd",
+                                    borderRadius: "4px",
+                                    cursor: "pointer",
                                   }}
                                   disabled={isReadOnly}
                                 />
                               </div>
                             );
 
-                          case 'image':
+                          case "image":
                             return (
-                              <div style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                width: '100%',
-                                height: '100%',
-                                padding: '2px'
-                              }}>
+                              <div
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  width: "100%",
+                                  height: "100%",
+                                  padding: "2px",
+                                }}
+                              >
                                 {cellValue ? (
                                   <img
                                     src={cellValue}
                                     alt="Image"
                                     style={{
-                                      maxWidth: '100%',
-                                      maxHeight: '100%',
-                                      objectFit: 'contain'
+                                      maxWidth: "100%",
+                                      maxHeight: "100%",
+                                      objectFit: "contain",
                                     }}
                                     onError={(e) => {
-                                      e.target.style.display = 'none';
-                                      e.target.nextSibling.style.display = 'block';
+                                      e.target.style.display = "none";
+                                      e.target.nextSibling.style.display = "block";
                                     }}
                                   />
                                 ) : null}
@@ -2932,34 +3098,37 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
                                     }
                                   }}
                                   onKeyDown={(e) => {
-                                    if (e.key === 'Enter') {
+                                    if (e.key === "Enter") {
                                       const nextRow = rowIndex + 1;
                                       if (nextRow < rows) {
-                                        const nextInput = document.querySelector(`input[data-cell="${nextRow}-${colIndex}"]`);
+                                        const nextInput = document.querySelector(
+                                          `input[data-cell="${nextRow}-${colIndex}"]`
+                                        );
                                         if (nextInput) nextInput.focus();
                                       }
-                                    } else if (e.key === 'Tab') {
+                                    } else if (e.key === "Tab") {
                                       e.preventDefault();
                                       const nextCol = colIndex + 1;
                                       if (nextCol < cols) {
-                                        const nextInput = document.querySelector(`input[data-cell="${rowIndex}-${nextCol}"]`);
+                                        const nextInput = document.querySelector(
+                                          `input[data-cell="${rowIndex}-${nextCol}"]`
+                                        );
                                         if (nextInput) nextInput.focus();
                                       }
                                     }
                                   }}
                                   data-cell={cellKey}
                                   style={{
-                                    width: '100%',
-                                    height: '100%',
-                                    border: 'none',
-                                    outline: 'none',
-                                    padding: '8px',
-                                    backgroundColor: 'transparent',
-                                    fontSize: '12px',
+                                    width: "100%",
+                                    height: "100%",
+                                    border: "none",
+                                    outline: "none",
+                                    padding: "8px",
+                                    backgroundColor: "transparent",
+                                    fontSize: "12px",
                                     fontFamily: '"Segoe UI", Arial, sans-serif',
-                                    lineHeight: '24px',
-                                    display: cellValue ? 'none' : 'block',
-                                    ...appliedStyle
+                                    lineHeight: "24px",
+                                    display: cellValue ? "none" : "block",
                                   }}
                                   placeholder="Enter image URL..."
                                   disabled={isReadOnly}
@@ -2967,7 +3136,7 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
                               </div>
                             );
 
-                          case 'richtext':
+                          case "richtext":
                             return (
                               <textarea
                                 value={cellValue}
@@ -2979,40 +3148,44 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
                                   }
                                 }}
                                 onKeyDown={(e) => {
-                                  if (e.key === 'Enter' && e.shiftKey) {
+                                  if (e.key === "Enter" && e.shiftKey) {
                                     // Allow new lines with Shift+Enter
                                     return;
-                                  } else if (e.key === 'Enter') {
+                                  } else if (e.key === "Enter") {
                                     e.preventDefault();
                                     const nextRow = rowIndex + 1;
                                     if (nextRow < rows) {
-                                      const nextInput = document.querySelector(`input[data-cell="${nextRow}-${colIndex}"]`);
+                                      const nextInput = document.querySelector(
+                                        `input[data-cell="${nextRow}-${colIndex}"]`
+                                      );
                                       if (nextInput) nextInput.focus();
                                     }
-                                  } else if (e.key === 'Tab') {
+                                  } else if (e.key === "Tab") {
                                     e.preventDefault();
                                     const nextCol = colIndex + 1;
                                     if (nextCol < cols) {
-                                      const nextInput = document.querySelector(`input[data-cell="${rowIndex}-${nextCol}"]`);
+                                      const nextInput = document.querySelector(
+                                        `input[data-cell="${rowIndex}-${nextCol}"]`
+                                      );
                                       if (nextInput) nextInput.focus();
                                     }
                                   }
                                 }}
                                 data-cell={cellKey}
                                 style={{
-                                  width: '100%',
-                                  height: '100%',
-                                  border: 'none',
-                                  outline: 'none',
-                                  padding: '8px',
-                                  backgroundColor: 'transparent',
-                                  fontSize: '12px',
+                                  width: "100%",
+                                  height: "100%",
+                                  border: "none",
+                                  outline: "none",
+                                  padding: "8px",
+                                  backgroundColor: "transparent",
+                                  fontSize: "12px",
                                   fontFamily: '"Segoe UI", Arial, sans-serif',
-                                  resize: 'none',
-                                  overflow: 'hidden',
-                                  ...appliedStyle
+                                  resize: "none",
+                                  overflow: "hidden",
+                                  ...appliedStyle,
                                 }}
-                                placeholder={isFormFill ? '' : `${getColumnHeader(colIndex)}${rowIndex + 1}`}
+                                placeholder={isFormFill ? "" : `${getColumnHeader(colIndex)}${rowIndex + 1}`}
                                 disabled={isReadOnly}
                               />
                             );
@@ -3030,35 +3203,39 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
                                   }
                                 }}
                                 onKeyDown={(e) => {
-                                  if (e.key === 'Enter') {
+                                  if (e.key === "Enter") {
                                     const nextRow = rowIndex + 1;
                                     if (nextRow < rows) {
-                                      const nextInput = document.querySelector(`input[data-cell="${nextRow}-${colIndex}"]`);
+                                      const nextInput = document.querySelector(
+                                        `input[data-cell="${nextRow}-${colIndex}"]`
+                                      );
                                       if (nextInput) nextInput.focus();
                                     }
-                                  } else if (e.key === 'Tab') {
+                                  } else if (e.key === "Tab") {
                                     e.preventDefault();
                                     const nextCol = colIndex + 1;
                                     if (nextCol < cols) {
-                                      const nextInput = document.querySelector(`input[data-cell="${rowIndex}-${nextCol}"]`);
+                                      const nextInput = document.querySelector(
+                                        `input[data-cell="${rowIndex}-${nextCol}"]`
+                                      );
                                       if (nextInput) nextInput.focus();
                                     }
                                   }
                                 }}
                                 data-cell={cellKey}
                                 style={{
-                                  width: '100%',
-                                  height: '100%',
-                                  border: 'none',
-                                  outline: 'none',
-                                  padding: '8px',
-                                  backgroundColor: 'transparent',
-                                  fontSize: '12px',
+                                  width: "100%",
+                                  height: "100%",
+                                  border: "none",
+                                  outline: "none",
+                                  padding: "8px",
+                                  backgroundColor: "transparent",
+                                  fontSize: "12px",
                                   fontFamily: '"Segoe UI", Arial, sans-serif',
-                                  lineHeight: '24px',
-                                  ...appliedStyle
+                                  lineHeight: "24px",
+                                  ...appliedStyle,
                                 }}
-                                placeholder={isFormFill ? '' : `${getColumnHeader(colIndex)}${rowIndex + 1}`}
+                                placeholder={isFormFill ? "" : `${getColumnHeader(colIndex)}${rowIndex + 1}`}
                                 disabled={isReadOnly}
                               />
                             );
@@ -3077,91 +3254,124 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
       {showToolbar && !isFormFill && (
         <>
           {/* Range Selection Instructions */}
-          <div style={{
-            top: '10px',
-            left: '10px',
-            backgroundColor: '#e3f2fd',
-            border: '1px solid #2196f3',
-            borderRadius: '4px',
-            padding: '8px 12px',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-            zIndex: 999,
-            fontSize: '12px',
-            color: '#1976d2',
-            maxWidth: '300px',
-          }}>
+          <div
+            style={{
+              top: "10px",
+              left: "10px",
+              backgroundColor: "#e3f2fd",
+              border: "1px solid #2196f3",
+              borderRadius: "4px",
+              padding: "8px 12px",
+              boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+              zIndex: 999,
+              fontSize: "12px",
+              color: "#1976d2",
+              maxWidth: "300px",
+            }}
+          ></div>
 
-          </div>
-
-          <div style={{
-            position: 'absolute',
-            top: '10px',
-            right: '10px',
-            backgroundColor: '#fff',
-            border: '1px solid #ddd',
-            borderRadius: '4px',
-            padding: '8px',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-            zIndex: 1000,
-            display: 'flex',
-            gap: '5px',
-            flexWrap: 'wrap'
-          }}>
+          <div
+            style={{
+              position: "absolute",
+              top: "10px",
+              right: "10px",
+              backgroundColor: "#fff",
+              border: "1px solid #ddd",
+              borderRadius: "4px",
+              padding: "8px",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+              zIndex: 1000,
+              display: "flex",
+              gap: "5px",
+              flexWrap: "wrap",
+            }}
+          >
             {/* Inline format bar for text styling */}
             <select
               onChange={(e) => {
-                const val = e.target.value;
-                updateStylesForSelection((cur) => ({ ...cur, fontSize: val }));
+                if (!selectedCell) return;
+                const [r, c] = selectedCell.split("-").map(Number);
+                const key = `${r}-${c}`;
+                const next = { ...(cellStyles[key] || {}), fontSize: e.target.value };
+                const nextMap = { ...cellStyles, [key]: next };
+                setCellStyles(nextMap);
+                updateField({ cellStyles: nextMap });
               }}
-              value={selectedCell ? ((cellStyles[selectedCell] && cellStyles[selectedCell].fontSize) || '12px') : '12px'}
-              style={{ padding: '4px', borderRadius: 4 }}
+              value={selectedCell ? (cellStyles[selectedCell] && cellStyles[selectedCell].fontSize) || "12px" : "12px"}
+              style={{ padding: "4px", borderRadius: 4 }}
               title="Font size"
             >
-              {['12px', '14px', '16px', '18px', '20px'].map(s => <option key={s} value={s}>{s}</option>)}
+              {["12px", "14px", "16px", "18px", "20px"].map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
             </select>
             <input
               type="color"
               title="Font color"
               onChange={(e) => {
-                const val = e.target.value;
-                updateStylesForSelection((cur) => ({ ...cur, color: val }));
+                if (!selectedCell) return;
+                const [r, c] = selectedCell.split("-").map(Number);
+                const key = `${r}-${c}`;
+                const next = { ...(cellStyles[key] || {}), color: e.target.value };
+                const nextMap = { ...cellStyles, [key]: next };
+                setCellStyles(nextMap);
+                updateField({ cellStyles: nextMap });
               }}
-              value={selectedCell ? ((cellStyles[selectedCell] && cellStyles[selectedCell].color) || '#000000') : '#000000'}
-              style={{ width: 36, height: 32, padding: 0, border: '1px solid #ddd', borderRadius: 4 }}
+              value={
+                selectedCell ? (cellStyles[selectedCell] && cellStyles[selectedCell].color) || "#000000" : "#000000"
+              }
+              style={{ width: 36, height: 32, padding: 0, border: "1px solid #ddd", borderRadius: 4 }}
             />
-            <span style={{ fontSize: '10px', color: '#666', marginLeft: '2px' }}>Text</span>
-            <input
-              type="color"
-              title="Cell background color"
-              onChange={(e) => {
-                const val = e.target.value;
-                updateStylesForSelection((cur) => ({ ...cur, backgroundColor: val }));
-              }}
-              value={selectedCell ? ((cellStyles[selectedCell] && cellStyles[selectedCell].backgroundColor) || '#ffffff') : '#ffffff'}
-              style={{ width: 36, height: 32, padding: 0, border: '1px solid #ddd', borderRadius: 4 }}
-            />
-            <span style={{ fontSize: '10px', color: '#666', marginLeft: '2px' }}>BG</span>
             <button
               onClick={() => {
-                updateStylesForSelection((cur) => ({ ...cur, fontWeight: cur.fontWeight === 'bold' ? 'normal' : 'bold' }));
+                if (!selectedCell) return;
+                const [r, c] = selectedCell.split("-").map(Number);
+                const key = `${r}-${c}`;
+                const cur = cellStyles[key] || {};
+                const next = { ...cur, fontWeight: cur.fontWeight === "bold" ? "normal" : "bold" };
+                const nextMap = { ...cellStyles, [key]: next };
+                setCellStyles(nextMap);
+                updateField({ cellStyles: nextMap });
               }}
-              style={{ padding: '6px 10px' }}
+              style={{ padding: "6px 10px" }}
               title="Bold"
-            >B</button>
+            >
+              B
+            </button>
             <button
               onClick={() => {
-                updateStylesForSelection((cur) => ({ ...cur, fontStyle: cur.fontStyle === 'italic' ? 'normal' : 'italic' }));
+                if (!selectedCell) return;
+                const [r, c] = selectedCell.split("-").map(Number);
+                const key = `${r}-${c}`;
+                const cur = cellStyles[key] || {};
+                const next = { ...cur, fontStyle: cur.fontStyle === "italic" ? "normal" : "italic" };
+                const nextMap = { ...cellStyles, [key]: next };
+                setCellStyles(nextMap);
+                updateField({ cellStyles: nextMap });
               }}
-              style={{ padding: '6px 10px', fontStyle: 'italic' }}
+              style={{ padding: "6px 10px", fontStyle: "italic" }}
               title="Italic"
-            >I</button>
+            >
+              I
+            </button>
             <button
               onClick={() => {
-                updateStylesForSelection((cur) => ({ ...cur, textDecoration: cur.textDecoration === 'underline' ? 'none' : 'underline' }));
+                if (!selectedCell) return;
+                const [r, c] = selectedCell.split("-").map(Number);
+                const key = `${r}-${c}`;
+                const cur = cellStyles[key] || {};
+                const next = { ...cur, textDecoration: cur.textDecoration === "underline" ? "none" : "underline" };
+                const nextMap = { ...cellStyles, [key]: next };
+                setCellStyles(nextMap);
+                updateField({ cellStyles: nextMap });
               }}
-              style={{ padding: '6px 10px', textDecoration: 'underline' }}
+              style={{ padding: "6px 10px", textDecoration: "underline" }}
               title="Underline"
-            >U</button>
+            >
+              U
+            </button>
             <button
               onClick={() => {
                 updateStylesForSelection((cur) => ({ ...cur, textDecoration: cur.textDecoration === 'line-through' ? 'none' : 'line-through' }));
@@ -3212,18 +3422,18 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
             <button
               onClick={() => {
                 if (selectedCell) {
-                  const [rowIndex, colIndex] = selectedCell.split('-').map(Number);
+                  const [rowIndex, colIndex] = selectedCell.split("-").map(Number);
                   openColumnTypeModal(colIndex);
                 }
               }}
               style={{
-                padding: '6px 12px',
-                backgroundColor: '#007bff',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '12px'
+                padding: "6px 12px",
+                backgroundColor: "#007bff",
+                color: "white",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer",
+                fontSize: "12px",
               }}
               title="Set Column Type"
             >
@@ -3232,18 +3442,18 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
             <button
               onClick={() => {
                 if (selectedCell) {
-                  const [rowIndex, colIndex] = selectedCell.split('-').map(Number);
+                  const [rowIndex, colIndex] = selectedCell.split("-").map(Number);
                   openRowTypeModal(rowIndex);
                 }
               }}
               style={{
-                padding: '6px 12px',
-                backgroundColor: '#28a745',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '12px'
+                padding: "6px 12px",
+                backgroundColor: "#28a745",
+                color: "white",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer",
+                fontSize: "12px",
               }}
               title="Set Row Type"
             >
@@ -3252,18 +3462,18 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
             <button
               onClick={() => {
                 if (selectedCell) {
-                  const [rowIndex, colIndex] = selectedCell.split('-').map(Number);
+                  const [rowIndex, colIndex] = selectedCell.split("-").map(Number);
                   removeColumnType(colIndex);
                 }
               }}
               style={{
-                padding: '6px 12px',
-                backgroundColor: '#dc3545',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '12px'
+                padding: "6px 12px",
+                backgroundColor: "#dc3545",
+                color: "white",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer",
+                fontSize: "12px",
               }}
               title="Remove Column Type"
             >
@@ -3272,18 +3482,18 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
             <button
               onClick={() => {
                 if (selectedCell) {
-                  const [rowIndex, colIndex] = selectedCell.split('-').map(Number);
+                  const [rowIndex, colIndex] = selectedCell.split("-").map(Number);
                   removeRowType(rowIndex);
                 }
               }}
               style={{
-                padding: '6px 12px',
-                backgroundColor: '#dc3545',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '12px'
+                padding: "6px 12px",
+                backgroundColor: "#dc3545",
+                color: "white",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer",
+                fontSize: "12px",
               }}
               title="Remove Row Type"
             >
@@ -3292,13 +3502,13 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
             <button
               onClick={addRow}
               style={{
-                padding: '6px 12px',
-                backgroundColor: '#28a745',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '12px'
+                padding: "6px 12px",
+                backgroundColor: "#28a745",
+                color: "white",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer",
+                fontSize: "12px",
               }}
               title="Add Row"
             >
@@ -3307,13 +3517,13 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
             <button
               onClick={addColumn}
               style={{
-                padding: '6px 12px',
-                backgroundColor: '#28a745',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '12px'
+                padding: "6px 12px",
+                backgroundColor: "#28a745",
+                color: "white",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer",
+                fontSize: "12px",
               }}
               title="Add Column"
             >
@@ -3322,13 +3532,13 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
             <button
               onClick={deleteRow}
               style={{
-                padding: '6px 12px',
-                backgroundColor: '#dc3545',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '12px'
+                padding: "6px 12px",
+                backgroundColor: "#dc3545",
+                color: "white",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer",
+                fontSize: "12px",
               }}
               title="Delete Row"
             >
@@ -3337,13 +3547,13 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
             <button
               onClick={deleteColumn}
               style={{
-                padding: '6px 12px',
-                backgroundColor: '#dc3545',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '12px'
+                padding: "6px 12px",
+                backgroundColor: "#dc3545",
+                color: "white",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer",
+                fontSize: "12px",
               }}
               title="Delete Column"
             >
@@ -3353,25 +3563,32 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
               onClick={() => {
                 if (selectedRange) {
                   const { startRow, startCol, endRow, endCol } = selectedRange;
-                  console.log('🔗 Merging cells:', { startRow, startCol, endRow, endCol });
+                  console.log("🔗 Merging cells:", { startRow, startCol, endRow, endCol });
                   setMerge(startRow, startCol, endRow, endCol);
                 } else {
-                  console.log('❌ No range selected for merge');
+                  console.log("❌ No range selected for merge");
                 }
               }}
               disabled={!selectedRange}
               style={{
-                padding: '6px 12px',
-                backgroundColor: !selectedRange ? '#6c757d' : '#17a2b8',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: !selectedRange ? 'not-allowed' : 'pointer',
-                fontSize: '12px'
+                padding: "6px 12px",
+                backgroundColor: !selectedRange ? "#6c757d" : "#17a2b8",
+                color: "white",
+                border: "none",
+                borderRadius: "4px",
+                cursor: !selectedRange ? "not-allowed" : "pointer",
+                fontSize: "12px",
               }}
-              title={!selectedRange ?
-                "Select a range first: Click a cell, then Shift+Click another cell, or drag to select" :
-                `Merge ${selectedRange ? `${selectedRange.endRow - selectedRange.startRow + 1}×${selectedRange.endCol - selectedRange.startCol + 1}` : ''} cells`
+              title={
+                !selectedRange
+                  ? "Select a range first: Click a cell, then Shift+Click another cell, or drag to select"
+                  : `Merge ${
+                      selectedRange
+                        ? `${selectedRange.endRow - selectedRange.startRow + 1}×${
+                            selectedRange.endCol - selectedRange.startCol + 1
+                          }`
+                        : ""
+                    } cells`
               }
             >
               🔗 Merge
@@ -3379,19 +3596,19 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
             <button
               onClick={() => {
                 if (selectedCell) {
-                  const [rowIndex, colIndex] = selectedCell.split('-').map(Number);
+                  const [rowIndex, colIndex] = selectedCell.split("-").map(Number);
                   removeMerge(rowIndex, colIndex);
                 }
               }}
               disabled={!selectedCell}
               style={{
-                padding: '6px 12px',
-                backgroundColor: !selectedCell ? '#6c757d' : '#fd7e14',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: !selectedCell ? 'not-allowed' : 'pointer',
-                fontSize: '12px'
+                padding: "6px 12px",
+                backgroundColor: !selectedCell ? "#6c757d" : "#fd7e14",
+                color: "white",
+                border: "none",
+                borderRadius: "4px",
+                cursor: !selectedCell ? "not-allowed" : "pointer",
+                fontSize: "12px",
               }}
               title="Unmerge Selected Cell"
             >
@@ -3399,47 +3616,72 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
             </button>
             <button
               onClick={destroyMerged}
-              style={{ padding: '6px 12px', backgroundColor: '#6f42c1', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}
-              title="Remove All Merges">🗑️ Clear Merges</button>
+              style={{
+                padding: "6px 12px",
+                backgroundColor: "#6f42c1",
+                color: "white",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer",
+                fontSize: "12px",
+              }}
+              title="Remove All Merges"
+            >
+              🗑️ Clear Merges
+            </button>
 
-            <button onClick={() => {
-              if (selectedRange && dragStart) {
-                const startCellValue = data[dragStart.row]?.[dragStart.col] || '';
-                if (startCellValue !== '') {
-                  const newData = [...data];
-                  for (let r = selectedRange.startRow; r <= selectedRange.endRow; r++) {
-                    for (let c = selectedRange.startCol; c <= selectedRange.endCol; c++) {
-                      if (r === dragStart.row && c === dragStart.col) continue;
-                      if (!newData[r]) newData[r] = [];
-                      newData[r][c] = startCellValue;
+            <button
+              onClick={() => {
+                if (selectedRange && dragStart) {
+                  const startCellValue = data[dragStart.row]?.[dragStart.col] || "";
+                  if (startCellValue !== "") {
+                    const newData = [...data];
+                    for (let r = selectedRange.startRow; r <= selectedRange.endRow; r++) {
+                      for (let c = selectedRange.startCol; c <= selectedRange.endCol; c++) {
+                        if (r === dragStart.row && c === dragStart.col) continue;
+                        if (!newData[r]) newData[r] = [];
+                        newData[r][c] = startCellValue;
+                      }
                     }
+                    setData(newData);
+                    addToHistory(newData);
+                    updateField({ data: newData });
                   }
-                  setData(newData);
-                  addToHistory(newData);
-                  updateField({ data: newData });
                 }
-              }
-            }}
+              }}
               disabled={!selectedRange || !dragStart}
               style={{
-                padding: '6px 12px',
-                backgroundColor: !selectedRange || !dragStart ? '#6c757d' : '#20c997',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: !selectedRange || !dragStart ? 'not-allowed' : 'pointer',
-                fontSize: '12px'
+                padding: "6px 12px",
+                backgroundColor: !selectedRange || !dragStart ? "#6c757d" : "#20c997",
+                color: "white",
+                border: "none",
+                borderRadius: "4px",
+                cursor: !selectedRange || !dragStart ? "not-allowed" : "pointer",
+                fontSize: "12px",
               }}
-              title="Fill Series - Copy data from start cell to selected range">🔄 Fill Series</button>
+              title="Fill Series - Copy data from start cell to selected range"
+            >
+              🔄 Fill Series
+            </button>
 
-            <button onClick={copyData}
-              style={{ padding: '6px 12px', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}
-              title="Copy Selected Data">📋 Copy</button>
+            <button
+              onClick={copyData}
+              style={{
+                padding: "6px 12px",
+                backgroundColor: "#28a745",
+                color: "white",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer",
+                fontSize: "12px",
+              }}
+              title="Copy Selected Data"
+            >
+              📋 Copy
+            </button>
           </div>
         </>
       )}
-
-
 
       {/* Datalist for autocomplete */}
       {Array.from({ length: cols }, (_, colIndex) => (
@@ -3451,7 +3693,7 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
       ))}
 
       {/* Datalist for row autocomplete */}
-      {Array.from({ length: rows }, (_, rowIndex) => (
+      {Array.from({ length: rows }, (_, rowIndex) =>
         Array.from({ length: cols }, (_, colIndex) => (
           <datalist key={`${rowIndex}-${colIndex}`} id={`autocomplete-${rowIndex}-${colIndex}`}>
             {getCellOptions(rowIndex, colIndex).map((option, idx) => (
@@ -3459,9 +3701,9 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
             ))}
           </datalist>
         ))
-      ))}
+      )}
     </div>
   );
 };
 
-export default JSpreadsheetCE4Component; 
+export default JSpreadsheetCE4Component;
