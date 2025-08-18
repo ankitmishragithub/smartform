@@ -1310,16 +1310,16 @@ export default function AllSubmissions() {
                    return (
                      <div key={response._id} className="rr-form-submission mb-5">
                        {/* Submission Header */}
-                       <Card className="rr-submission-header mb-4">
-                         {/* <CardBody>
+                       <Card className="rr-submission-header">
+                         <CardBody>
                            <div className="d-flex justify-content-between align-items-start">
                              <div className="rr-submission-info">
-                               <div className="rr-submission-title">
-                                 <h4 className="mb-2">
-                                   <i className="ni ni-file-docs text-primary me-2"></i>
+                               <div>
+                                 <h6>
+                                   <i className="ni ni-file-docs text-primary"></i>
                                    {getFormLabel(response.form)}
-                                 </h4>
-                                 <div className="rr-submission-meta">
+                                 </h6>
+                                 {/* <div className="rr-submission-meta">
                                    <div className="d-flex flex-wrap gap-3">
                                      <div className="rr-submitter-info">
                                        <i className="ni ni-user text-muted me-1"></i>
@@ -1337,11 +1337,11 @@ export default function AllSubmissions() {
                                        {getStatusBadge(getSubmissionStatus(response))}
                                      </div>
                                    </div>
-                                 </div>
+                                 </div> */}
                                </div>
                              </div>
                            </div>
-                         </CardBody> */}
+                         </CardBody> 
                        </Card>
 
                        {/* Form Display */}
