@@ -53,6 +53,13 @@ export default function ResponseDetails() {
   const [editingResponse, setEditingResponse] = useState(null);
   const [saving, setSaving] = useState(false);
 
+  // If user navigates to the /edit route, auto-enter edit mode once data is loaded
+  useEffect(() => {
+    if (isEditMode && response && !editingResponse) {
+      setEditingResponse({ ...response });
+    }
+  }, [isEditMode, response, editingResponse]);
+
   // Fetch all responses for this form
   const fetchAllResponses = async () => {
     setLoadingReport(true);
@@ -530,6 +537,89 @@ export default function ResponseDetails() {
                       }}>
                         {rowIndex + 1}
                       </td>
+                      {row && row.map((cell, colIndex) => {
+                        // Handle both old string format and new object format
+                        let cellContent = "";
+                        if (typeof cell === 'string') {
+                          cellContent = cell;
+                        } else if (cell && typeof cell === 'object' && cell.content !== undefined) {
+                          cellContent = cell.content;
+                        }
+                        
+                        return (
+                          <td key={colIndex} style={{
+                            padding: "8px",
+                            border: "1px solid #e5e7eb",
+                            minHeight: "40px"
+                          }}>
+                            {cellContent || ""}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        );
+      }
+
+      if (node.type === "jspreadsheetCE4") {
+        // Handle jSpreadsheet CE v4 data structure
+        const jSpreadsheetData = answers[node.id];
+        
+        if (!jSpreadsheetData || !jSpreadsheetData.data) {
+          return (
+            <div style={{ 
+              padding: "2rem", 
+              textAlign: "center", 
+              backgroundColor: "#f8f9fa", 
+              border: "2px dashed #dee2e6",
+              borderRadius: "8px",
+              marginBottom: "1rem"
+            }}>
+              <i className="ni ni-grid-3x3-gap" style={{ fontSize: "2rem", color: "#6b7280", marginBottom: "0.5rem" }}></i>
+              <div style={{ color: "#6b7280" }}>
+                <strong>📊 jSpreadsheet CE v4</strong>
+                <br />
+                <small>No spreadsheet data</small>
+              </div>
+            </div>
+          );
+        }
+
+        return (
+          <div style={{ marginBottom: "1rem" }}>
+            <div style={{
+              border: "1px solid #e5e7eb",
+              borderRadius: "8px",
+              overflow: "auto",
+              backgroundColor: "white"
+            }}>
+              <table style={{
+                width: "100%",
+                borderCollapse: "collapse",
+                fontSize: "14px"
+              }}>
+                <thead>
+                  <tr style={{ backgroundColor: "#f8f9fa" }}>
+                    {jSpreadsheetData.data[0] && jSpreadsheetData.data[0].map((cell, colIndex) => (
+                      <th key={colIndex} style={{
+                        padding: "8px",
+                        border: "1px solid #e5e7eb",
+                        fontWeight: "600",
+                        textAlign: "left",
+                        minWidth: "120px"
+                      }}>
+                        {`Column ${colIndex + 1}`}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {jSpreadsheetData.data && jSpreadsheetData.data.map((row, rowIndex) => (
+                    <tr key={rowIndex}>
                       {row && row.map((cell, colIndex) => {
                         // Handle both old string format and new object format
                         let cellContent = "";

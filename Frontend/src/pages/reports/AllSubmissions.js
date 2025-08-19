@@ -12,7 +12,7 @@ import api from '../../api/api';
 import './response-reports.css';
 
 // Form Display Component (Read-only version of FormFill)
-const FormDisplayComponent = ({ form, response }) => {
+const FormDisplayComponent = ({ form, response, hideTitles = false }) => {
   // Helper function to check if a cell is merged
   const isCellMerged = (rowIndex, colIndex, mergedCells = []) => {
     return mergedCells?.some(merge => 
@@ -47,8 +47,9 @@ const FormDisplayComponent = ({ form, response }) => {
 
   const renderFormNode = (node) => {
     if (node.type === "heading") {
+      if (hideTitles) return null;
       return (
-        <h2
+        <h6
           key={node.id}
           style={{
             textAlign: "center",
@@ -58,7 +59,7 @@ const FormDisplayComponent = ({ form, response }) => {
           }}
         >
           {node.label || "Untitled Form"}
-        </h2>
+        </h6>
       );
     }
     
@@ -220,6 +221,7 @@ const FormDisplayComponent = ({ form, response }) => {
 
     // Handle folder name as a header
     if (node.type === "folderName") {
+      if (hideTitles) return null;
       return (
         <div key={node.id} style={{
           marginBottom: "1rem",
@@ -256,6 +258,14 @@ const FormDisplayComponent = ({ form, response }) => {
       return (
         <div key={node.id} className="form-group mb-3">
           {renderReadOnlySpreadsheet(node, response.answers[node.id])}
+        </div>
+      );
+    }
+
+    if (node.type === "jspreadsheetCE4") {
+      return (
+        <div key={node.id} className="form-group mb-3">
+          {renderReadOnlyJSpreadsheetCE4(node, response.answers[node.id])}
         </div>
       );
     }
@@ -405,6 +415,135 @@ const FormDisplayComponent = ({ form, response }) => {
     );
   };
 
+  const renderReadOnlyJSpreadsheetCE4 = (field, value) => {
+    if (!value || !Array.isArray(value.data)) {
+      return (
+        <div>
+          <Label className="form-label fw-bold text-dark mb-2">
+            {field.label}
+          </Label>
+          <div className="form-control-plaintext" style={{
+            padding: "0.75rem",
+            backgroundColor: "#f8f9fa",
+            borderRadius: "6px",
+            border: "1px solid #e9ecef",
+            minHeight: "2.5rem",
+            display: "flex",
+            alignItems: "center"
+          }}>
+            <span style={{ color: "#6c757d", fontStyle: "italic" }}>No spreadsheet data</span>
+          </div>
+        </div>
+      );
+    }
+
+    // Helpers to handle merged cells object/array
+    const toMergeArray = (mc) => Array.isArray(mc) ? mc : (mc && typeof mc === 'object' ? Object.values(mc) : []);
+    const getMergeInfoCE4 = (rowIndex, colIndex, mergedCells) => {
+      const list = toMergeArray(mergedCells);
+      const merge = list.find(m => m.startRow <= rowIndex && m.endRow >= rowIndex && m.startCol <= colIndex && m.endCol >= colIndex);
+      if (!merge) return { isStartCell: false, isContinuation: false, rowSpan: 1, colSpan: 1 };
+      const isStartCell = rowIndex === merge.startRow && colIndex === merge.startCol;
+      return {
+        isStartCell,
+        isContinuation: !isStartCell,
+        rowSpan: merge.endRow - merge.startRow + 1,
+        colSpan: merge.endCol - merge.startCol + 1
+      };
+    };
+    const isCellMergedCE4 = (rowIndex, colIndex, mergedCells) => {
+      const list = toMergeArray(mergedCells);
+      return list.some(m => m.startRow <= rowIndex && m.endRow >= rowIndex && m.startCol <= colIndex && m.endCol >= colIndex);
+    };
+
+    const mergedCells = value.mergedCells || {};
+    const cellStyles = value.cellStyles || {};
+
+    return (
+      <div>
+        <Label className="form-label fw-bold text-dark mb-2">
+          {field.label}
+        </Label>
+        <div style={{
+          border: "1px solid #e5e7eb",
+          borderRadius: "8px",
+          overflow: "auto",
+          backgroundColor: "white"
+        }}>
+          <table style={{
+            width: "100%",
+            borderCollapse: "collapse",
+            fontSize: "14px"
+          }}>
+            <thead>
+              <tr style={{ backgroundColor: "#f8f9fa" }}>
+                {value.data[0] && value.data[0].map((_, colIndex) => (
+                  <th key={colIndex} style={{
+                    padding: "8px",
+                    border: "1px solid #e5e7eb",
+                    fontWeight: "600",
+                    textAlign: "left",
+                    minWidth: "120px"
+                  }}>
+                    {`Column ${colIndex + 1}`}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {value.data.map((row, rowIndex) => (
+                <tr key={rowIndex}>
+                  {Array.isArray(row) && row.map((cell, colIndex) => {
+                    const mergeInfo = getMergeInfoCE4(rowIndex, colIndex, mergedCells);
+                    if (mergeInfo.isContinuation) return null;
+
+                    // Content
+                    let content = "";
+                    let formatting = {};
+                    if (typeof cell === 'string' || typeof cell === 'number') {
+                      content = String(cell);
+                    } else if (cell && typeof cell === 'object') {
+                      content = cell.content || "";
+                      if (cell.formatting && typeof cell.formatting === 'object') {
+                        formatting = cell.formatting;
+                      }
+                    }
+
+                    // Styles from CE4 cellStyles map
+                    const styleKey = `${rowIndex}-${colIndex}`;
+                    const styleFromMap = cellStyles[styleKey] || {};
+                    const finalStyle = {
+                      padding: "8px",
+                      border: "1px solid #e5e7eb",
+                      minHeight: "40px",
+                      ...formatting,
+                      ...styleFromMap
+                    };
+                    // Subtle merge highlight if no background provided
+                    if (isCellMergedCE4(rowIndex, colIndex, mergedCells) && !finalStyle.backgroundColor) {
+                      finalStyle.backgroundColor = "rgba(102, 126, 234, 0.1)";
+                    }
+
+                    return (
+                      <td
+                        key={colIndex}
+                        rowSpan={mergeInfo.rowSpan}
+                        colSpan={mergeInfo.colSpan}
+                        style={finalStyle}
+                      >
+                        {content}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="form-display-container">
       {form.schemaJson.map(node => renderFormNode(node))}
@@ -462,7 +601,7 @@ export default function AllSubmissions() {
   const [filteredResponses, setFilteredResponses] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedForms, setSelectedForms] = useState([]);
-  const [selectedFolders, setSelectedFolders] = useState([]);
+  const [selectedFolders, setSelectedFolders] = useState(['Brindavan Bottlers Private Limited, UNNAO']);
   const [statusFilter, setStatusFilter] = useState('all');
   
   // Modal state for spreadsheet viewer
@@ -789,9 +928,9 @@ export default function AllSubmissions() {
   function getFormLabel(formId) {
     const form = getFormObject(formId);
     if (!form) return "Unknown";
-    const folder = form.schemaJson.find(e => e.type === "heading")?.label;
     const heading = form.schemaJson.find(e => e.type === "heading")?.label;
-    return folder ? folder : heading ? heading : "Untitled Form";
+    const folder = form.schemaJson.find(e => e.type === "folderName")?.label;
+    return heading ? heading : folder ? folder : "Untitled Form";
   }
 
   const formatDate = (dateString) =>
@@ -1303,20 +1442,21 @@ export default function AllSubmissions() {
                <div className="rr-forms-container">
                  {filteredResponses.map((response, index) => {
                    const form = getFormObject(response.form);
+                   const hideTitles = selectedFolders.length > 0;
                    
                    return (
                      <div key={response._id} className="rr-form-submission mb-5">
                        {/* Submission Header */}
-                       <Card className="rr-submission-header mb-4">
+                       <Card className="rr-submission-header">
                          <CardBody>
                            <div className="d-flex justify-content-between align-items-start">
                              <div className="rr-submission-info">
-                               <div className="rr-submission-title">
-                                 <h4 className="mb-2">
-                                   <i className="ni ni-file-docs text-primary me-2"></i>
+                               <div>
+                                 <h6>
+                                   <i className="ni ni-file-docs text-primary"></i>
                                    {getFormLabel(response.form)}
-                                 </h4>
-                                 <div className="rr-submission-meta">
+                                 </h6>
+                                 {/* <div className="rr-submission-meta">
                                    <div className="d-flex flex-wrap gap-3">
                                      <div className="rr-submitter-info">
                                        <i className="ni ni-user text-muted me-1"></i>
@@ -1334,18 +1474,18 @@ export default function AllSubmissions() {
                                        {getStatusBadge(getSubmissionStatus(response))}
                                      </div>
                                    </div>
-                                 </div>
+                                 </div> */}
                                </div>
                              </div>
                            </div>
-                         </CardBody>
+                         </CardBody> 
                        </Card>
 
                        {/* Form Display */}
                        {form && (
                          <Card className="rr-form-display">
                            <CardBody>
-                             <FormDisplayComponent form={form} response={response} />
+                             <FormDisplayComponent form={form} response={response} hideTitles={hideTitles} />
                            </CardBody>
                          </Card>
                        )}

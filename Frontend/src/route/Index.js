@@ -10,6 +10,7 @@ import FolderList from "../pages/FolderList";
 import FolderFormsView from "../pages/FolderFormsView";
 import ManageForms from "../pages/ManageForms";
 import ResponseDetails from "../pages/ResponseDetails";
+import ReeditForm from "../pages/ReeditForm";
 
 // Reports pages
 import FormAnalytics from "../pages/reports/FormAnalytics";
@@ -50,6 +51,7 @@ const Router = () => {
         <Route path="forms/fill/:id" element={<FormFill />} />
         <Route path="response-details/:responseId" element={<ResponseDetails />} />
         <Route path="response-details/:responseId/edit" element={<ResponseDetails />} />
+        <Route path="forms/reedit/:formId/:responseId" element={<ReeditForm />} />
         
         {/* Reports routes */}
         <Route path="reports/analytics" element={<FormAnalytics />} />
