@@ -905,6 +905,27 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
     }
   };
 
+  // Force preview re-render on merge changes
+  useEffect(() => {
+    // Force preview refresh when mergedCells change
+    if (onChange && !isFormFill) {
+      const updatedField = {
+        ...field,
+        data: data,
+        cellStyles: cellStyles,
+        mergedCells: mergedCells,
+        cellTypes: cellTypes,
+        cellDropdowns: cellDropdowns,
+        rowTypes: rowTypes,
+        rowDropdowns: rowDropdowns,
+        columnWidths: columnWidths,
+        rowHeights: rowHeights,
+        _forceUpdate: Date.now() // Add timestamp to force re-render
+      };
+      onChange(updatedField);
+    }
+  }, [mergedCells]);
+
   // Add to history for undo/redo
   const addToHistory = useCallback(
     (newData) => {
@@ -3307,6 +3328,17 @@ const JSpreadsheetCE4Component = ({ field, value, onChange, isFormFill = false }
                 </option>
               ))}
             </select>
+            <input
+              type="color"
+              title="Cell background color"
+              onChange={(e) => {
+                const val = e.target.value;
+                updateStylesForSelection((cur) => ({ ...cur, backgroundColor: val }));              
+              }}
+              value={selectedCell ? ((cellStyles[selectedCell] && cellStyles[selectedCell].backgroundColor) || '#ffffff') : '#ffffff'}
+              style={{ width: 36, height: 32, padding: 0, border: '1px solid #ddd', borderRadius: 4 }}
+            />
+
             <input
               type="color"
               title="Font color"

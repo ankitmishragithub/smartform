@@ -352,11 +352,25 @@ function UnifiedFormBuilder() {
   // ✅ Update field props
   const updateField = (fid, props) => {
     console.log('🔄 UnifiedFormBuilder - Updating field:', fid, 'with props:', props);
+    
+    // Update fields state
     setFields((list) => {
       const updated = updateById(list, fid, props);
       console.log('✅ UnifiedFormBuilder - Fields state updated successfully');
       return updated;
     });
+    
+    // Also update values state for jSpreadsheet fields to ensure live preview shows merged cells
+    if (props.mergedCells !== undefined || props.data !== undefined || props.cellStyles !== undefined || 
+        props.cellTypes !== undefined || props.cellDropdowns !== undefined || props.rowTypes !== undefined || 
+        props.rowDropdowns !== undefined || props.columnWidths !== undefined || props.rowHeights !== undefined) {
+      setValues((prevValues) => {
+        const currentValue = prevValues[fid] || {};
+        const updatedValue = { ...currentValue, ...props };
+        console.log('🔄 UnifiedFormBuilder - Updating values for field:', fid, 'with:', updatedValue);
+        return { ...prevValues, [fid]: updatedValue };
+      });
+    }
   };
 
   function updateById(nodes, fid, props) {
@@ -855,7 +869,6 @@ function UnifiedFormBuilder() {
             <LivePreview 
               fields={fields} 
               values={values} 
-              onChange={handlePreviewChange} 
               folderName={folderName} 
             />
           )}

@@ -415,4 +415,36 @@
 .jspreadsheet-ce4-container .jexcel_table input:focus {
   background-color: #e3f2fd !important;
   box-shadow: inset 0 0 0 2px #2196f3;
-} 
+}
+
+/* Remove scroll from merged cells */
+.jspreadsheet-ce4-spreadsheet td[rowspan],
+.jspreadsheet-ce4-spreadsheet td[colspan] {
+  overflow: hidden !important;
+  scrollbar-width: none !important; /* Firefox */
+  -ms-overflow-style: none !important; /* IE/Edge */
+}
+
+/* Hide scrollbars in WebKit browsers */
+.jspreadsheet-ce4-spreadsheet td[rowspan]::-webkit-scrollbar,
+.jspreadsheet-ce4-spreadsheet td[colspan]::-webkit-scrollbar {
+  display: none !important;
+}
+
+/* Merged cell content containers */
+.jspreadsheet-ce4-spreadsheet td[rowspan] > div,
+.jspreadsheet-ce4-spreadsheet td[colspan] > div {
+  overflow: hidden !important;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: flex-start !important;
+}
+
+.jspreadsheet-ce4-spreadsheet td[rowspan] > div::-webkit-scrollbar,
+.jspreadsheet-ce4-spreadsheet td[colspan] > div::-webkit-scrollbar {
+  display: none !important;
+}
