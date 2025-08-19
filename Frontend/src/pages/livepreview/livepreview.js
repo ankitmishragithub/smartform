@@ -868,10 +868,244 @@ function SpreadsheetPreviewComponent({ node, values, handlePreviewChange }) {
   }
 }
 
-export default function LivePreview({ fields, values, onChange, folderName }) {
+export default function LivePreview({ fields, values, folderName }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [previewValues, setPreviewValues] = useState({});
+  const [editableCells, setEditableCells] = useState(new Set());
+  
   const toggleModal = () => setIsModalOpen((open) => !open);
-  const handlePreviewChange = (id, val) => onChange(id, val);
+  
+  // IMPORTANT: Live preview is completely isolated from the main form
+  // Changes made here do NOT affect the canvas/form builder
+  // This is only for testing and preview purposes
+  // The parent component no longer passes onChange prop, ensuring complete isolation
+  
+  // Debug: Log when values prop changes to identify data flow issues
+  useEffect(() => {
+    console.log('🔍 LivePreview: values prop changed', values);
+    console.log('🔍 LivePreview: previewValues state', previewValues);
+    
+    // Check if values object is being mutated (this would indicate data flow issues)
+    if (values && typeof values === 'object') {
+      const valuesString = JSON.stringify(values);
+      console.log('🔍 LivePreview: values JSON string length:', valuesString.length);
+    }
+  }, [values]);
+  
+  // Initialize preview values and editable cells when form loads
+  useEffect(() => {
+    initializeFormData();
+  }, [fields]); // Remove 'values' dependency to prevent re-initialization
+  
+  // Function to initialize form data and determine which cells are editable
+  // This creates a local copy of the form data for preview purposes only
+  const initializeFormData = () => {
+    // Create a deep copy of values to ensure complete isolation
+    const newPreviewValues = JSON.parse(JSON.stringify(values || {}));
+    const newEditableCells = new Set();
+    
+    console.log('🔍 LivePreview: initializeFormData - values:', values);
+    console.log('🔍 LivePreview: initializeFormData - newPreviewValues:', newPreviewValues);
+    
+    fields.forEach(field => {
+      if (field.type === "jspreadsheetCE4") {
+        const fieldData = values[field.id] || {};
+        console.log(`🔍 LivePreview: Field ${field.id} data:`, fieldData);
+        console.log(`🔍 LivePreview: Field ${field.id} cellDropdowns:`, fieldData.cellDropdowns);
+        console.log(`🔍 LivePreview: Field ${field.id} cellTypes:`, fieldData.cellTypes);
+        
+        // Initialize with existing data or default values
+        if (!newPreviewValues[field.id]) {
+          newPreviewValues[field.id] = {
+            data: fieldData.data || Array.from({ length: field.rows || 5 }, () => 
+              Array.from({ length: field.cols || 5 }, () => "")
+            ),
+            cellStyles: fieldData.cellStyles || {},
+            mergedCells: fieldData.mergedCells || {},
+            cellTypes: fieldData.cellTypes || {},
+            cellDropdowns: fieldData.cellDropdowns || {},
+            rowDropdowns: fieldData.rowDropdowns || {},
+            columnDropdowns: fieldData.columnDropdowns || {},
+            columnTypes: fieldData.columnTypes || {},
+            columnWidths: fieldData.columnWidths || {},
+            rowHeights: fieldData.rowHeights || {},
+            rowTypes: fieldData.rowTypes || {}
+          };
+        }
+        
+        // Determine which cells are editable (empty cells, dropdown cells, or cells with specific markers)
+        const fieldData2 = newPreviewValues[field.id];
+        if (fieldData2.data) {
+          fieldData2.data.forEach((row, rowIndex) => {
+            row.forEach((cell, colIndex) => {
+              const cellKey = `${rowIndex}-${colIndex}`;
+              const cellContent = typeof cell === 'object' ? cell.content : cell;
+              const cellType = fieldData2.cellTypes?.[cellKey];
+              
+              // Cell is editable if:
+              // 1. It's empty, OR
+              // 2. It's a dropdown/autocomplete/color/date/time/numeric cell, OR
+              // 3. It's marked as editable
+              if (!cellContent || cellContent.trim() === '' || 
+                  cellType === "dropdown" || 
+                  cellType === "autocomplete" || 
+                  cellType === "color" || 
+                  cellType === "date" || 
+                  cellType === "time" || 
+                  cellType === "numeric" ||
+                  cellType === "checkbox" ||
+                  cellType === "radio" ||
+                  cellType === "textarea" ||
+                  (typeof cell === 'object' && cell.editable !== false)) {
+                newEditableCells.add(`${field.id}-${cellKey}`);
+                console.log(`🔍 Marking cell [${rowIndex}][${colIndex}] as editable:`, {
+                  cellContent,
+                  cellType,
+                  cellKey: `${field.id}-${cellKey}`
+                });
+              }
+            });
+          });
+        }
+      }
+    });
+    
+    console.log('🔍 LivePreview: Final newPreviewValues:', newPreviewValues);
+    console.log('🔍 LivePreview: Final editableCells:', Array.from(newEditableCells));
+    setPreviewValues(newPreviewValues);
+    setEditableCells(newEditableCells);
+  };
+  
+  // Handle preview changes (only update local preview values, don't pass back to form)
+  const handlePreviewChange = (id, val) => {
+    console.log('🔍 LivePreview: handlePreviewChange called', { id, val });
+    setPreviewValues(prev => {
+      const currentField = prev[id] || {};
+      const newField = { ...currentField, ...val };
+      
+      // Ensure all essential properties are preserved
+      const updatedField = {
+        ...currentField,
+        ...newField,
+        // Preserve these properties if they exist in the current field
+        cellStyles: newField.cellStyles || currentField.cellStyles || {},
+        mergedCells: newField.mergedCells || currentField.mergedCells || {},
+        cellTypes: newField.cellTypes || currentField.cellTypes || {},
+        cellDropdowns: newField.cellDropdowns || currentField.cellDropdowns || {},
+        rowTypes: newField.rowTypes || currentField.rowTypes || {},
+        rowDropdowns: newField.rowDropdowns || currentField.rowDropdowns || {},
+        columnTypes: newField.columnTypes || currentField.columnTypes || {},
+        columnDropdowns: newField.columnDropdowns || currentField.columnDropdowns || {},
+        columnWidths: newField.columnWidths || currentField.columnWidths || {},
+        rowHeights: newField.rowHeights || currentField.rowHeights || {}
+      };
+      
+      return { ...prev, [id]: updatedField };
+    });
+    // Don't call onChange - keep live preview isolated from main form
+  };
+  
+  // Handle column type changes (only update local preview values, don't affect main form)
+  const handleColumnTypeChange = (fieldId, colIndex, newValue) => {
+    console.log('🔍 LivePreview: handleColumnTypeChange called', { fieldId, colIndex, newValue });
+    
+    setPreviewValues(prev => {
+      const fieldData = prev[fieldId] || {};
+      
+      // Update column type
+      const newColumnTypes = { ...(fieldData.columnTypes || {}) };
+      newColumnTypes[colIndex] = newValue;
+      
+      console.log('🔍 LivePreview: Updated column types:', newColumnTypes);
+      
+      return {
+        ...prev,
+        [fieldId]: {
+          ...fieldData,
+          columnTypes: newColumnTypes,
+          // Preserve all other essential properties
+          cellStyles: fieldData.cellStyles || {},
+          mergedCells: fieldData.mergedCells || {},
+          cellTypes: fieldData.cellTypes || {},
+          cellDropdowns: fieldData.cellDropdowns || {},
+          rowTypes: fieldData.rowTypes || {},
+          rowDropdowns: fieldData.rowDropdowns || {},
+          columnWidths: fieldData.columnWidths || {},
+          rowHeights: fieldData.rowHeights || {}
+        }
+      };
+    });
+  };
+
+  // Handle cell changes in spreadsheet (only update local preview values, don't affect main form)
+  const handleCellChange = (fieldId, rowIndex, colIndex, newValue) => {
+    console.log('🔍 LivePreview: handleCellChange called', { fieldId, rowIndex, colIndex, newValue });
+    
+    const cellKey = `${rowIndex}-${colIndex}`;
+    const fullCellKey = `${fieldId}-${cellKey}`;
+    
+    // Only allow editing if cell is marked as editable
+    if (!editableCells.has(fullCellKey)) {
+      console.log(`🚫 Cell ${cellKey} is not editable`);
+      return;
+    }
+    
+    console.log('🔍 LivePreview: Before update - previewValues:', previewValues);
+    console.log('🔍 LivePreview: Before update - fieldData:', previewValues[fieldId]);
+    
+    setPreviewValues(prev => {
+      const fieldData = prev[fieldId] || {};
+      const newData = [...(fieldData.data || [])];
+      
+      if (!newData[rowIndex]) {
+        newData[rowIndex] = [];
+      }
+      
+      console.log('🔍 LivePreview: Updating cell data:', {
+        rowIndex,
+        colIndex,
+        oldValue: newData[rowIndex][colIndex],
+        newValue,
+        cellType: fieldData.cellTypes?.[cellKey]
+      });
+      
+      // Update cell content
+      if (typeof newData[rowIndex][colIndex] === 'object') {
+        newData[rowIndex][colIndex] = {
+          ...newData[rowIndex][colIndex],
+          content: newValue
+        };
+      } else {
+        newData[rowIndex][colIndex] = newValue;
+      }
+      
+      const updatedField = {
+        ...fieldData,
+        data: newData,
+        // Preserve all other essential properties
+        cellStyles: fieldData.cellStyles || {},
+        mergedCells: fieldData.mergedCells || {},
+        cellTypes: fieldData.cellTypes || {},
+        cellDropdowns: fieldData.cellDropdowns || {},
+        rowTypes: fieldData.rowTypes || {},
+        rowDropdowns: fieldData.rowDropdowns || {},
+        columnTypes: fieldData.columnTypes || {},
+        columnDropdowns: fieldData.columnDropdowns || {},
+        columnWidths: fieldData.columnWidths || {},
+        rowHeights: fieldData.rowHeights || {}
+      };
+      
+      console.log('🔍 LivePreview: After update - updatedField:', updatedField);
+      
+      return {
+        ...prev,
+        [fieldId]: updatedField
+      };
+    });
+    
+    // Note: This function only updates local preview values
+    // It does NOT call onChange() to keep live preview isolated from the main form
+  };
 
   const SaveForm = async () => {
     if(!fields || fields.length === 0) {
@@ -917,8 +1151,8 @@ export default function LivePreview({ fields, values, onChange, folderName }) {
   // DashLite-styled form controls
   function renderDashliteInput(f, id) {
     const val = f.type === "checkbox"
-      ? Boolean(values[f.id])
-      : values[f.id] ?? "";
+      ? Boolean(previewValues[f.id] || values[f.id])
+      : previewValues[f.id] ?? values[f.id] ?? "";
       
 
 
@@ -1378,6 +1612,9 @@ export default function LivePreview({ fields, values, onChange, folderName }) {
 
   // Recursively render columns / tables / leaf fields
   function renderFormNode(node) {
+    // Debug: Log what type of node is being processed
+    console.log("🔍 renderFormNode processing:", { nodeType: node.type, nodeId: node.id, node });
+    
     // ✅ Heading node
     if (node.type === "heading") {
       return (
@@ -1503,18 +1740,43 @@ export default function LivePreview({ fields, values, onChange, folderName }) {
     }
 
     return (
-      <SpreadsheetPreviewComponent key={node.id} node={node} values={values} handlePreviewChange={handlePreviewChange} />
+      <SpreadsheetPreviewComponent key={node.id} node={node} values={previewValues} handlePreviewChange={handlePreviewChange} />
     );
   }
 
   // jSpreadsheet layout
   if (node.type === "jspreadsheet") {
+    // Use preview values for interactive editing - ALWAYS use the latest state
+    const jSpreadsheetData = previewValues[node.id] || values[node.id];
+    
+    // Debug: Log the data structure and state
+    console.log("📊 jSpreadsheet node:", node);
+    console.log("📊 jSpreadsheet values:", values);
+    console.log("📊 jSpreadsheet previewValues:", previewValues);
+    console.log("📊 jSpreadsheet jSpreadsheetData:", jSpreadsheetData);
+    console.log("📊 jSpreadsheet node.type:", node.type);
+    console.log("📊 jSpreadsheet node.id:", node.id);
+    
     return (
       <div key={node.id} style={{ marginBottom: "1rem" }}>
         <JSpreadsheetComponent 
-          field={node} 
-          value={values[node.id]}
+          field={{
+            ...node,
+            // Ensure the field has all the necessary properties from the original field
+            cellDropdowns: jSpreadsheetData?.cellDropdowns || node.cellDropdowns || {},
+            cellTypes: jSpreadsheetData?.cellTypes || node.cellTypes || {},
+            rowDropdowns: jSpreadsheetData?.rowDropdowns || node.rowDropdowns || {},
+            rowTypes: jSpreadsheetData?.rowTypes || node.rowTypes || {},
+            // Add all other properties to ensure complete functionality
+            cellStyles: jSpreadsheetData?.cellStyles || node.cellStyles || {},
+            mergedCells: jSpreadsheetData?.mergedCells || node.mergedCells || {},
+            columnWidths: jSpreadsheetData?.columnWidths || node.columnWidths || {},
+            rowHeights: jSpreadsheetData?.rowHeights || node.rowHeights || {}
+          }}
+          value={jSpreadsheetData}
           onChange={(updatedField) => {
+            // Only update local preview values, don't pass back to main form
+            console.log('🔍 LivePreview: JSpreadsheetComponent onChange', { nodeId: node.id, updatedField });
             handlePreviewChange(node.id, updatedField);
           }}
           isFormFill={true}
@@ -1525,19 +1787,748 @@ export default function LivePreview({ fields, values, onChange, folderName }) {
 
   // jSpreadsheet CE v4 layout
   if (node.type === "jspreadsheetCE4") {
+    // Use preview values for interactive editing - ALWAYS use the latest state
+    const jSpreadsheetData = previewValues[node.id] || values[node.id];
+    
+    // Debug: Log the data structure and state
+    console.log("📊 jSpreadsheet CE v4 node:", node);
+    console.log("📊 jSpreadsheet CE v4 values:", values);
+    console.log("📊 jSpreadsheet CE v4 previewValues:", previewValues);
+    console.log("📊 jSpreadsheet CE v4 jSpreadsheetData:", jSpreadsheetData);
+    console.log("📊 jSpreadsheet CE v4 mergedCells:", jSpreadsheetData?.mergedCells);
+    console.log("📊 jSpreadsheet CE v4 cellStyles:", jSpreadsheetData?.cellStyles);
+    console.log("📊 jSpreadsheet CE v4 cellTypes:", jSpreadsheetData?.cellTypes);
+    console.log("📊 jSpreadsheet CE v4 columnWidths:", jSpreadsheetData?.columnWidths);
+    console.log("📊 jSpreadsheet CE v4 rowHeights:", jSpreadsheetData?.rowHeights);
+    console.log("📊 jSpreadsheet CE v4 rowTypes:", jSpreadsheetData?.rowTypes);
+    console.log("📊 jSpreadsheet CE v4 node.type:", node.type);
+    console.log("📊 jSpreadsheet CE v4 node.id:", node.id);
+    
+    // Check if we have data to display - be more flexible with data structure
+    let hasData = false;
+    let dataToDisplay = null;
+    
+    if (jSpreadsheetData && jSpreadsheetData.data && Array.isArray(jSpreadsheetData.data)) {
+      hasData = true;
+      dataToDisplay = jSpreadsheetData.data;
+      console.log("📊 Using jSpreadsheetData.data:", dataToDisplay);
+    } else if (jSpreadsheetData && Array.isArray(jSpreadsheetData)) {
+      // Handle case where data is directly an array
+      hasData = true;
+      dataToDisplay = jSpreadsheetData;
+      console.log("📊 Using jSpreadsheetData directly:", dataToDisplay);
+    } else if (node.data && Array.isArray(node.data)) {
+      // Handle case where data is in the node itself
+      hasData = true;
+      dataToDisplay = node.data;
+      console.log("📊 Using node.data:", dataToDisplay);
+    } else if (node.defaultData && Array.isArray(node.defaultData)) {
+      // Handle case where data is in defaultData
+      hasData = true;
+      dataToDisplay = node.defaultData;
+      console.log("📊 Using node.defaultData:", dataToDisplay);
+    } else {
+      // Create default empty data structure for preview
+      const defaultRows = node.rows || 5;
+      const defaultCols = node.cols || 5;
+      dataToDisplay = Array.from({ length: defaultRows }, () => 
+        Array.from({ length: defaultCols }, () => "")
+      );
+      hasData = true;
+      console.log("📊 Using default empty data:", dataToDisplay);
+    }
+    
+    if (!hasData) {
+      return (
+        <div key={node.id} style={{ 
+          padding: "2rem", 
+          textAlign: "center", 
+          backgroundColor: "#f8f9fa", 
+          border: "2px dashed #dee2e6",
+          borderRadius: "8px",
+          marginBottom: "1rem"
+        }}>
+          <i className="ni ni-grid-3x3-gap" style={{ fontSize: "2rem", color: "#6b7280", marginBottom: "0.5rem" }}></i>
+          <div style={{ color: "#6b7280" }}>
+            <strong>📊 jSpreadsheet CE v4</strong>
+            <br />
+            <small>No spreadsheet data available</small>
+            <br />
+            <small style={{ fontSize: "10px", color: "#9ca3af" }}>
+              Debug: {JSON.stringify({ 
+                hasValues: !!jSpreadsheetData, 
+                hasData: !!(jSpreadsheetData?.data), 
+                isArray: Array.isArray(jSpreadsheetData?.data),
+                nodeData: !!node.data,
+                nodeDefaultData: !!node.defaultData
+              })}
+            </small>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div key={node.id} style={{ marginBottom: "1rem" }}>
-        <JSpreadsheetCE4Component
-          field={node}
-          value={values[node.id]}
-          onChange={(updatedField) => {
-            // For jSpreadsheetCE4, the updatedField contains complete data including mergedCells
-            // We need to store this complete object, not just the data
-            console.log("📊 Live preview received jSpreadsheetCE4 data:", updatedField);
-            handlePreviewChange(node.id, updatedField);
-          }}
-          isFormFill={true}
-        />
+        <div style={{
+          border: "1px solid #e5e7eb",
+          borderRadius: "8px",
+          overflow: "auto",
+          backgroundColor: "white"
+        }}>
+          <div style={{
+            padding: "12px",
+            backgroundColor: "#f8f9fa",
+            borderBottom: "1px solid #e5e7eb",
+            fontWeight: "600",
+            color: "#374151"
+          }}>
+            📊 jSpreadsheet CE v4 - {node.label || 'Spreadsheet'}
+          </div>
+          <table 
+            key={`${node.id}-table-${Date.now()}`}
+            style={{
+            width: "100%",
+            borderCollapse: "collapse",
+            fontSize: "14px"
+            }}
+          >
+            <thead key={`${node.id}-thead-${Date.now()}`}>
+              <tr key={`${node.id}-thead-row-${Date.now()}`} style={{ backgroundColor: "#f8f9fa" }}>
+                {dataToDisplay[0] && dataToDisplay[0].map((_, colIndex) => {
+                  // Get column width from jSpreadsheetData
+                  const columnWidth = jSpreadsheetData?.columnWidths?.[colIndex] || 120;
+                  
+                  // Get column type and handle special rendering
+                  const columnType = jSpreadsheetData?.columnTypes?.[colIndex] || "text";
+                  const columnDropdownOptions = jSpreadsheetData?.columnDropdowns?.[colIndex] || [];
+                  
+                  // Apply column-specific styling
+                  const columnStyles = {
+                    backgroundColor: columnType === "header" ? "#e5e7eb" : "#f8f9fa",
+                    fontWeight: columnType === "header" ? "700" : "600",
+                    color: columnType === "header" ? "#1f2937" : "#374151"
+                  };
+                  
+                  return (
+                  <th key={`${node.id}-th-${colIndex}-${Date.now()}`} style={{
+                    padding: "8px",
+                    border: "1px solid #e5e7eb",
+                    textAlign: "left",
+                    minWidth: `${columnWidth}px`,
+                    width: `${columnWidth}px`,
+                    ...columnStyles
+                  }}>
+                    {columnType === "dropdown" && columnDropdownOptions.length > 0 ? (
+                                              <select
+                          key={`col-dropdown-${node.id}-${colIndex}-${Date.now()}`}
+                          defaultValue=""
+                          onChange={(e) => handleColumnTypeChange(node.id, colIndex, e.target.value)}
+                        style={{
+                          width: '100%',
+                          padding: '4px 8px',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '4px',
+                          fontSize: '14px',
+                          backgroundColor: 'white',
+                          fontWeight: '600'
+                        }}
+                      >
+                        <option value="">{`Column ${colIndex + 1}`}</option>
+                        {columnDropdownOptions.map((option, idx) => (
+                          <option key={idx} value={option}>
+                            {option}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      `${columnType === "header" ? "Header" : `Column ${colIndex + 1}`}`
+                    )}
+                  </th>
+                  );
+                })}
+              </tr>
+            </thead>
+            <tbody key={`${node.id}-tbody-${Date.now()}`}>
+              {dataToDisplay.map((row, rowIndex) => {
+                // Get row height from jSpreadsheetData
+                const rowHeight = jSpreadsheetData?.rowHeights?.[rowIndex] || 40;
+                
+                // Get row type and handle special rendering
+                const rowType = jSpreadsheetData?.rowTypes?.[rowIndex] || "data";
+                const rowDropdownOptions = jSpreadsheetData?.rowDropdowns?.[rowIndex] || [];
+                
+                // Apply row-specific styling
+                const rowStyles = {
+                  height: `${rowHeight}px`,
+                  backgroundColor: rowType === "header" ? "#f8f9fa" : "transparent",
+                  fontWeight: rowType === "header" ? "600" : "normal"
+                };
+                
+                return (
+                  <tr key={`${node.id}-row-${rowIndex}-${Date.now()}`} style={rowStyles}>
+                  {row.map((cell, colIndex) => {
+                    // Get the LATEST cell data from the current state
+                    const currentCellData = jSpreadsheetData?.data?.[rowIndex]?.[colIndex];
+                    
+                    // Handle both old string format and new object format
+                    let cellContent = "";
+                    if (typeof currentCellData === 'string') {
+                      cellContent = currentCellData;
+                    } else if (currentCellData && typeof currentCellData === 'object' && currentCellData.content !== undefined) {
+                      cellContent = currentCellData.content;
+                    } else if (typeof cell === 'string') {
+                      cellContent = cell;
+                    } else if (cell && typeof cell === 'object' && cell.content !== undefined) {
+                      cellContent = cell.content;
+                    }
+                    
+                    // Debug: Log cell data for troubleshooting
+                    console.log(`🔍 Cell [${rowIndex}][${colIndex}]:`, {
+                      cell,
+                      currentCellData,
+                      cellContent,
+                      cellType: jSpreadsheetData?.cellTypes?.[`${rowIndex}-${colIndex}`],
+                      cellDropdowns: jSpreadsheetData?.cellDropdowns?.[`${rowIndex}-${colIndex}`],
+                      jSpreadsheetDataKeys: Object.keys(jSpreadsheetData || {}),
+                      dataKeys: Object.keys(jSpreadsheetData?.data || {})
+                    });
+                    
+                    // Get cell type and handle special rendering
+                    const cellKey = `${rowIndex}-${colIndex}`;
+                    const cellType = jSpreadsheetData?.cellTypes?.[cellKey] || "text";
+                    const cellDropdownOptions = jSpreadsheetData?.cellDropdowns?.[cellKey] || [];
+                    
+                    // Render content based on cell type
+                    let renderedContent = cellContent || "";
+                    
+                    // Check if cell is editable
+                    const isCellEditable = editableCells.has(`${node.id}-${cellKey}`);
+                    
+                    // Debug: Log editable cell status
+                    if (cellType === "dropdown") {
+                      console.log(`🔍 Dropdown cell [${rowIndex}][${colIndex}]:`, {
+                        cellKey: `${node.id}-${cellKey}`,
+                        isCellEditable,
+                        editableCellsSize: editableCells.size,
+                        editableCellsKeys: Array.from(editableCells.keys())
+                      });
+                    }
+                    
+                    if (cellType === "dropdown" && cellDropdownOptions.length > 0) {
+                      // For dropdown cells, render actual select element if editable
+                      if (isCellEditable) {
+                        renderedContent = (
+                          <select
+                            key={`dropdown-${node.id}-${rowIndex}-${colIndex}-${Date.now()}`}
+                            value={cellContent || ""}
+                            onChange={(e) => {
+                              console.log('🔍 Dropdown onChange:', {
+                                nodeId: node.id,
+                                rowIndex,
+                                colIndex,
+                                selectedValue: e.target.value,
+                                cellContent,
+                                cellDropdownOptions
+                              });
+                              handleCellChange(node.id, rowIndex, colIndex, e.target.value);
+                            }}
+                            style={{
+                              width: '100%',
+                              padding: '4px 8px',
+                              border: '1px solid #ddd',
+                              borderRadius: '4px',
+                              fontSize: '14px',
+                              backgroundColor: 'white',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            <option value="">Select...</option>
+                            {cellDropdownOptions.map((option, idx) => (
+                              <option key={idx} value={option}>
+                                {option}
+                              </option>
+                            ))}
+                          </select>
+                        );
+                      } else {
+                        // Show selected value for non-editable cells
+                        renderedContent = (
+                          <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            {cellContent || "Select..."}
+                            <span style={{ fontSize: '12px', color: '#666', marginLeft: '8px' }}>▼</span>
+                          </span>
+                        );
+                      }
+                    } else if (cellType === "autocomplete" && cellDropdownOptions.length > 0) {
+                      // For autocomplete cells, render datalist input if editable
+                      if (isCellEditable) {
+                        const inputId = `autocomplete-${node.id}-${cellKey}`;
+                        renderedContent = (
+                          <div>
+                            <input
+                              key={`autocomplete-${node.id}-${rowIndex}-${colIndex}-${Date.now()}`}
+                              list={inputId}
+                              value={cellContent || ""}
+                              onChange={(e) => handleCellChange(node.id, rowIndex, colIndex, e.target.value)}
+                              onFocus={(e) => e.target.select()}
+                              style={{
+                                width: '100%',
+                                padding: '4px 8px',
+                                border: '1px solid #ddd',
+                                borderRadius: '4px',
+                                fontSize: '14px',
+                                cursor: 'text'
+                              }}
+                              placeholder="Type to search..."
+                              autoComplete="off"
+                            />
+                            <datalist id={inputId}>
+                              {cellDropdownOptions.map((option, idx) => (
+                                <option key={idx} value={option} />
+                              ))}
+                            </datalist>
+                          </div>
+                        );
+                      } else {
+                        renderedContent = (
+                          <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            {cellContent || "Type to search..."}
+                            <span style={{ fontSize: '12px', color: '#666', marginLeft: '8px' }}>🔍</span>
+                          </span>
+                        );
+                      }
+                    } else if (cellType === "color") {
+                      // For color cells, render color picker if editable
+                      if (isCellEditable) {
+                        renderedContent = (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <input
+                              key={`color-${node.id}-${rowIndex}-${colIndex}-${Date.now()}`}
+                              type="color"
+                              value={cellContent || "#ffffff"}
+                              onChange={(e) => handleCellChange(node.id, rowIndex, colIndex, e.target.value)}
+                              style={{
+                                width: '40px',
+                                height: '30px',
+                                border: '1px solid #ddd',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                padding: '0'
+                              }}
+                            />
+                            <span style={{ fontSize: '12px', color: '#666' }}>
+                              {cellContent || "Select Color"}
+                            </span>
+                          </div>
+                        );
+                      } else {
+                        renderedContent = (
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <div style={{ 
+                              width: '20px', 
+                              height: '20px', 
+                              backgroundColor: cellContent || '#ffffff',
+                              border: '1px solid #ddd',
+                              borderRadius: '3px'
+                            }} />
+                            {cellContent || "Select Color"}
+                          </span>
+                        );
+                      }
+                    } else if (cellType === "date") {
+                      // For date cells, render date picker if editable
+                      if (isCellEditable) {
+                        renderedContent = (
+                          <input
+                            key={`date-${node.id}-${rowIndex}-${colIndex}-${Date.now()}`}
+                            type="date"
+                            value={cellContent || ""}
+                            onChange={(e) => handleCellChange(node.id, rowIndex, colIndex, e.target.value)}
+                            style={{
+                              width: '100%',
+                              padding: '4px 8px',
+                              border: '1px solid #ddd',
+                              borderRadius: '4px',
+                              fontSize: '14px',
+                              cursor: 'pointer'
+                            }}
+                          />
+                        );
+                      } else {
+                        // Format date for display
+                        if (cellContent) {
+                          try {
+                            const date = new Date(cellContent);
+                            if (!isNaN(date.getTime())) {
+                              renderedContent = date.toLocaleDateString();
+                            }
+                          } catch (e) {
+                            // Keep original content if date parsing fails
+                          }
+                        }
+                      }
+                                          } else if (cellType === "time") {
+                        // For time cells, render time picker if editable
+                        if (isCellEditable) {
+                        renderedContent = (
+                          <input
+                            key={`time-${node.id}-${rowIndex}-${colIndex}-${Date.now()}`}
+                            type="time"
+                            value={cellContent || ""}
+                            onChange={(e) => handleCellChange(node.id, rowIndex, colIndex, e.target.value)}
+                            style={{
+                              width: '100%',
+                              padding: '4px 8px',
+                              border: '1px solid #ddd',
+                              borderRadius: '4px',
+                              fontSize: '14px',
+                              cursor: 'pointer'
+                            }}
+                          />
+                        );
+                      } else {
+                        // Format time for display
+                        if (cellContent) {
+                          try {
+                            const time = new Date(`2000-01-01T${cellContent}`);
+                            if (!isNaN(time.getTime())) {
+                              renderedContent = time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                            }
+                          } catch (e) {
+                            // Keep original content if time parsing fails
+                          }
+                        }
+                      }
+                    } else if (cellType === "numeric") {
+                      // For numeric cells, render number input if editable
+                      if (isCellEditable) {
+                        const numberFormat = jSpreadsheetData?.cellTypes?.[`${cellKey}-format`] || "decimal";
+                        const decimalPlaces = jSpreadsheetData?.cellTypes?.[`${cellKey}-decimals`] || 2;
+                        
+                        let inputType = "number";
+                        let step = "0.01";
+                        
+                        if (numberFormat === "integer") {
+                          inputType = "number";
+                          step = "1";
+                        } else if (numberFormat === "percentage") {
+                          inputType = "number";
+                          step = "0.01";
+                        }
+                        
+                        renderedContent = (
+                          <input
+                            key={`numeric-${node.id}-${rowIndex}-${colIndex}`}
+                            type={inputType}
+                            value={cellContent || ""}
+                            onChange={(e) => handleCellChange(node.id, rowIndex, colIndex, e.target.value)}
+                            onFocus={(e) => e.target.select()}
+                            step={step}
+                            min={numberFormat === "percentage" ? "0" : undefined}
+                            max={numberFormat === "percentage" ? "100" : undefined}
+                            style={{
+                              width: '100%',
+                              padding: '4px 8px',
+                              border: '1px solid #ddd',
+                              borderRadius: '4px',
+                              fontSize: '14px',
+                              cursor: 'text'
+                            }}
+                          />
+                        );
+                      } else {
+                        // Apply number formatting for display
+                        if (cellContent && !isNaN(parseFloat(cellContent))) {
+                          const num = parseFloat(cellContent);
+                          const numberFormat = jSpreadsheetData?.cellTypes?.[`${cellKey}-format`] || "decimal";
+                          const decimalPlaces = jSpreadsheetData?.cellTypes?.[`${cellKey}-decimals`] || 2;
+                          
+                          switch (numberFormat) {
+                            case "currency":
+                              const currencySymbol = jSpreadsheetData?.cellTypes?.[`${cellKey}-currency`] || "$";
+                              renderedContent = `${currencySymbol}${num.toFixed(decimalPlaces)}`;
+                              break;
+                            case "percentage":
+                              renderedContent = `${(num * 100).toFixed(decimalPlaces)}%`;
+                              break;
+                            case "decimal":
+                            default:
+                              renderedContent = num.toFixed(decimalPlaces);
+                              break;
+                          }
+                        }
+                      }
+                    }
+                    
+                    // Handle additional cell types
+                    if (cellType === "checkbox") {
+                      if (isCellEditable) {
+                        renderedContent = (
+                          <input
+                            key={`checkbox-${node.id}-${rowIndex}-${colIndex}`}
+                            type="checkbox"
+                            checked={Boolean(cellContent)}
+                            onChange={(e) => handleCellChange(node.id, rowIndex, colIndex, e.target.checked)}
+                            style={{
+                              width: '16px',
+                              height: '16px',
+                              cursor: 'pointer'
+                            }}
+                          />
+                        );
+                      } else {
+                        renderedContent = (
+                          <span style={{ color: cellContent ? '#10b981' : '#6b7280' }}>
+                            {cellContent ? '☑' : '☐'}
+                          </span>
+                        );
+                      }
+                    } else if (cellType === "radio") {
+                      if (isCellEditable) {
+                        renderedContent = (
+                          <input
+                            key={`radio-${node.id}-${rowIndex}-${colIndex}`}
+                            type="radio"
+                            checked={Boolean(cellContent)}
+                            onChange={(e) => handleCellChange(node.id, rowIndex, colIndex, e.target.checked)}
+                            style={{
+                              width: '16px',
+                              height: '16px',
+                              cursor: 'pointer'
+                            }}
+                          />
+                        );
+                      } else {
+                        renderedContent = (
+                          <span style={{ color: cellContent ? '#3b82f6' : '#6b7280' }}>
+                            {cellContent ? '🔘' : '⚪'}
+                          </span>
+                        );
+                      }
+                    } else if (cellType === "textarea") {
+                      if (isCellEditable) {
+                        renderedContent = (
+                          <textarea
+                            key={`textarea-${node.id}-${rowIndex}-${colIndex}`}
+                            value={cellContent || ""}
+                            onChange={(e) => handleCellChange(node.id, rowIndex, colIndex, e.target.value)}
+                            rows={2}
+                            style={{
+                              width: '100%',
+                              padding: '4px 8px',
+                              border: '1px solid #ddd',
+                              borderRadius: '4px',
+                              fontSize: '14px',
+                              resize: 'vertical',
+                              cursor: 'text'
+                            }}
+                            placeholder="Enter text..."
+                          />
+                        );
+                      } else {
+                        renderedContent = (
+                          <div style={{ 
+                            whiteSpace: 'pre-wrap', 
+                            wordBreak: 'break-word',
+                            maxHeight: '60px',
+                            overflow: 'auto'
+                          }}>
+                            {cellContent || ""}
+                          </div>
+                        );
+                      }
+                    }
+                    
+                    // Get cell styles from the jSpreadsheetData
+                    const cellStyle = jSpreadsheetData?.cellStyles?.[cellKey] || {};
+                    
+                    // Check if this cell is part of a merged range
+                    const isMerged = jSpreadsheetData && jSpreadsheetData.mergedCells && 
+                      (Array.isArray(jSpreadsheetData.mergedCells) ? 
+                        jSpreadsheetData.mergedCells.some(merge => 
+                          merge && merge.startRow !== undefined && merge.endRow !== undefined &&
+                          merge.startCol !== undefined && merge.endCol !== undefined &&
+                          rowIndex >= merge.startRow && rowIndex <= merge.endRow &&
+                          colIndex >= merge.startCol && colIndex <= merge.endCol
+                        ) :
+                      Object.values(jSpreadsheetData.mergedCells).some(merge => 
+                          merge && merge.startRow !== undefined && merge.endRow !== undefined &&
+                          merge.startCol !== undefined && merge.endCol !== undefined &&
+                        rowIndex >= merge.startRow && rowIndex <= merge.endRow &&
+                        colIndex >= merge.startCol && colIndex <= merge.endCol
+                        )
+                      );
+                    
+                    // Debug: Log merge detection for first few cells
+                    if (rowIndex < 3 && colIndex < 3) {
+                      console.log(`🔍 Cell ${rowIndex}-${colIndex}: isMerged=${isMerged}, mergedCells=`, jSpreadsheetData?.mergedCells);
+                      console.log(`🎨 Cell ${rowIndex}-${colIndex}: styles=`, cellStyle);
+                      console.log(`🎨 Cell ${rowIndex}-${colIndex}: background=${cellStyle.backgroundColor || 'transparent'}`);
+                    }
+                    
+                    // Skip rendering continuation cells in merged ranges
+                    const mergeInfo = jSpreadsheetData && jSpreadsheetData.mergedCells && 
+                      (Array.isArray(jSpreadsheetData.mergedCells) ? 
+                        jSpreadsheetData.mergedCells.find(merge => 
+                          merge && merge.startRow !== undefined && merge.endRow !== undefined &&
+                          merge.startCol !== undefined && merge.endCol !== undefined &&
+                          rowIndex >= merge.startRow && rowIndex <= merge.endRow &&
+                          colIndex >= merge.startCol && colIndex <= merge.endCol
+                        ) :
+                      Object.values(jSpreadsheetData.mergedCells).find(merge => 
+                          merge && merge.startRow !== undefined && merge.endRow !== undefined &&
+                          merge.startCol !== undefined && merge.endCol !== undefined &&
+                        rowIndex >= merge.startRow && rowIndex <= merge.endRow &&
+                        colIndex >= merge.startCol && colIndex <= merge.endCol
+                        )
+                      );
+                    
+                    if (mergeInfo) {
+                      const isStartCell = rowIndex === mergeInfo.startRow && colIndex === mergeInfo.startCol;
+                      if (!isStartCell) {
+                        return null; // Skip continuation cells
+                      }
+                    }
+                    
+                    // Build comprehensive cell styles
+                    const cellStyles = {
+                      // Base styles
+                          padding: "8px",
+                          border: "1px solid #e5e7eb",
+                          minHeight: "40px",
+                      
+                                          // Apply cell background color (merged cells keep their original color, not the merge indicator color)
+                    backgroundColor: cellStyle.backgroundColor || "transparent",
+                      
+                      // Apply font styles
+                      fontSize: cellStyle.fontSize || "14px",
+                      fontFamily: cellStyle.fontFamily || '"Segoe UI", Arial, sans-serif',
+                      fontWeight: cellStyle.fontWeight || "normal",
+                      fontStyle: cellStyle.fontStyle || "normal",
+                      color: cellStyle.color || "#000000",
+                      
+                      // Apply text alignment
+                      textAlign: cellStyle.textAlign || "left",
+                      verticalAlign: cellStyle.verticalAlign || "middle",
+                      
+                      // Apply text decoration
+                      textDecoration: cellStyle.textDecoration || "none",
+                      
+                      // Apply borders
+                      borderLeft: cellStyle.borderLeft || "1px solid #e5e7eb",
+                      borderRight: cellStyle.borderRight || "1px solid #e5e7eb",
+                      borderTop: cellStyle.borderTop || "1px solid #e5e7eb",
+                      borderBottom: cellStyle.borderBottom || "1px solid #e5e7eb",
+                      
+                      // Add special border styling for merged cells to show they're merged
+                      ...(isMerged && {
+                        border: "2px solid #667eea",
+                        boxShadow: "inset 0 0 0 1px rgba(102, 126, 234, 0.2)"
+                      }),
+                      
+                      // Apply padding
+                      paddingLeft: cellStyle.paddingLeft || "8px",
+                      paddingRight: cellStyle.paddingRight || "8px",
+                      paddingTop: cellStyle.paddingTop || "8px",
+                      paddingBottom: cellStyle.paddingBottom || "8px",
+                      
+                      // Apply other styles
+                      whiteSpace: cellStyle.whiteSpace || "normal",
+                      overflow: cellStyle.overflow || "visible",
+                      wordWrap: cellStyle.wordWrap || "break-word",
+                      
+                      // Apply conditional formatting if available
+                      ...(cellStyle.conditionalFormatting && {
+                        backgroundColor: cellStyle.conditionalFormatting.backgroundColor || cellStyle.backgroundColor,
+                        color: cellStyle.conditionalFormatting.color || cellStyle.color,
+                        fontWeight: cellStyle.conditionalFormatting.fontWeight || cellStyle.fontWeight,
+                      }),
+                      
+                      // Apply custom CSS if available
+                      ...(cellStyle.customCSS && cellStyle.customCSS),
+                    };
+                    
+                    // Check if this cell is editable
+                    const isEditable = editableCells.has(`${node.id}-${rowIndex}-${colIndex}`);
+                    const isProtected = !isEditable;
+                    
+                    return (
+                      <td 
+                        key={`${node.id}-cell-${rowIndex}-${colIndex}-${Date.now()}`}
+                        rowSpan={mergeInfo && mergeInfo.startRow !== undefined && mergeInfo.endRow !== undefined ? 
+                          Math.max(1, mergeInfo.endRow - mergeInfo.startRow + 1) : 1}
+                        colSpan={mergeInfo && mergeInfo.startCol !== undefined && mergeInfo.endCol !== undefined ? 
+                          Math.max(1, mergeInfo.endCol - mergeInfo.startCol + 1) : 1}
+                        style={{
+                          ...cellStyles,
+                          // Add visual indicators for editable/protected cells
+                          ...(isEditable && {
+                            cursor: 'text'
+                          }),
+                          ...(isProtected && {
+                            cursor: 'not-allowed',
+                            opacity: 0.7,
+                            position: 'relative'
+                          })
+                        }}
+                        onClick={() => {
+                          // Don't make cells editable if they have special types (like dropdown, autocomplete, etc.)
+                          // But allow editing for text type cells
+                          if (isEditable && (cellType === "text" || !cellType)) {
+                            // Make cell editable
+                            const input = document.createElement('input');
+                            input.type = 'text';
+                            input.value = cellContent || '';
+                            input.style.cssText = `
+                              width: 100%;
+                              height: 100%;
+                              border: none;
+                              outline: none;
+                              background: transparent;
+                              font-size: inherit;
+                              font-family: inherit;
+                              color: inherit;
+                              padding: 0;
+                              margin: 0;
+                            `;
+                            
+                            const cell = event.target.closest('td');
+                            cell.innerHTML = '';
+                            cell.appendChild(input);
+                            input.focus();
+                            
+                            const handleBlur = () => {
+                              const newValue = input.value;
+                              cell.innerHTML = '';
+                              cell.appendChild(document.createTextNode(newValue));
+                              handleCellChange(node.id, rowIndex, colIndex, newValue);
+                            };
+                            
+                            const handleKeyDown = (e) => {
+                              if (e.key === 'Enter' || e.key === 'Escape') {
+                                input.blur();
+                              }
+                            };
+                            
+                            input.addEventListener('blur', handleBlur);
+                            input.addEventListener('keydown', handleKeyDown);
+                          } else if (isProtected) {
+                            // Do nothing - silently ignore protected cell clicks
+                          }
+                        }}
+
+                      >
+                        {renderedContent}
+                      </td>
+                    );
+                  })}
+                </tr>
+                  );
+                })}
+            </tbody>
+          </table>
+        </div>
       </div>
     );
   }
@@ -1622,6 +2613,9 @@ export default function LivePreview({ fields, values, onChange, folderName }) {
         <div className="modal-content" onClick={e=>e.stopPropagation()}>
    
             <h3>Form Preview</h3>
+            
+
+            
             <form>{fields.map(f=>renderFormNode(f))}</form>
             <div className="button-group"> 
               <button className="save-btn" onClick={SaveForm}>Save Form</button>
@@ -1643,6 +2637,5 @@ export default function LivePreview({ fields, values, onChange, folderName }) {
 LivePreview.propTypes = {
   fields: PropTypes.array.isRequired,
   values: PropTypes.object.isRequired,
-  onChange: PropTypes.func.isRequired,
   folderName: PropTypes.string.isRequired,
 };
