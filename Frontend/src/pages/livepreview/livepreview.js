@@ -2473,9 +2473,8 @@ export default function LivePreview({ fields, values, folderName }) {
                           })
                         }}
                         onClick={() => {
-                          // Don't make cells editable if they have special types (like dropdown, autocomplete, etc.)
-                          // But allow editing for text type cells
-                          if (isEditable && (cellType === "text" || !cellType)) {
+                          // Don't make cells editable if they already have a specific type (like dropdown)
+                          if (isEditable && !cellType) {
                             // Make cell editable
                             const input = document.createElement('input');
                             input.type = 'text';
