@@ -1,10 +1,11 @@
 const express = require('express');
-const { requireAuth, requireAdmin } = require('../middleware/auth');
+const auth = require('../middleware/auth');
+const adminAuth = require('../middleware/adminAuth');
 const Bundle = require('../models/Bundle');
 const router = express.Router();
 
 // Admin CRUD
-router.use(requireAuth, requireAdmin);
+router.use(adminAuth);
 
 router.post('/', async (req, res) => {
   const slug = require('crypto').randomBytes(6).toString('hex');
@@ -35,7 +36,7 @@ router.delete('/:id', async (req, res) => {
 });
 
 // Public share
-router.get('/share/:slug', requireAuth, async (req, res) => {
+router.get('/share/:slug', auth, async (req, res) => {
   const b = await Bundle.findOne({ shareLink: req.params.slug }).populate('forms');
   if (!b) return res.status(404).json({ error: 'Not found' });
   res.json(b);

@@ -29,6 +29,13 @@ import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-alpine.css';
 import AllSubmissions from "../pages/reports/AllSubmissions";
 
+// Authentication pages
+import Login from "../pages/Login";
+import AdminPanel from "../pages/AdminPanel";
+
+// Protected Route component
+import ProtectedRoute from "../components/ProtectedRoute";
+
 const Router = () => {
   const location = useLocation();
   useLayoutEffect(() => {
@@ -37,31 +44,38 @@ const Router = () => {
 
   return (
     <Routes>
-       <Route path={`${process.env.PUBLIC_URL}`} element={<Layout />}>
-        <Route index element={<Homepage />}></Route>
+      {/* Public routes */}
+      <Route path="/login" element={<Login />} />
+      
+      {/* Protected routes */}
+      <Route path={`${process.env.PUBLIC_URL}`} element={<Layout />}>
+        <Route index element={<ProtectedRoute><Homepage /></ProtectedRoute>}></Route>
         
         {/* Form builder routes */}
-        <Route path="formBuilder/:id" element={<UnifiedFormBuilder />} />  
-        <Route path="formBuilder" element={<UnifiedFormBuilder />} />
+        <Route path="formBuilder/:id" element={<ProtectedRoute requiredPermission="formBuilder"><UnifiedFormBuilder /></ProtectedRoute>} />  
+        <Route path="formBuilder" element={<ProtectedRoute requiredPermission="formBuilder"><UnifiedFormBuilder /></ProtectedRoute>} />
         
         {/* Form management routes */}
-        <Route path="forms/folders" element={<FolderList />} />
-        <Route path="forms/folder/:folderName" element={<FolderFormsView />} />
-        <Route path="forms/manage" element={<ManageForms />} />
-        <Route path="forms/fill/:id" element={<FormFill />} />
-        <Route path="response-details/:responseId" element={<ResponseDetails />} />
-        <Route path="response-details/:responseId/edit" element={<ResponseDetails />} />
-        <Route path="forms/reedit/:formId/:responseId" element={<ReeditForm />} />
+        <Route path="forms/folders" element={<ProtectedRoute requiredPermission="folders"><FolderList /></ProtectedRoute>} />
+        <Route path="forms/folder/:folderName" element={<ProtectedRoute requiredPermission="folders"><FolderFormsView /></ProtectedRoute>} />
+        <Route path="forms/manage" element={<ProtectedRoute requiredPermission="folders"><ManageForms /></ProtectedRoute>} />
+        <Route path="forms/fill/:id" element={<ProtectedRoute requiredPermission="folders"><FormFill /></ProtectedRoute>} />
+        <Route path="response-details/:responseId" element={<ProtectedRoute requiredPermission="responses"><ResponseDetails /></ProtectedRoute>} />
+        <Route path="response-details/:responseId/edit" element={<ProtectedRoute requiredPermission="responses"><ResponseDetails /></ProtectedRoute>} />
+        <Route path="forms/reedit/:formId/:responseId" element={<ProtectedRoute requiredPermission="responses"><ReeditForm /></ProtectedRoute>} />
         
         {/* Reports routes */}
-        <Route path="reports/analytics" element={<FormAnalytics />} />
-        <Route path="reports/responses" element={<ResponseReports />} />
-        <Route path="reports/folders" element={<FolderReports />} />
-           <Route path="reports/submissions" element={<AllSubmissions />} />
-        <Route path="reports/export" element={<ExportData />} />
+        <Route path="reports/analytics" element={<ProtectedRoute requiredPermission="reports"><FormAnalytics /></ProtectedRoute>} />
+        <Route path="reports/responses" element={<ProtectedRoute requiredPermission="reports"><ResponseReports /></ProtectedRoute>} />
+        <Route path="reports/folders" element={<ProtectedRoute requiredPermission="reports"><FolderReports /></ProtectedRoute>} />
+        <Route path="reports/submissions" element={<ProtectedRoute requiredPermission="reports"><AllSubmissions /></ProtectedRoute>} />
+        <Route path="reports/export" element={<ProtectedRoute requiredPermission="reports"><ExportData /></ProtectedRoute>} />
+        
+        {/* Admin routes */}
+        <Route path="admin" element={<ProtectedRoute requiredPermission="admin"><AdminPanel /></ProtectedRoute>} />
         
         {/* Legacy compatibility */}
-        <Route path="view-forms" element={<FormList />} />
+        <Route path="view-forms" element={<ProtectedRoute requiredPermission="folders"><FormList /></ProtectedRoute>} />
         
         {/* Fallback for unknown routes */}
         <Route path="*" element={<Error404Modern />}></Route>

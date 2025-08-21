@@ -16,8 +16,10 @@ const Layout = ({title, ...props}) => {
         <AppMain>
           <Sidebar fixed />
           <AppWrap>
-            {/* <Header fixed /> */}
-            <Outlet />
+            <Header fixed />
+            <div style={{ marginTop: '80px', padding: '20px' }}>
+              <Outlet />
+            </div>
             <Footer />
           </AppWrap>
         </AppMain>
