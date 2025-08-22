@@ -1,15 +1,75 @@
 const mongoose = require('mongoose');
-const bcrypt   = require('bcrypt');
+const bcrypt = require('bcryptjs');
 
-const UserSchema = new mongoose.Schema({
-  email:        { type: String, required: true, unique: true },
-  passwordHash: { type: String, required: true },
-  role:         { type: String, enum: ['admin','user'], default: 'user' },
-  createdAt:    { type: Date, default: Date.now }
+const userSchema = new mongoose.Schema({
+  username: {
+    type: String,
+    required: true,
+    unique: true,
+    trim: true
+  },
+  email: {
+    type: String,
+    required: true,
+    unique: true,
+    trim: true,
+    lowercase: true
+  },
+  password: {
+    type: String,
+    required: true
+  },
+  role: {
+    type: String,
+    enum: ['admin', 'user'],
+    default: 'user'
+  },
+  permissions: {
+    forms: { type: Boolean, default: false },
+    formBuilder: { type: Boolean, default: false },
+    folders: { type: Boolean, default: false },
+    responses: { type: Boolean, default: false },
+    reports: { type: Boolean, default: false },
+    admin: { type: Boolean, default: false }
+  },
+  isActive: {
+    type: Boolean,
+    default: true
+  },
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
+  },
+  lastLogin: {
+    type: Date
+  }
 });
 
-UserSchema.methods.comparePassword = function(plaintext) {
-  return bcrypt.compare(plaintext, this.passwordHash);
+// Hash password before saving
+userSchema.pre('save', async function(next) {
+  if (!this.isModified('password')) return next();
+  
+  try {
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Method to compare password
+userSchema.methods.comparePassword = async function(candidatePassword) {
+  return bcrypt.compare(candidatePassword, this.password);
 };
 
-module.exports = mongoose.model('User', UserSchema);
+// Method to get user permissions
+userSchema.methods.hasPermission = function(permission) {
+  return this.permissions[permission] || false;
+};
+
+module.exports = mongoose.model('User', userSchema);

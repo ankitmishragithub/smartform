@@ -22,6 +22,7 @@ import {
 } from 'reactstrap';
 import { useFormAPI } from '../hooks/useFormAPI';
 import SimpleDragDropTree from '../components/SimpleDragDropTree';
+import BackButton from '../components/BackButton';
 import '../css/FolderStyles.css';
 import '../components/SimpleDragDropTree.css';
 import FormFillPage from './FormFill';
@@ -216,12 +217,22 @@ export default function FolderList() {
       }
       return (
         <div>
-              {/* Folder indicator */}
-              {/* <div className="folder-breadcrumb mb-3">
-                <i className="ni ni-folder me-2"></i>
-                <span className="folder-title">{tabsOpenFolder}</span>
-                <span className="form-count">({validFolderForms.length} forms)</span>
-              </div> */}
+              {/* Back button and folder indicator */}
+              <div className="d-flex justify-content-between align-items-center mb-3">
+                <BackButton 
+                  text="← Back to Folders" 
+                  onClick={() => {
+                    setTabsOpenFolder(null);
+                    setTabsActiveFormTab(null);
+                  }}
+                />
+                <div className="folder-indicator">
+                  <i className="ni ni-folder me-2"></i>
+                  <span className="folder-title">{tabsOpenFolder}</span>
+                  <span className="form-count">({validFolderForms.length} forms)</span>
+                </div>
+              </div>
+              
               {/* Search input for tabs */}
               <div className="tab-search-container" style={{ maxWidth: 400 }}>
                 <input
@@ -363,12 +374,13 @@ export default function FolderList() {
         <Card className="border-0 shadow-sm">
           <CardBody>
             <div className="d-flex justify-content-between align-items-center mb-3">
-              <Button color="secondary" size="sm" onClick={() => {
-                setGridOpenFolder(null);
-                setGridActiveFormTab(null);
-              }}>
-                <i className="ni ni-arrow-left me-1"></i> Back to Folders
-              </Button>
+              <BackButton 
+                text="← Back to Folders" 
+                onClick={() => {
+                  setGridOpenFolder(null);
+                  setGridActiveFormTab(null);
+                }}
+              />
               
               {/* Edit button for active form */}
               <div className="d-flex gap-2">
@@ -493,6 +505,7 @@ export default function FolderList() {
 
   return (
           <DndProvider backend={HTML5Backend}>
+        <BackButton toHome={true} text="← Back" />
         {/* Compact Professional Header */}
         <div style={{
           background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
@@ -532,19 +545,7 @@ export default function FolderList() {
               
               {/* View Mode Toggle */}
               <ButtonGroup size="sm">
-                <Button
-                  color={viewMode === 'tree' ? 'primary' : 'outline-secondary'}
-                  onClick={() => setViewMode('tree')}
-                  style={{ 
-                    padding: '8px 12px',
-                    fontSize: '0.8rem',
-                    fontWeight: '500',
-                    borderRadius: viewMode === 'tree' ? '4px 0 0 4px' : '4px 0 0 4px'
-                  }}
-                >
-                  <i className="ni ni-hierarchy me-1" style={{ fontSize: '0.75rem' }}></i>
-                  Tree
-                </Button>
+                
                 <Button
                   color={viewMode === 'grid' ? 'primary' : 'outline-secondary'}
                   onClick={() => setViewMode('grid')}
@@ -570,6 +571,20 @@ export default function FolderList() {
                 >
                   <i className="ni ni-folder me-1" style={{ fontSize: '0.75rem' }}></i>
                   Tabs
+                </Button>
+
+                <Button
+                  color={viewMode === 'tree' ? 'primary' : 'outline-secondary'}
+                  onClick={() => setViewMode('tree')}
+                  style={{ 
+                    padding: '8px 12px',
+                    fontSize: '0.8rem',
+                    fontWeight: '500',
+                    borderRadius: viewMode === 'tree' ? '4px 0 0 4px' : '4px 0 0 4px'
+                  }}
+                >
+                  <i className="ni ni-hierarchy me-1" style={{ fontSize: '0.75rem' }}></i>
+                  Tree
                 </Button>
               </ButtonGroup>
             </div>

@@ -6,6 +6,8 @@ const path     = require('path');
 
 const formRoutes     = require('./routes/forms');
 const responseRoutes = require('./routes/responses');
+const authRoutes     = require('./routes/auth');
+const healthRoutes   = require('./routes/health');
 
 const app = express();
 
@@ -38,7 +40,13 @@ app.use(cors());
 //app.use(express.static(PUBLIC_DIR));
 
 // 4) Mount your API routes
+console.log('Mounting health routes...');
+app.use('/api/health',   healthRoutes);
+console.log('Mounting auth routes...');
+app.use('/api/auth',     authRoutes);
+console.log('Mounting form routes...');
 app.use('/api/forms',    formRoutes);
+console.log('Mounting response routes...');
 app.use('/api/responses', responseRoutes);
 
 // 5) **True** catch‑all for client‑side routes

@@ -19,6 +19,7 @@ import { formUtils } from '../utils/formUtils';
 import DeleteConfirmModal from '../components/DeleteConfirmModal';
 import '../css/FolderStyles.css';
 import '../css/FolderFormsView.css';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function FolderFormsView() {
   const { folderName } = useParams();
@@ -28,8 +29,12 @@ export default function FolderFormsView() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [formToDelete, setFormToDelete] = useState(null);
   const navigate = useNavigate();
+  const { user } = useAuth();
   
   const { getFormsByFolder, deleteForm, error } = useFormAPI();
+
+  // Check if user is admin
+  const isAdmin = user?.role === 'admin' || user?.permissions?.admin;
 
   useEffect(() => {
     if (folderName) {
@@ -233,13 +238,15 @@ export default function FolderFormsView() {
                       >
                         Edit
                       </Button>
-                      <Button
-                        color="outline-danger"
-                        size="sm"
-                        onClick={() => handleDeleteForm(form._id, preview.title)}
-                      >
-                        Delete
-                      </Button>
+                      {isAdmin && (
+                        <Button
+                          color="outline-danger"
+                          size="sm"
+                          onClick={() => handleDeleteForm(form._id, preview.title)}
+                        >
+                          Delete
+                        </Button>
+                      )}
                     </div>
                   </CardBody>
                 </Card>
@@ -260,6 +267,16 @@ export default function FolderFormsView() {
           confirmText="Delete Forever"
           cancelText="Cancel"
         />
+
+        {/* Admin Notice */}
+        {!isAdmin && forms.length > 0 && (
+          <div className="admin-notice mt-4">
+            <Alert color="info" className="text-center">
+              <strong>Note:</strong> Only administrators can delete forms. 
+              Contact your system administrator if you need to remove a form.
+            </Alert>
+          </div>
+        )}
       </Container>
     </div>
   );

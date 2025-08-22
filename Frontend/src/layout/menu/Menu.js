@@ -3,6 +3,7 @@ import menu from "./MenuData";
 import Icon from "../../components/icon/Icon";
 import classNames from "classnames";
 import { NavLink, Link } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
 
 const MenuHeading = ({ heading }) => {
   return (
@@ -200,9 +201,23 @@ const MenuSub = ({ icon, link, text, sub, sidebarToggle, mobileView, ...props })
 };
 
 const Menu = ({ sidebarToggle, mobileView }) => {
+  const { hasPermission, isAdmin } = useAuth();
+  
+  // Filter menu items based on user permissions
+  const filteredMenu = menu.filter(item => {
+    if (item.heading) return true; // Always show headings
+    
+    // Check if item has permission requirements
+    if (item.text === "Create Form" && !hasPermission("formBuilder")) return false;
+    if (item.text === "Forms" && !hasPermission("folders")) return false;
+    if (item.text === "Reports" && !hasPermission("reports")) return false;
+    
+    return true;
+  });
+  
   return (
     <ul className="nk-menu">
-      {menu.map((item) =>
+      {filteredMenu.map((item) =>
         item.heading ? (
           <MenuHeading heading={item.heading} key={item.heading} />
         ) : (

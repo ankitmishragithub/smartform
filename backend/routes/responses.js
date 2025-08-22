@@ -1,5 +1,6 @@
 const express = require('express');
-const { requireAuth, requireAdmin } = require('../middleware/auth');
+const auth = require('../middleware/auth');
+const adminAuth = require('../middleware/adminAuth');
 const Response = require('../models/Response');
 const router = express.Router();
 
@@ -124,19 +125,29 @@ router.get('/debug/structure', async (req, res) => {
 });
 
 // Admin: list by form (must come before /:responseId)
-router.get('/form/:formId', requireAuth, requireAdmin, async (req, res) => {
-  const responses = await Response.find({ form: req.params.formId })
-    .populate('filledBy', 'email')
-    .sort({ submittedAt: -1 });
-  res.json(responses);
+router.get('/form/:formId', adminAuth, async (req, res) => {
+  try {
+    const responses = await Response.find({ form: req.params.formId })
+      .populate('filledBy', 'email')
+      .sort({ submittedAt: -1 });
+    res.json(responses);
+  } catch (error) {
+    console.error('Error fetching form responses:', error);
+    res.status(500).json({ error: 'Failed to fetch responses' });
+  }
 });
 
 // Admin: list by bundle (must come before /:responseId)
-router.get('/bundle/:bundleId', requireAuth, requireAdmin, async (req, res) => {
-  const responses = await Response.find({ bundle: req.params.bundleId })
-    .populate('filledBy', 'email')
-    .sort({ submittedAt: -1 });
-  res.json(responses);
+router.get('/bundle/:bundleId', adminAuth, async (req, res) => {
+  try {
+    const responses = await Response.find({ bundle: req.params.bundleId })
+      .populate('filledBy', 'email')
+      .sort({ submittedAt: -1 });
+    res.json(responses);
+  } catch (error) {
+    console.error('Error fetching bundle responses:', error);
+    res.status(500).json({ error: 'Failed to fetch responses' });
+  }
 });
 
 // Update a specific response by ID
