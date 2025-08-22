@@ -32,6 +32,8 @@ import AllSubmissions from "../pages/reports/AllSubmissions";
 // Authentication pages
 import Login from "../pages/Login";
 import AdminPanel from "../pages/AdminPanel";
+import AccountSettings from "../pages/AccountSettings";
+import ViewProfile from "../pages/ViewProfile";
 
 // Protected Route component
 import ProtectedRoute from "../components/ProtectedRoute";
@@ -73,6 +75,10 @@ const Router = () => {
         
         {/* Admin routes */}
         <Route path="admin" element={<ProtectedRoute requiredPermission="admin"><AdminPanel /></ProtectedRoute>} />
+        
+        {/* User account routes */}
+        <Route path="account-settings" element={<ProtectedRoute><AccountSettings /></ProtectedRoute>} />
+        <Route path="view-profile" element={<ProtectedRoute><ViewProfile /></ProtectedRoute>} />
         
         {/* Legacy compatibility */}
         <Route path="view-forms" element={<ProtectedRoute requiredPermission="folders"><FormList /></ProtectedRoute>} />

@@ -24,6 +24,11 @@ const User = () => {
     }, 100);
   };
 
+  const handleViewProfile = () => {
+    toggle(); // Close dropdown first
+    navigate('/view-profile');
+  };
+
   return (
     <Dropdown isOpen={open} className="user-dropdown" toggle={toggle}>
       <DropdownToggle
@@ -37,8 +42,8 @@ const User = () => {
         <div className="user-toggle">
           <UserAvatar icon="user-alt" className="sm" />
           <div className="user-info d-none d-md-block">
-            <div className="user-status">Administrator</div>
-            <div className="user-name dropdown-indicator">Smartfactory worx</div>
+            <div className="user-status">{user?.role === 'admin' ? 'Administrator' : 'User'}</div>
+            <div className="user-name dropdown-indicator">{user?.username || 'Smartfactory worx'}</div>
           </div>
         </div>
       </DropdownToggle>
@@ -57,15 +62,12 @@ const User = () => {
         <div className="dropdown-inner">
           <LinkList>
             {isAdmin() && (
-              <LinkItem link="/admin" icon="setting-alt" onClick={toggle}>
+              <LinkItem link="/admin" icon="setting-alt">
                 Admin Panel
               </LinkItem>
             )}
-            <LinkItem link="/user-profile-regular" icon="user-alt" onClick={toggle}>
+            <LinkItem onClick={handleViewProfile} icon="user-alt">
               View Profile
-            </LinkItem>
-            <LinkItem link="/user-profile-setting" icon="setting-alt" onClick={toggle}>
-              Account Setting
             </LinkItem>
           </LinkList>
         </div>

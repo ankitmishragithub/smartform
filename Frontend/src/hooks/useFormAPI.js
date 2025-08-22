@@ -113,7 +113,18 @@ export const useFormAPI = () => {
       const response = await api.delete(`/forms/${formId}`);
       return response.data;
     } catch (err) {
-      const errorMessage = err.response?.data?.error || 'Failed to delete form';
+      let errorMessage = 'Failed to delete form';
+      
+      if (err.response?.status === 403) {
+        errorMessage = 'Access denied: Only administrators can delete forms';
+      } else if (err.response?.status === 401) {
+        errorMessage = 'Authentication required: Please log in again';
+      } else if (err.response?.status === 404) {
+        errorMessage = 'Form not found: It may have been already deleted';
+      } else if (err.response?.data?.error) {
+        errorMessage = err.response.data.error;
+      }
+      
       setError(errorMessage);
       throw new Error(errorMessage);
     } finally {

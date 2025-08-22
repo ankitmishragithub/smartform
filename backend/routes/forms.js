@@ -1,6 +1,8 @@
 const express = require('express');
 const Form = require('../models/Form');
 const router = express.Router();
+const auth = require('../middleware/auth');
+const adminAuth = require('../middleware/adminAuth');
 
 // Helper function to extract folderName from schemaJson
 function getFolderNameFromSchema(schemaJson) {
@@ -156,8 +158,8 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// Delete a form
-router.delete('/:id', async (req, res) => {
+// Delete a form - ADMIN ONLY
+router.delete('/:id', adminAuth, async (req, res) => {
   try {
     const deleted = await Form.findByIdAndDelete(req.params.id);
     if (!deleted) return res.status(404).json({ error: 'Form not found' });

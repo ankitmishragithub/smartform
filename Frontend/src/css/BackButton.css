@@ -1,0 +1,99 @@
+.back-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #6c757d;
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  margin-bottom: 20px;
+}
+
+.back-button:hover {
+  background: #5a6268;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.back-button:active {
+  transform: translateY(0);
+}
+
+.back-button.primary {
+  background: #007bff;
+}
+
+.back-button.primary:hover {
+  background: #0056b3;
+}
+
+.back-button.danger {
+  background: #dc3545;
+}
+
+.back-button.danger:hover {
+  background: #c82333;
+}
+
+.back-button.success {
+  background: #28a745;
+}
+
+.back-button.success:hover {
+  background: #1e7e34;
+}
+
+.back-button.warning {
+  background: #ffc107;
+  color: #212529;
+}
+
+.back-button.warning:hover {
+  background: #e0a800;
+}
+
+.back-button.info {
+  background: #17a2b8;
+}
+
+.back-button.info:hover {
+  background: #138496;
+}
+
+.back-button.large {
+  padding: 12px 20px;
+  font-size: 16px;
+}
+
+.back-button.small {
+  padding: 8px 12px;
+  font-size: 12px;
+}
+
+.back-button.icon-only {
+  padding: 10px;
+  min-width: 40px;
+  justify-content: center;
+}
+
+.back-button.icon-only .back-text {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .back-button {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+  
+  .back-button.large {
+    padding: 10px 16px;
+    font-size: 14px;
+  }
+}
