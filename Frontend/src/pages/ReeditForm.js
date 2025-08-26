@@ -78,11 +78,82 @@ function SpreadsheetFormFillComponent({ field, value, onChange }) {
       setEditableCells(new Set());
       return;
     }
-
+    
     const sheets = src.sheets;
     const sheet = sheets[currentActiveSheet] || { data: [], headers: [], rows: 0, cols: 0, mergedCells: [] };
 
     seedAuditFromSheet(currentActiveSheet, sheet);
+
+    // DETECT EXISTING AUDIT MODE from pre-filled data (for re-editing)
+    if (!auditModeRef.current.has(currentActiveSheet) && sheet.data) {
+      const auditColIdx = auditColIndexRef.current.get(currentActiveSheet) ?? sheet._auditColIndex ?? -1;
+      const auditRowIdx = auditRowIndexRef.current.get(currentActiveSheet) ?? sheet._auditRowIndex ?? -1;
+      
+      let hasExistingAuditColumns = false;
+      let hasExistingAuditRows = false;
+      
+      // Check for existing audit column content
+      if (auditColIdx >= 0) {
+        for (let r = 1; r < sheet.data.length; r++) {
+          const cell = sheet.data[r]?.[auditColIdx];
+          const content = typeof cell === "object" ? (cell.content || "") : String(cell || "");
+          if (content.includes(" - ") && (content.includes(" AM") || content.includes(" PM"))) {
+            hasExistingAuditColumns = true;
+              break;
+            }
+          }
+        }
+        
+      // Check for existing audit row content
+      if (auditRowIdx >= 0 && sheet.data[auditRowIdx]) {
+        for (let c = 0; c < (sheet.data[0]?.length || 0); c++) {
+          const cell = sheet.data[auditRowIdx][c];
+          const content = typeof cell === "object" ? (cell.content || "") : String(cell || "");
+          if (content.includes(" - ") && (content.includes(" AM") || content.includes(" PM"))) {
+            hasExistingAuditRows = true;
+            break;
+          }
+        }
+      }
+      
+            // Set mode based on existing audit data
+      // IMPORTANT: audit COLUMNS exist → user was filling ROWS → mode="row" 
+      //           audit ROWS exist → user was filling COLUMNS → mode="col"
+      if (hasExistingAuditColumns && !hasExistingAuditRows) {
+        auditModeRef.current.set(currentActiveSheet, "row");
+        console.log(`🔍 [ReeditForm] Detected existing audit COLUMNS → User was filling ROWS → Setting mode to ROW for sheet ${currentActiveSheet}`);
+      } else if (hasExistingAuditRows && !hasExistingAuditColumns) {
+        auditModeRef.current.set(currentActiveSheet, "col");
+        console.log(`🔍 [ReeditForm] Detected existing audit ROWS → User was filling COLUMNS → Setting mode to COL for sheet ${currentActiveSheet}`);
+      } else if (hasExistingAuditColumns && hasExistingAuditRows) {
+        // Both exist - choose based on which has more entries
+        let auditColCount = 0, auditRowCount = 0;
+        
+        if (auditColIdx >= 0) {
+          for (let r = 1; r < sheet.data.length; r++) {
+            const cell = sheet.data[r]?.[auditColIdx];
+            const content = typeof cell === "object" ? (cell.content || "") : String(cell || "");
+            if (content.includes(" - ")) auditColCount++;
+          }
+        }
+        
+        if (auditRowIdx >= 0 && sheet.data[auditRowIdx]) {
+          for (let c = 0; c < (sheet.data[0]?.length || 0); c++) {
+            const cell = sheet.data[auditRowIdx][c];
+            const content = typeof cell === "object" ? (cell.content || "") : String(cell || "");
+            if (content.includes(" - ")) auditRowCount++;
+          }
+        }
+        
+        if (auditColCount >= auditRowCount) {
+          auditModeRef.current.set(currentActiveSheet, "row");
+          console.log(`🔍 [ReeditForm] Both audit types exist, audit columns have more entries (${auditColCount} vs ${auditRowCount}) → Setting mode to ROW (user was filling ROWS)`);
+          } else {
+          auditModeRef.current.set(currentActiveSheet, "col");
+          console.log(`🔍 [ReeditForm] Both audit types exist, audit rows have more entries (${auditRowCount} vs ${auditColCount}) → Setting mode to COL (user was filling COLUMNS)`);
+        }
+      }
+    }
 
     const newEditableData = {};
     const newEditableCells = new Set();
@@ -121,9 +192,9 @@ function SpreadsheetFormFillComponent({ field, value, onChange }) {
           // empty -> editable
           newEditableCells.add(key);
           newEditableData[key] = "";
-        }
+          }
+        });
       });
-    });
 
     // Step 2: keep USER-filled cells editable (even if now non-empty)
     userEditedCellsRef.current.forEach(key => {
@@ -186,7 +257,7 @@ function SpreadsheetFormFillComponent({ field, value, onChange }) {
     const lc = header.toLowerCase();
     const isTimeColumn = lc.includes("time") || lc.includes("time.");
     const isFirstDataRow = rowIndex === 1;
-
+    
     const updates = { [key]: newValue };
 
     if (isTimeColumn && !isFirstDataRow && String(newValue).trim()) {
@@ -208,7 +279,7 @@ function SpreadsheetFormFillComponent({ field, value, onChange }) {
       data[r] = [...data[r]];
       if (typeof data[r][c] === "object" && data[r][c] !== null) {
         data[r][c] = { ...data[r][c], content: v };
-      } else {
+        } else {
         data[r][c] = v;
       }
     });
@@ -224,7 +295,7 @@ function SpreadsheetFormFillComponent({ field, value, onChange }) {
       const userId  = user?.id || user?.username || "admin";
       const stamp   = `${userId} - ${new Date().toLocaleString()}`;
 
-      const ensureAuditColumn = () => {
+        const ensureAuditColumn = () => {
         let idx = -1;
         if (headers) idx = headers.findIndex(h => (h || "").toString().trim().toLowerCase() === "audit");
         const cols = data[0]?.length || 0;
@@ -244,18 +315,18 @@ function SpreadsheetFormFillComponent({ field, value, onChange }) {
         return idx;
       };
 
-      const ensureAuditRow = () => {
+        const ensureAuditRow = () => {
         const cols = data[0]?.length || (colIndex + 1);
-        const existing = auditRowIndexRef.current.get(currentActiveSheet);
+          const existing = auditRowIndexRef.current.get(currentActiveSheet);
         if (typeof existing === "number" && existing >= 0 && existing < data.length) return existing;
         const row = new Array(cols).fill("");
         data.push(row);
         const idx = data.length - 1;
         sheet.rows = data.length;
-        auditRowIndexRef.current.set(currentActiveSheet, idx);
+          auditRowIndexRef.current.set(currentActiveSheet, idx);
         sheet._auditRowIndex = idx;
-        return idx;
-      };
+          return idx;
+        };
 
       const countFilledInRow = (rIdx) => {
         let cnt = 0;
@@ -268,35 +339,74 @@ function SpreadsheetFormFillComponent({ field, value, onChange }) {
 
       const countFilledInCol = (cIdx) => {
         let cnt = 0;
-        for (let r = 1; r < data.length; r++) {
+        // Detect if this is a time column
+        let header = "";
+        for (let r = 0; r < Math.min(3, data.length); r++) {
+          const cell = data[r]?.[cIdx];
+          if (cell) {
+            const t = typeof cell === "object" ? (cell.content || "") : String(cell || "");
+            if (t.trim()) { header = t; break; }
+          }
+        }
+        const isTimeCol = header.toLowerCase().includes("time") || header.toLowerCase().includes("time.");
+        
+        // For time columns, start counting from row 2 (since row 1 is reserved for auto-timestamp)
+        // For regular columns, start from row 1
+        const startRow = isTimeCol ? 2 : 1;
+        
+        for (let r = startRow; r < data.length; r++) {
           if (isAuditRow(currentActiveSheet, r, sheet)) continue;
           if (hasContent(data[r]?.[cIdx])) cnt++;
         }
+        console.log(`[ReeditForm] Column ${cIdx} ${isTimeCol ? '(TIME COLUMN)' : '(REGULAR)'} has ${cnt} filled cells (starting from row ${startRow})`);
         return cnt;
       };
 
+      // PRIORITY AUDIT LOGIC: Once mode is chosen, stick to it for entire form
       let mode = auditModeRef.current.get(currentActiveSheet);
       const rowFilled = rowIndex >= 1 ? countFilledInRow(rowIndex) : 0;
       const colFilled = countFilledInCol(colIndex);
 
+      console.log(`[ReeditForm] Row ${rowIndex} has ${rowFilled} filled cells, Column ${colIndex} has ${colFilled} filled cells`);
+      console.log(`[ReeditForm] Current audit mode for sheet ${currentActiveSheet}: ${mode || 'undefined'}`);
+
+      // If no mode set yet, determine it based on which threshold is reached first
+      // IMPORTANT: When you fill COLUMNS → Add audit ROWS (mode="col")
+      //           When you fill ROWS → Add audit COLUMNS (mode="row") 
       if (!mode) {
-        if (rowFilled >= 2) mode = "row";
-        else if (colFilled >= 3) mode = "col";
-        if (mode) auditModeRef.current.set(currentActiveSheet, mode);
+        if (colFilled === 2) {
+          mode = "col";
+          auditModeRef.current.set(currentActiveSheet, "col");
+          console.log(`🎯 [ReeditForm] COLUMN FILLED → Setting mode to COL (will add audit ROWS below) for sheet ${currentActiveSheet}`);
+        } else if (rowIndex >= 1 && rowFilled === 2) {
+          mode = "row";
+          auditModeRef.current.set(currentActiveSheet, "row");
+          console.log(`🎯 [ReeditForm] ROW FILLED → Setting mode to ROW (will add audit COLUMNS to right) for sheet ${currentActiveSheet}`);
+        }
       }
 
-      if (mode === "row") {
-        if (rowIndex >= 1 && rowFilled >= 2) {
-          const aCol = ensureAuditColumn();
-          data[rowIndex][aCol] = stamp;
-        }
-      } else if (mode === "col") {
+      // Apply audit logic based on the established mode
+      if (mode === "col") {
+        // COLUMN FILLING MODE: Add audit rows below when columns are filled
         const stKey = `${currentActiveSheet}:${colIndex}`;
-        if (colFilled >= 3 && !stampedColumnsRef.current.has(stKey)) {
+        if (colFilled === 2 && !stampedColumnsRef.current.has(stKey)) {
+          console.log(`✅ [ReeditForm][COLUMN MODE] Adding audit ROW below for column ${colIndex} (2 cells in column)`);
           const aRow = ensureAuditRow();
           if (!hasContent(data[aRow][colIndex])) data[aRow][colIndex] = stamp;
           stampedColumnsRef.current.add(stKey);
         }
+        // Skip row audit logic entirely in column mode
+        console.log(`⏭️ [ReeditForm][COLUMN MODE] Skipping row audit logic`);
+        
+      } else if (mode === "row") {
+        // ROW FILLING MODE: Add audit columns to the right when rows are filled
+        if (rowIndex >= 1 && rowFilled === 2) {
+          console.log(`✅ [ReeditForm][ROW MODE] Adding audit COLUMN to right for row ${rowIndex} (2 cells in row)`);
+          const aCol = ensureAuditColumn();
+          data[rowIndex][aCol] = stamp;
+        }
+        // Skip column audit logic entirely in row mode
+        console.log(`⏭️ [ReeditForm][ROW MODE] Skipping column audit logic`);
       }
     } catch { /* ignore audit errors */ }
 
@@ -413,7 +523,7 @@ function SpreadsheetFormFillComponent({ field, value, onChange }) {
                 {(row || []).map((cell, c) => {
                   const m = getMergeInfo(r, c, sheet.mergedCells);
                   if (m.isContinuation) return null;
-
+                  
                   const { content, styles } = getCellDisplay(cell);
                   const merged = isCellMerged(r, c, sheet.mergedCells);
 
@@ -443,26 +553,26 @@ function SpreadsheetFormFillComponent({ field, value, onChange }) {
                     : (content ?? editableData[key] ?? "");
 
                   const showTimeButton = editable && isTimeCol && (isFirstDataRow || lc.includes("time."));
-
+                  
                   return (
                     <td key={c} rowSpan={m.rowSpan} colSpan={m.colSpan}
                         style={{ backgroundColor: merged ? "rgba(102,126,234,0.1)" : styles.backgroundColor || "transparent", ...styles }}>
                       {editable ? (
                         showTimeButton ? (
                           <div style={{ position: "relative", width: "100%", height: "100%" }}>
-                            <input
-                              type="text"
-                              value={displayValue}
+                        <input
+                          type="text"
+                          value={displayValue}
                               onChange={(e) => handleCellChange(r, c, e.target.value)}
                               onKeyDown={(e) => handleCellKeyDown(e, r, c)}
                               data-cell={`${r}-${c}`}
                               {...attachFocusBlur(r, c)}
-                              style={{
+                          style={{
                                 width: "100%", height: "100%", border: "none", background: "transparent", outline: "none",
                                 fontSize: styles.fontSize || 14, fontFamily: styles.fontFamily || "inherit",
                                 padding: "8px 28px 8px 8px", margin: 0, position: "absolute", inset: 0, zIndex: 10, boxSizing: "border-box"
-                              }}
-                              className="form-fill-spreadsheet-input"
+                          }}
+                          className="form-fill-spreadsheet-input"
                             />
                             <button type="button" title="Insert current time"
                               onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleAutofillTime(r, c, e); }}
@@ -594,7 +704,7 @@ export default function ReeditForm(props) {
   const [formName, setFormName] = useState('');
   const [baseInit, setBaseInit] = useState(null);
   const [formLoaded, setFormLoaded] = useState(false);
-
+  const {user}=useAuth();
 
   useEffect(() => {
     // Parse responseId from query string if not passed via props
@@ -1502,7 +1612,7 @@ export default function ReeditForm(props) {
 
             {/* Action Buttons and Submitter Info */}
             <div className="form-fill-submitter-section">
-              <h6>Personal Information</h6>
+              {/* <h6>Personal Information</h6>
               <FormGroup className="form-group mb-3">
                 <Label>Name *</Label>
                 <Input
@@ -1524,7 +1634,7 @@ export default function ReeditForm(props) {
                   placeholder="Enter your email address"
                   required
                 />
-              </FormGroup>
+              </FormGroup> */}
               <div className="button-group"> 
                 <button className="save-btn" onClick={handleSubmit} disabled={loading}>
                   Update Form
