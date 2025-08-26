@@ -116,6 +116,7 @@ const AdminPanel = () => {
         });
         fetchUsers();
       } catch (error) {
+        console.error('Delete user error:', error);
         setError('Failed to delete user');
       }
     }
@@ -240,7 +241,7 @@ const AdminPanel = () => {
                     checked={formData.permissions.forms}
                     onChange={handleInputChange}
                   />
-                  Forms Access
+                  Edit Submissions Access
                 </label>
                 <label className="permission-item">
                   <input
@@ -249,7 +250,7 @@ const AdminPanel = () => {
                     checked={formData.permissions.formBuilder}
                     onChange={handleInputChange}
                   />
-                  Form Builder
+                  Form Builder Access
                 </label>
                 <label className="permission-item">
                   <input
@@ -258,7 +259,7 @@ const AdminPanel = () => {
                     checked={formData.permissions.folders}
                     onChange={handleInputChange}
                   />
-                  Forms/Folders
+                  Folders Access
                 </label>
                 <label className="permission-item">
                   <input
@@ -310,12 +311,12 @@ const AdminPanel = () => {
           <table>
             <thead>
               <tr>
-                <th>Username</th>
-                <th>Email</th>
-                <th>Role</th>
-                <th>Permissions</th>
-                <th>Status</th>
-                <th>Actions</th>
+                <th style={{width: '15%'}}>Username</th>
+                <th style={{width: '20%'}}>Email</th>
+                <th style={{width: '10%'}}>Role</th>
+                <th style={{width: '25%'}}>Permissions</th>
+                <th style={{width: '10%'}}>Status</th>
+                <th style={{width: '20%'}}>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -340,7 +341,7 @@ const AdminPanel = () => {
                     </div>
                   </td>
                   <td>
-                    <span className={`status-badge status-${user.isActive ? 'active' : 'inactive'}`}>
+                    <span className={`status-badge status-${user.isActive ? 'active' : 'Inactive'}`}>
                       {user.isActive ? 'Active' : 'Inactive'}
                     </span>
                   </td>
@@ -358,12 +359,14 @@ const AdminPanel = () => {
                       >
                         {user.isActive ? 'Deactivate' : 'Activate'}
                       </button>
-                      <button
-                        className="action-btn delete-btn"
+                       <button
+                        className="action-btn edit-btn"
+                        style={{ backgroundColor: '#dc3545', color: 'white' }}
                         onClick={() => handleDelete(user._id)}
+                  
                       >
-                        Delete
-                      </button>
+                        🗑️ Delete
+                      </button>               
                     </div>
                   </td>
                 </tr>

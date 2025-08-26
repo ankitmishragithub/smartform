@@ -193,7 +193,7 @@
   background: white;
   border: 1px solid #e1e5e9;
   border-radius: 12px;
-  overflow: hidden;
+  overflow-x: auto;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
@@ -275,16 +275,19 @@
 .user-actions {
   display: flex;
   gap: 8px;
+  
+  min-width: 200px;
 }
 
 .action-btn {
-  padding: 6px 12px;
+  padding: 8px 16px;
   border: none;
   border-radius: 6px;
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition: all 0.2s ease;
+  white-space: nowrap;
 }
 
 .edit-btn {
@@ -309,6 +312,8 @@
   background-color: #dc3545;
   color: white;
 }
+
+
 
 .delete-btn:hover {
   background-color: #c82333;

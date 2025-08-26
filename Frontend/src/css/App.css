@@ -1027,7 +1027,7 @@ h1 {
 /* Unified FormBuilder palette styling */
 .EditForm .palette,
 .UnifiedFormBuilder .palette {
-  width: 100% !important;
+  width: 50% !important;
   padding: 0 !important;
   height: 100%;
   display: flex;

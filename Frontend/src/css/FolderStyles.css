@@ -2590,3 +2590,43 @@
     padding: 0.5rem;
   }
 }
+
+/* Admin Notice Styling */
+.admin-notice {
+  margin-top: 2rem;
+}
+
+.admin-notice .alert {
+  border-radius: 12px;
+  border: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  color: #1e40af;
+  border-left: 4px solid #3b82f6;
+}
+
+.admin-notice .alert strong {
+  color: #1e3a8a;
+}
+
+/* Form Card Actions - Admin Only Delete Button */
+.folder-forms-card-actions .btn-outline-danger {
+  transition: all 0.3s ease;
+}
+
+.folder-forms-card-actions .btn-outline-danger:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+}
+
+/* Responsive adjustments for admin notice */
+@media (max-width: 768px) {
+  .admin-notice {
+    margin-top: 1.5rem;
+  }
+  
+  .admin-notice .alert {
+    font-size: 0.9rem;
+    padding: 1rem;
+  }
+}
