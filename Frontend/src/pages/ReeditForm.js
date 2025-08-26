@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../api/api";
-import "../css/FormFill.css"; //
+import "../css/FormFill.css";
 import "../css/Livepreview.css";
 import JSpreadsheetComponent from "../components/JSpreadsheetComponent";
 import JSpreadsheetCE4Component from "../components/JSpreadsheetCE4Component";
@@ -10,1242 +10,467 @@ import { useAuth } from "../contexts/AuthContext";
   
 // Spreadsheet component for form fill
 function SpreadsheetFormFillComponent({ field, value, onChange }) {
-  const { user } = useAuth(); // Get current user for audit stamps
+  const { user } = useAuth();
+
   const [editableData, setEditableData] = useState({});
   const [editableCells, setEditableCells] = useState(new Set());
   const [currentActiveSheet, setCurrentActiveSheet] = useState(0);
-  const [addedRows, setAddedRows] = useState(new Set());
-  const [addedColumns, setAddedColumns] = useState(new Set());
-  // Track which columns (per sheet) have been stamped once
-  const stampedColumnsRef = useRef(new Set()); // keys like `${sheetIndex}:${colIndex}`
-  // Track a single audit row per sheet; reuse it for all stamps
-  const auditRowIndexRef = useRef(new Map()); // sheetIndex -> rowIndex
-  // Debounced onChange to prevent typing conflicts while preserving stamps
+
+  // Audit trackers / mode
+  const stampedColumnsRef = useRef(new Set()); // `${sheetIdx}:${colIdx}` (col-mode only)
+  const auditRowIndexRef  = useRef(new Map()); // sheetIdx -> rowIdx
+  const auditColIndexRef  = useRef(new Map()); // sheetIdx -> colIdx
+  const auditModeRef      = useRef(new Map()); // sheetIdx -> 'row' | 'col'
+
+  // Keep currently focused cell editable
+  const activeEditRef     = useRef(null);            // `${row}-${col}` or null
+  // Persist editability for cells the USER filled in this session
+  const userEditedCellsRef = useRef(new Set());      // keys `${r}-${c}`
+
   const debouncedOnChange = useRef(null);
-  // Track which sheets have been processed for read-only logic (FIRST TIME ONLY)
-  const processedSheetsRef = useRef(new Set());
-  // Force re-render when audit data changes
 
+  // ---------- utils ----------
+  const getCellDisplay = (cell) =>
+    typeof cell === "object" && cell !== null
+      ? { content: cell.content || "", styles: cell.formatting || {} }
+      : { content: cell || "", styles: {} };
 
-  // Initialize editable data when component mounts or field changes
-  useEffect(() => {
-    // FIRST: Initialize with field schema for immediate editing capability
-    if (!value?.sheets || value.sheets.length === 0) {
-      console.log("🔄 No response data yet, initializing with field schema for immediate editing");
-      
-      // Use field schema to initialize editable cells immediately
-      const sheets = field.sheets || [];
-      const currentSheet = sheets[currentActiveSheet] || { data: [], headers: [], rows: 0, cols: 0, mergedCells: [] };
-      
-      const newEditableData = {};
-      const editableCells = new Set();
-      
-      if (currentSheet.data) {
-        currentSheet.data.forEach((row, rowIndex) => {
-          row.forEach((cell, colIndex) => {
-            const cellKey = `${rowIndex}-${colIndex}`;
-            let content = '';
-            if (typeof cell === 'object' && cell !== null) {
-              content = cell.content || '';
-            } else {
-              content = cell || '';
-            }
-            
-            // Check if this is an audit column or row (NEVER editable, even in field schema)
-            let headerContent = '';
-            if (currentSheet.data[0] && currentSheet.data[0][colIndex]) {
-              const headerCell = currentSheet.data[0][colIndex];
-              headerContent = typeof headerCell === 'object' ? (headerCell.content || '') : String(headerCell || '');
-            }
-            // Check for audit columns: header contains "audit" OR it's the last column
-            const isAuditColumn = headerContent.toLowerCase().includes('audit') || colIndex === (currentSheet.data[0]?.length - 1);
-            
-            // Check for audit rows: last row OR row contains audit content
-            const isAuditRow = rowIndex === (currentSheet.data.length - 1);
-            
-            if (isAuditColumn || isAuditRow) {
-              // Audit columns and rows are NEVER editable
-              newEditableData[cellKey] = content || '';
-              // Don't add to editableCells - this makes it non-editable
-              console.log(`🔒 Audit cell ${cellKey} marked as read-only in field schema (${isAuditColumn ? 'audit column' : 'audit row'})`);
-            } else {
-              // Initially, make all other cells editable until response data loads
-              newEditableData[cellKey] = content || '';
-              editableCells.add(cellKey);
-            }
-          });
-        });
-      }
-      
-      setEditableData(newEditableData);
-      setEditableCells(editableCells);
-      
-      console.log(`🎯 Sheet ${currentActiveSheet} initialized with field schema (temporary):`, {
-        totalCells: Object.keys(newEditableData).length,
-        editableCellsCount: editableCells.size,
-        note: "All cells editable until response data loads"
-      });
-      return;
-    }
-    
-    // Check if we've already processed this sheet for read-only logic (FIRST TIME ONLY)
-    const sheetKey = `${currentActiveSheet}_${value.sheets[currentActiveSheet]?.data?.length || 0}`;
-    if (processedSheetsRef.current.has(sheetKey)) {
-      console.log(`🔄 Sheet ${currentActiveSheet} already processed for read-only logic, skipping`);
-      return;
-    }
-    
-    // Use response data (value.sheets) instead of field schema
-    const sheets = value.sheets;
-    console.log("🔄 Response data loaded, applying read-only logic for FIRST TIME");
-    console.log("sheets: ",sheets)
-    const currentSheet = sheets[currentActiveSheet] || { data: [], headers: [], rows: 0, cols: 0, mergedCells: [] };
-    
-    const newEditableData = {};
-    const editableCells = new Set(); // Track which cells are editable
-    
-    // First, identify time columns
-    const timeColumns = new Set();
-    
-    if (currentSheet.data && currentSheet.data[0]) {
-      for (let colIndex = 0; colIndex < currentSheet.data[0].length; colIndex++) {
-        let headerContent = '';
-        // Check all rows for time detection
-        for (let checkRow = 0; checkRow < currentSheet.data.length; checkRow++) {
-          const checkCell = currentSheet.data[checkRow] && currentSheet.data[checkRow][colIndex];
-          if (checkCell) {
-            const cellContent = typeof checkCell === 'object' ? (checkCell.content || '') : checkCell;
-            if (cellContent && cellContent.trim() !== '') {
-              headerContent = cellContent;
-              break;
-            }
-          }
-        }
-        
-        const hasTime = headerContent.toLowerCase().includes('time');
-        const hasTimedot = headerContent.toLowerCase().includes('time.');
-        const isTimeColumn = hasTime || hasTimedot;
-        
-        if (isTimeColumn) {
-          timeColumns.add(colIndex);
-        }
-      }
-    }
-    
-    if (currentSheet.data) {
-      currentSheet.data.forEach((row, rowIndex) => {
-        row.forEach((cell, colIndex) => {
-          const cellKey = `${rowIndex}-${colIndex}`;
-          // Get cell content, handling both string and object formats
-          let content = '';
-          if (typeof cell === 'object' && cell !== null) {
-            content = cell.content || '';
-          } else {
-            content = cell || '';
-          }
-          
-          // For time columns: make first data row (row 1) non-editable, others editable if empty
-          const isTimeColumn = timeColumns.has(colIndex);
-          const isFirstDataRow = rowIndex === 1;
-          
-          // Check if this is an audit column or row (NEVER editable)
-          let headerContent = '';
-          if (currentSheet.data[0] && currentSheet.data[0][colIndex]) {
-            const headerCell = currentSheet.data[0][colIndex];
-            headerContent = typeof headerCell === 'object' ? (headerCell.content || '') : String(headerCell || '');
-          }
-          
-          // Check for audit columns: header contains "audit" OR it's the last column
-          const isAuditColumn = headerContent.toLowerCase().includes('audit') || colIndex === (currentSheet.data[0]?.length - 1);
-          
-          // Check for audit rows: last row OR row contains audit content
-          const isAuditRow = rowIndex === (currentSheet.data.length - 1);
-          
-          if (isTimeColumn && isFirstDataRow) {
-            // First row below time header - not editable, reserved for time display
-            newEditableData[cellKey] = content || '';
-            // Don't add to editableCells - this makes it non-editable
-          } else if (isAuditColumn || isAuditRow) {
-            // Audit columns and rows are NEVER editable
-            newEditableData[cellKey] = content || '';
-            // Don't add to editableCells - this makes it non-editable
-            console.log(`🔒 Audit cell ${cellKey} marked as read-only (${isAuditColumn ? 'audit column' : 'audit row'})`);
-          } else {
-            // For re-editing: Only empty cells are editable, existing data is read-only
-            if (content && content.trim() !== '') {
-              // Cell has existing data - make it read-only (show data but don't add to editableCells)
-              newEditableData[cellKey] = content;
-              // DON'T add to editableCells - this makes it non-editable
-            } else {
-              // Empty cell - make it editable
-              newEditableData[cellKey] = '';
-              editableCells.add(cellKey);
-            }
-          }
-        });
-      });
-    }
-    setEditableData(newEditableData);
-    // Store editable cells info for quick lookup
-    setEditableCells(editableCells);
-    
-    // Mark this sheet as processed for read-only logic (FIRST TIME ONLY)
-    processedSheetsRef.current.add(sheetKey);
-    
-    console.log(`🎯 Sheet ${currentActiveSheet} initialization complete (FIRST TIME ONLY):`, {
-      totalCells: Object.keys(newEditableData).length,
-      editableCellsCount: editableCells.size,
-      readOnlyCellsCount: Object.keys(newEditableData).length - editableCells.size,
-      sheetMarkedAsProcessed: true
-    });
-  }, [field, currentActiveSheet, value]); // Added 'value' dependency to wait for response data before applying read-only logic
+  const isCellMerged = (r, c, merged) =>
+    merged?.some(m => m.startRow <= r && r <= m.endRow && m.startCol <= c && c <= m.endCol) || false;
 
-  // Cleanup debounced onChange on unmount
-  useEffect(() => {
-    return () => {
-      if (debouncedOnChange.current) {
-        clearTimeout(debouncedOnChange.current);
-      }
+  const getMergeInfo = (r, c, merged) => {
+    const m = merged?.find(m => m.startRow <= r && r <= m.endRow && m.startCol <= c && c <= m.endCol);
+    if (!m) return { isContinuation: false, rowSpan: 1, colSpan: 1 };
+    return {
+      isContinuation: r > m.startRow || c > m.startCol,
+      rowSpan: m.endRow - m.startRow + 1,
+      colSpan: m.endCol - m.startCol + 1
     };
-  }, []);
+  };
 
-  // Sync data when switching sheets to ensure stamps are preserved
-  useEffect(() => {
-    if (Object.keys(editableData).length > 0) {
-      // Clear any pending debounced calls
-      if (debouncedOnChange.current) {
-        clearTimeout(debouncedOnChange.current);
-        debouncedOnChange.current = null;
+  const seedAuditFromSheet = (sheetIdx, sheet) => {
+    const headers = Array.isArray(sheet.headers) ? sheet.headers : null;
+    if (headers) {
+      const idx = headers.findIndex(h => (h || "").toString().trim().toLowerCase() === "audit");
+      if (idx >= 0) {
+        auditColIndexRef.current.set(sheetIdx, idx);
+        sheet._auditColIndex = idx;
       }
-      syncDataImmediately();
     }
-  }, [currentActiveSheet]);
+    if (typeof sheet._auditRowIndex === "number") {
+      auditRowIndexRef.current.set(sheetIdx, sheet._auditRowIndex);
+    }
+  };
+
+  const isAuditCol = (sheetIdx, colIdx, sheet) =>
+    (auditColIndexRef.current.get(sheetIdx) ?? sheet?._auditColIndex ?? -1) === colIdx;
+
+  const isAuditRow = (sheetIdx, rowIdx, sheet) =>
+    (auditRowIndexRef.current.get(sheetIdx) ?? sheet?._auditRowIndex ?? -1) === rowIdx;
+
+  // ---------- build editable map ----------
+  // Rule: Only empty cells (at load) are editable. Cells the user fills remain editable afterwards.
+  // Pre-filled cells from the sheet remain read-only forever.
+  useEffect(() => {
+    const src = value?.sheets?.length ? value : field;
+    if (!src?.sheets?.length) {
+      setEditableData({});
+      setEditableCells(new Set());
+      return;
+    }
+
+    const sheets = src.sheets;
+    const sheet = sheets[currentActiveSheet] || { data: [], headers: [], rows: 0, cols: 0, mergedCells: [] };
+
+    seedAuditFromSheet(currentActiveSheet, sheet);
+
+    const newEditableData = {};
+    const newEditableCells = new Set();
+
+    // detect time columns
+    const timeCols = new Set();
+    if (sheet.data?.[0]) {
+      for (let c = 0; c < sheet.data[0].length; c++) {
+        let header = "";
+        for (let r = 0; r < sheet.data.length; r++) {
+          const cell = sheet.data[r]?.[c];
+          if (cell) {
+            const t = typeof cell === "object" ? (cell.content || "") : String(cell || "");
+            if (t.trim()) { header = t; break; }
+          }
+        }
+        const lc = header.toLowerCase();
+        if (lc.includes("time") || lc.includes("time.")) timeCols.add(c);
+      }
+    }
+
+    // Step 1: make EMPTY, non-reserved cells editable
+    sheet.data?.forEach((row, r) => {
+      row?.forEach((cell, c) => {
+        const key = `${r}-${c}`;
+        const { content } = getCellDisplay(cell);
+
+        const isReserved =
+          (timeCols.has(c) && r === 1) ||
+          isAuditCol(currentActiveSheet, c, sheet) ||
+          isAuditRow(currentActiveSheet, r, sheet);
+
+        if (isReserved) return;
+
+        if (!String(content ?? "").trim()) {
+          // empty -> editable
+          newEditableCells.add(key);
+          newEditableData[key] = "";
+        }
+      });
+    });
+
+    // Step 2: keep USER-filled cells editable (even if now non-empty)
+    userEditedCellsRef.current.forEach(key => {
+      const [r, c] = key.split("-").map(Number);
+      if (!Number.isFinite(r) || !Number.isFinite(c)) return;
+
+      const isReserved =
+        (timeCols.has(c) && r === 1) ||
+        isAuditCol(currentActiveSheet, c, sheet) ||
+        isAuditRow(currentActiveSheet, r, sheet);
+
+      if (isReserved) return;
+
+      newEditableCells.add(key);
+      // preserve buffer if any, otherwise seed with current content
+      if (!(key in newEditableData)) {
+        const cell = sheet.data?.[r]?.[c];
+        const fromSheet = getCellDisplay(cell).content ?? "";
+        newEditableData[key] = editableData[key] ?? fromSheet ?? "";
+      }
+    });
+
+    // Step 3: keep the currently focused cell editable (typing pauses)
+    if (activeEditRef.current) {
+      newEditableCells.add(activeEditRef.current);
+      if (!(activeEditRef.current in newEditableData)) {
+        newEditableData[activeEditRef.current] = editableData[activeEditRef.current] ?? "";
+      }
+    }
+
+    setEditableData(newEditableData);
+    setEditableCells(newEditableCells);
+  }, [field, value, currentActiveSheet]); // rebuild on every value change
+
+  // cleanup debounce
+  useEffect(() => () => debouncedOnChange.current && clearTimeout(debouncedOnChange.current), []);
 
   const handleCellChange = (rowIndex, colIndex, newValue) => {
-    const cellKey = `${rowIndex}-${colIndex}`;
-    
-    // Check if this cell is editable (only empty cells are editable in re-edit mode)
-    if (!editableCells.has(cellKey)) {
-      console.log(`Cell ${cellKey} is read-only (has existing data), cannot be modified`);
-      return; // Prevent editing read-only cells
-    }
-    
-    // Use existing data if available, otherwise use field schema
+    const key = `${rowIndex}-${colIndex}`;
+    if (!editableCells.has(key)) return;
+
     const sheets = value?.sheets || field.sheets || [];
-    const currentSheet = sheets[currentActiveSheet] || { data: [], headers: [], rows: 0, cols: 0, mergedCells: [] };
-    
-    // DOUBLE CHECK: Ensure audit columns and rows are NEVER editable
-    let headerContent = '';
-    if (currentSheet.data[0] && currentSheet.data[0][colIndex]) {
-      const headerCell = currentSheet.data[0][colIndex];
-      headerContent = typeof headerCell === 'object' ? (headerCell.content || '') : String(headerCell || '');
-    }
-    // Check for audit columns: header contains "audit" OR it's the last column
-    const isAuditColumn = headerContent.toLowerCase().includes('audit') || colIndex === (currentSheet.data[0]?.length - 1);
-    
-    // Check for audit rows: last row OR row contains audit content
-    const isAuditRow = rowIndex === (currentSheet.data.length - 1);
-    
-    if (isAuditColumn || isAuditRow) {
-      console.log(`🔒 BLOCKED: Cell ${cellKey} is in audit ${isAuditColumn ? 'column' : 'row'}, cannot be modified`);
-      return; // Block editing of audit cells completely
-    }
-    
-    // Check if current column is a time column and auto-capture time in first row
-    const maxRowsToCheck = Math.min(3, currentSheet.data?.length || 0);
-    
-    for (let checkRow = 0; checkRow < maxRowsToCheck; checkRow++) {
-      const checkCell = currentSheet.data && currentSheet.data[checkRow] && currentSheet.data[checkRow][colIndex];
-      if (checkCell) {
-        const cellContent = typeof checkCell === 'object' ? (checkCell.content || '') : checkCell;
-        if (cellContent && cellContent.trim() !== '') {
-          headerContent = cellContent;
-          break;
-        }
+    const sheet  = sheets[currentActiveSheet] || { data: [], headers: [], rows: 0, cols: 0, mergedCells: [] };
+
+    if (isAuditCol(currentActiveSheet, colIndex, sheet) || isAuditRow(currentActiveSheet, rowIndex, sheet)) return;
+
+    // As soon as the user edits this cell, mark it as user-owned editable
+    userEditedCellsRef.current.add(key);
+
+    // detect time column
+    let header = "";
+    const maxCheck = Math.min(3, sheet.data?.length || 0);
+    for (let r = 0; r < maxCheck; r++) {
+      const cell = sheet.data?.[r]?.[colIndex];
+      if (cell) {
+        const t = typeof cell === "object" ? (cell.content || "") : String(cell || "");
+        if (t.trim()) { header = t; break; }
       }
     }
-    
-    const hasTime = headerContent.toLowerCase().includes('time');
-    const hasTimedot = headerContent.toLowerCase().includes('time.');
-    const isTimeColumn = hasTime || hasTimedot;
+    const lc = header.toLowerCase();
+    const isTimeColumn = lc.includes("time") || lc.includes("time.");
     const isFirstDataRow = rowIndex === 1;
-    
-    // Prepare updates
-    const updates = { [cellKey]: newValue };
-    
-    // If user entered data in a time column (but not in first row), auto-capture current time in first row
-    if (isTimeColumn && !isFirstDataRow && newValue && newValue.trim() !== '') {
-      const firstRowTimeKey = `1-${colIndex}`;
-      const currentTimeValue = editableData[firstRowTimeKey] || '';
-      
-      // Only auto-timestamp if first row of time column is empty
-      if (!currentTimeValue || currentTimeValue.trim() === '') {
-        const now = new Date();
-        const currentTime = now.toLocaleTimeString('en-US', { 
-          hour12: false, // 24-hour format
-          hour: '2-digit', 
-          minute: '2-digit' 
-        });
-        updates[firstRowTimeKey] = currentTime;
-      }
+
+    const updates = { [key]: newValue };
+
+    if (isTimeColumn && !isFirstDataRow && String(newValue).trim()) {
+      const timeKey = `1-${colIndex}`;
+      const now = new Date().toLocaleTimeString("en-US", { hour12: false, hour: "2-digit", minute: "2-digit" });
+      updates[timeKey] = now;
     }
-    
-    // Update local state immediately for responsive UI
-    setEditableData(prev => ({
-      ...prev,
-      ...updates
-    }));
-    
-    // Update the parent form value
+
+    // instant echo
+    setEditableData(prev => ({ ...prev, ...updates }));
+
+    // write into sheet copy
     const updatedSheets = [...sheets];
-    const activeSheet = updatedSheets[currentActiveSheet];
-    
-    if (activeSheet && activeSheet.data) {
-      const updatedData = [...activeSheet.data];
-      
-      // Apply all updates (original cell + auto-timestamp if applicable)
-      Object.entries(updates).forEach(([key, value]) => {
-        const [updateRowIndex, updateColIndex] = key.split('-').map(Number);
-        
-        if (updatedData[updateRowIndex]) {
-          updatedData[updateRowIndex] = [...updatedData[updateRowIndex]];
-        // Update cell content, preserving formatting if it exists
-          if (typeof updatedData[updateRowIndex][updateColIndex] === 'object' && updatedData[updateRowIndex][updateColIndex] !== null) {
-            updatedData[updateRowIndex][updateColIndex] = {
-              ...updatedData[updateRowIndex][updateColIndex],
-              content: value
-          };
-        } else {
-            updatedData[updateRowIndex][updateColIndex] = value;
-          }
-        }
-      });
-      
-      activeSheet.data = updatedData;
-      
-      // Auto-audit logic: add audit column/row with user and timestamp when thresholds met
-      console.log('Starting audit logic for cell change:', { rowIndex, colIndex, newValue });
-      try {
-        const hasContent = (cell) => {
-          if (typeof cell === 'object' && cell !== null) {
-            const c = (cell.content || '').toString().trim();
-            return c !== '';
-          }
-          const s = (cell ?? '').toString().trim();
-          return s !== '';
-        };
+    const data = [...(sheet.data || [])];
 
-        const getCellString = (cell) => {
-          if (typeof cell === 'object' && cell !== null) return (cell.content || '').toString();
-          return (cell ?? '').toString();
-        };
-
-        const currentUserId = user?.id || user?.username || 'unknown';
-        const stamp = `${currentUserId} - ${new Date().toLocaleString()}`;
-
-        // Ensure headers array exists if present
-        const headers = Array.isArray(activeSheet.headers) ? activeSheet.headers : null;
-
-        // Helper to find or create an "Audit" column; returns its index
-        const ensureAuditColumn = () => {
-          let auditIndex = -1;
-          if (headers) {
-            auditIndex = headers.findIndex((h) => (h || '').toString().trim().toLowerCase() === 'audit');
-          }
-          const currentCols = updatedData[0]?.length || 0;
-          if (auditIndex === -1) {
-            // Create new audit column at the end
-            auditIndex = currentCols;
-            for (let r = 0; r < updatedData.length; r++) {
-              const row = updatedData[r] || [];
-              // Pad row to currentCols if needed
-              while (row.length < currentCols) row.push('');
-              row.push('');
-              updatedData[r] = row;
-            }
-            if (headers) headers.push('Audit');
-            activeSheet.cols = (updatedData[0]?.length || currentCols + 1);
-          }
-          return auditIndex;
-        };
-
-        // Helper to find a usable bottom row or create one; returns its index
-        const ensureBottomRowForColumn = (targetCol) => {
-          const colsLen = updatedData[0]?.length || 0;
-          let lastIndex = updatedData.length - 1;
-          if (lastIndex < 0) {
-            // Create header row placeholder if sheet was empty
-            updatedData.push(new Array(colsLen).fill(''));
-            lastIndex = 0;
-          }
-          // Try to use last row if the target cell is empty (and not header row)
-          if (lastIndex >= 1 && !hasContent(updatedData[lastIndex]?.[targetCol])) {
-            return lastIndex;
-          }
-          // Otherwise append a new bottom row
-          const newRow = new Array(colsLen).fill('');
-          updatedData.push(newRow);
-          activeSheet.rows = updatedData.length;
-          return updatedData.length - 1;
-        };
-
-        // Helper: ensure a single audit row exists for this sheet and return its index
-        const ensureAuditRow = () => {
-          const colsLen = updatedData[0]?.length || (colIndex + 1);
-          const existing = auditRowIndexRef.current.get(currentActiveSheet);
-          if (typeof existing === 'number' && existing >= 0 && existing < updatedData.length) {
-            return existing;
-          }
-          const newRow = new Array(colsLen).fill('');
-          updatedData.push(newRow);
-          const idx = updatedData.length - 1;
-          auditRowIndexRef.current.set(currentActiveSheet, idx);
-          activeSheet.rows = updatedData.length;
-          return idx;
-        };
-
-        // 1) Row rule: when a data row reaches exactly 2 filled cells, stamp the same row in a single audit column (right side)
-        if (rowIndex >= 1) {
-          const rowCells = updatedData[rowIndex] || [];
-          let filledInRow = 0;
-          for (let c = 0; c < rowCells.length; c++) {
-            if (hasContent(rowCells[c])) filledInRow++;
-          }
-          console.log(`Row ${rowIndex} has ${filledInRow} filled cells`);
-          if (filledInRow === 2) {
-            console.log(`Adding row stamp for row ${rowIndex}`);
-            const auditColIdx = ensureAuditColumn();
-            updatedData[rowIndex][auditColIdx] = stamp;
-          }
-        }
-
-        // 2) Column rule: when a column reaches 3 or more filled cells (in data rows), append ONE new bottom row
-        // and stamp that new row's cell in this column with admin + timestamp (only once per column)
-        {
-          let filledInColumn = 0;
-          const totalRows = updatedData.length;
-          for (let r = 1; r < totalRows; r++) {
-            if (hasContent(updatedData[r]?.[colIndex])) filledInColumn++;
-          }
-          console.log(`Column ${colIndex} has ${filledInColumn} filled cells`);
-          const stampKey = `${currentActiveSheet}:${colIndex}`;
-          if (filledInColumn >= 3 && !stampedColumnsRef.current.has(stampKey)) {
-            console.log(`Adding column stamp for column ${colIndex}`);
-            const auditRowIdx = ensureAuditRow();
-            const currentCell = updatedData[auditRowIdx][colIndex];
-            if (!hasContent(currentCell)) {
-              if (typeof currentCell === 'object' && currentCell !== null) {
-                updatedData[auditRowIdx][colIndex] = { ...currentCell, content: stamp };
-              } else {
-                updatedData[auditRowIdx][colIndex] = stamp;
-              }
-            }
-            stampedColumnsRef.current.add(stampKey);
-          }
-        }
-      } catch (e) {
-        // Fail-safe: do not block user input on audit logic errors
-        // console.warn('Audit logic error:', e);
+    Object.entries(updates).forEach(([k, v]) => {
+      const [r, c] = k.split("-").map(Number);
+      if (!data[r]) return;
+      data[r] = [...data[r]];
+      if (typeof data[r][c] === "object" && data[r][c] !== null) {
+        data[r][c] = { ...data[r][c], content: v };
+      } else {
+        data[r][c] = v;
       }
-
-      // Assign possibly-augmented data back to sheet
-      activeSheet.data = updatedData;
-      updatedSheets[currentActiveSheet] = activeSheet;
-      
-      // Update the field data
-      const updatedField = {
-        ...field,
-        sheets: updatedSheets
-      };
-      
-      // Debounced onChange to prevent typing conflicts while preserving stamps
-      if (debouncedOnChange.current) clearTimeout(debouncedOnChange.current);
-      debouncedOnChange.current = setTimeout(() => {
-        onChange(updatedField);
-        
-        // Update local state to reflect new audit columns/rows
-        setEditableData(prev => {
-          const newEditableData = { ...prev };
-          
-          // Add new audit column cells to editable data
-          if (activeSheet.data && activeSheet.data[0]) {
-            const newColIndex = activeSheet.data[0].length - 1;
-            for (let r = 0; r < activeSheet.data.length; r++) {
-              const cellKey = `${r}-${newColIndex}`;
-              if (!newEditableData.hasOwnProperty(cellKey)) {
-                newEditableData[cellKey] = '';
-              }
-            }
-          }
-          
-          // Add new audit row cells to editable data
-          if (activeSheet.data) {
-            const newRowIndex = activeSheet.data.length - 1;
-            for (let c = 0; c < (activeSheet.data[0]?.length || 0); c++) {
-              const cellKey = `${newRowIndex}-${c}`;
-              if (!newEditableData.hasOwnProperty(cellKey)) {
-                newEditableData[cellKey] = '';
-              }
-            }
-          }
-          
-          return newEditableData;
-        });
-        
-        // Update editable cells set to include new audit cells
-        setEditableCells(prev => {
-          const newEditableCells = new Set(prev);
-          
-          // Add new audit column cells
-          if (activeSheet.data && activeSheet.data[0]) {
-            const newColIndex = activeSheet.data[0].length - 1;
-            for (let r = 0; r < activeSheet.data.length; r++) {
-              const cellKey = `${r}-${newColIndex}`;
-              newEditableCells.add(cellKey);
-            }
-          }
-          
-          // Add new audit row cells
-          if (activeSheet.data) {
-            const newRowIndex = activeSheet.data.length - 1;
-            for (let c = 0; c < (activeSheet.data[0]?.length || 0); c++) {
-              const cellKey = `${newRowIndex}-${c}`;
-              newEditableCells.add(cellKey);
-            }
-          }
-          
-          return newEditableCells;
-        });
-      }, 300); // Reduced to 300ms for better responsiveness
-    }
-  };
-
-  // Function to immediately sync data (useful for tab switching, form submission)
-  const syncDataImmediately = () => {
-    if (debouncedOnChange.current) {
-      clearTimeout(debouncedOnChange.current);
-      debouncedOnChange.current = null;
-    }
-    
-    const sheets = value?.sheets || field.sheets || [];
-    const currentSheet = sheets[currentActiveSheet] || { data: [], headers: [], rows: 0, cols: 0, mergedCells: [] };
-    
-    // Create updated field with current editable data
-    const updatedSheets = [...sheets];
-    const activeSheet = updatedSheets[currentActiveSheet];
-    
-    if (activeSheet && activeSheet.data) {
-      const updatedData = [...activeSheet.data];
-      
-      // Apply all current editable data
-      Object.entries(editableData).forEach(([key, value]) => {
-        const [updateRowIndex, updateColIndex] = key.split('-').map(Number);
-        
-        if (updatedData[updateRowIndex]) {
-          updatedData[updateRowIndex] = [...updatedData[updateRowIndex]];
-          if (typeof updatedData[updateRowIndex][updateColIndex] === 'object' && updatedData[updateRowIndex][updateColIndex] !== null) {
-            updatedData[updateRowIndex][updateColIndex] = {
-              ...updatedData[updateRowIndex][updateColIndex],
-              content: value
-            };
-          } else {
-            updatedData[updateRowIndex][updateColIndex] = value;
-          }
-        }
-      });
-      
-      activeSheet.data = updatedData;
-      updatedSheets[currentActiveSheet] = activeSheet;
-      
-      const updatedField = {
-        ...field,
-        sheets: updatedSheets
-      };
-      
-      onChange(updatedField);
-    }
-  };
-
-  // Function to autofill current time (only for Time columns)
-  const handleAutofillTime = (rowIndex, colIndex, e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    const now = new Date();
-    const currentTime = now.toLocaleTimeString('en-US', { 
-      hour12: false, // 24-hour format
-      hour: '2-digit', 
-      minute: '2-digit' 
     });
-    
-    handleCellChange(rowIndex, colIndex, currentTime);
-  };
 
-  const handleCellKeyDown = (e, rowIndex, colIndex) => {
-    const sheets = field.sheets || [];
-    const currentSheet = sheets[currentActiveSheet] || { data: [], headers: [], rows: 0, cols: 0, mergedCells: [] };
-    
-    // Check if this is a Time column for Ctrl+T shortcut (check multiple rows for headers)
-    let headerContent = '';
-    const maxRowsToCheck = Math.min(3, currentSheet.data?.length || 0); // Check first 3 rows
-    
-    for (let checkRow = 0; checkRow < maxRowsToCheck; checkRow++) {
-      const checkCell = currentSheet.data && currentSheet.data[checkRow] && currentSheet.data[checkRow][colIndex];
-      if (checkCell) {
-        const cellContent = typeof checkCell === 'object' ? (checkCell.content || '') : checkCell;
-        if (cellContent && cellContent.trim() !== '') {
-          headerContent = cellContent;
-          break; // Found non-empty content, use it as header
-        }
-      }
-    }
-    const hasTime = headerContent.toLowerCase().includes('time');
-    const isTimeColumn = hasTime;
-    const isFirstDataRow = rowIndex === 1; // Only show for row immediately below header
-    
-    // For "time" only columns: restrict to first data row
-    // For "start"/"end" columns: allow entire column
-    const shouldShowTimeButton = isTimeColumn && ( isFirstDataRow);
-    
-    // Ctrl+T to autofill current time
-    if (shouldShowTimeButton && e.ctrlKey && e.key.toLowerCase() === 't') {
-      e.preventDefault();
-      handleAutofillTime(rowIndex, colIndex, e);
-      return;
-    }
-    
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      const nextCol = colIndex + 1;
-      const nextRow = rowIndex + 1;
-      
-      if (nextCol < (currentSheet.headers?.length || 0)) {
-        const nextCellKey = `${rowIndex}-${nextCol}`;
-        const nextInput = document.querySelector(`input[data-cell="${nextCellKey}"]`);
-        if (nextInput) {
-          nextInput.focus();
-        }
-      } else if (nextRow < (currentSheet.data?.length || 0)) {
-        const nextCellKey = `${nextRow}-0`;
-        const nextInput = document.querySelector(`input[data-cell="${nextCellKey}"]`);
-        if (nextInput) {
-          nextInput.focus();
-        }
-      }
-    } else if (e.key === 'Tab') {
-      e.preventDefault();
-      const nextCol = colIndex + 1;
-      if (nextCol < (currentSheet.headers?.length || 0)) {
-        const nextCellKey = `${rowIndex}-${nextCol}`;
-        const nextInput = document.querySelector(`input[data-cell="${nextCellKey}"]`);
-        if (nextInput) {
-          nextInput.focus();
-        }
-      }
-    }
-  };
+    // ---- single-mode audit logic ----
+    try {
+      const hasContent = (cell) =>
+        typeof cell === "object" && cell !== null
+          ? (cell.content || "").toString().trim() !== ""
+          : (cell ?? "").toString().trim() !== "";
 
-  const handleCellClick = (e) => {
-    // Don't select all text on click, just focus
-    e.target.focus();
-  };
+      const headers = Array.isArray(sheet.headers) ? sheet.headers : null;
+      const userId  = user?.id || user?.username || "admin";
+      const stamp   = `${userId} - ${new Date().toLocaleString()}`;
 
-  const addRow = () => {
-    const sheets = field.sheets || [];
-    const updatedSheets = [...sheets];
-    const currentSheet = updatedSheets[currentActiveSheet];
-    
-    if (currentSheet && currentSheet.data) {
-      const newRowIndex = currentSheet.data.length;
-      const newRow = Array.from({ length: currentSheet.cols }, () => '');
-      currentSheet.data.push(newRow);
-      currentSheet.rows = currentSheet.data.length;
-      
-      // Track the newly added row
-      setAddedRows(prev => new Set([...prev, newRowIndex]));
-      
-      // Update the field data
-      const updatedField = {
-        ...field,
-        sheets: updatedSheets
-      };
-      
-      onChange(updatedField);
-      
-      // Re-initialize editable data for the new row
-      setTimeout(() => {
-        const newEditableData = { ...editableData };
-        const editableCells = new Set();
-        
-        currentSheet.data.forEach((row, rowIndex) => {
-          row.forEach((cell, colIndex) => {
-            const cellKey = `${rowIndex}-${colIndex}`;
-            let content = '';
-            if (typeof cell === 'object' && cell !== null) {
-              content = cell.content || '';
-            } else {
-              content = cell || '';
-            }
-            if (!content || content.trim() === '') {
-              newEditableData[cellKey] = '';
-              editableCells.add(cellKey);
-            }
-          });
-        });
-        setEditableData(newEditableData);
-        setEditableCells(editableCells);
-      }, 100);
-    }
-  };
-
-  const addColumn = () => {
-    const sheets = field.sheets || [];
-    const updatedSheets = [...sheets];
-    const currentSheet = updatedSheets[currentActiveSheet];
-    
-    if (currentSheet && currentSheet.data) {
-      const newColumnIndex = currentSheet.data[0].length;
-      
-      // Add new column to each row
-      currentSheet.data.forEach(row => {
-        row.push('');
-      });
-      
-      // Add new header
-      if (currentSheet.headers) {
-        currentSheet.headers.push(`Column ${currentSheet.headers.length + 1}`);
-      }
-      
-      currentSheet.cols = currentSheet.data[0].length;
-      
-      // Track the newly added column
-      setAddedColumns(prev => new Set([...prev, newColumnIndex]));
-      
-      // Update the field data
-      const updatedField = {
-        ...field,
-        sheets: updatedSheets
-      };
-      
-      onChange(updatedField);
-      
-      // Re-initialize editable data for the new column
-      setTimeout(() => {
-        const newEditableData = { ...editableData };
-        const editableCells = new Set();
-        
-        currentSheet.data.forEach((row, rowIndex) => {
-          row.forEach((cell, colIndex) => {
-            const cellKey = `${rowIndex}-${colIndex}`;
-            let content = '';
-            if (typeof cell === 'object' && cell !== null) {
-              content = cell.content || '';
-            } else {
-              content = cell || '';
-            }
-            if (!content || content.trim() === '') {
-              newEditableData[cellKey] = '';
-              editableCells.add(cellKey);
-            }
-          });
-        });
-        setEditableData(newEditableData);
-        setEditableCells(editableCells);
-      }, 100);
-    }
-  };
-
-  const deleteRow = (rowIndex) => {
-    const sheets = field.sheets || [];
-    const updatedSheets = [...sheets];
-    const currentSheet = updatedSheets[currentActiveSheet];
-    
-    // Only allow deletion of newly added rows
-    if (currentSheet && currentSheet.data && addedRows.has(rowIndex)) {
-      // Remove the row
-      currentSheet.data.splice(rowIndex, 1);
-      currentSheet.rows = currentSheet.data.length;
-      
-      // Remove from added rows tracking
-      setAddedRows(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(rowIndex);
-        // Adjust indices for rows after the deleted one
-        const adjustedSet = new Set();
-        newSet.forEach(index => {
-          if (index > rowIndex) {
-            adjustedSet.add(index - 1);
-          } else {
-            adjustedSet.add(index);
+      const ensureAuditColumn = () => {
+        let idx = -1;
+        if (headers) idx = headers.findIndex(h => (h || "").toString().trim().toLowerCase() === "audit");
+        const cols = data[0]?.length || 0;
+        if (idx === -1) {
+          idx = cols;
+          for (let r = 0; r < data.length; r++) {
+            const row = data[r] || [];
+            while (row.length < cols) row.push("");
+            row.push("");
+            data[r] = row;
           }
-        });
-        return adjustedSet;
-      });
-      
-      // Update the field data
-      const updatedField = {
-        ...field,
-        sheets: updatedSheets
+          headers && headers.push("Audit");
+          sheet.cols = (data[0]?.length || cols + 1);
+        }
+        auditColIndexRef.current.set(currentActiveSheet, idx);
+        sheet._auditColIndex = idx;
+        return idx;
       };
-      
-      onChange(updatedField);
-      
-      // Re-initialize editable data
-      setTimeout(() => {
-        const newEditableData = {};
-        const editableCells = new Set();
-        
-        currentSheet.data.forEach((row, rowIndex) => {
-          row.forEach((cell, colIndex) => {
-            const cellKey = `${rowIndex}-${colIndex}`;
-            let content = '';
-            if (typeof cell === 'object' && cell !== null) {
-              content = cell.content || '';
-            } else {
-              content = cell || '';
-            }
-            if (!content || content.trim() === '') {
-              newEditableData[cellKey] = '';
-              editableCells.add(cellKey);
-            }
-          });
-        });
-        setEditableData(newEditableData);
-        setEditableCells(editableCells);
-      }, 100);
-    }
-  };
 
-  const deleteColumn = (colIndex) => {
-    const sheets = field.sheets || [];
-    const updatedSheets = [...sheets];
-    const currentSheet = updatedSheets[currentActiveSheet];
-    
-    // Only allow deletion of newly added columns
-    if (currentSheet && currentSheet.data && addedColumns.has(colIndex)) {
-      // Remove the column from each row
-      currentSheet.data.forEach(row => {
-        row.splice(colIndex, 1);
-      });
-      
-      // Remove the header
-      if (currentSheet.headers) {
-        currentSheet.headers.splice(colIndex, 1);
+      const ensureAuditRow = () => {
+        const cols = data[0]?.length || (colIndex + 1);
+        const existing = auditRowIndexRef.current.get(currentActiveSheet);
+        if (typeof existing === "number" && existing >= 0 && existing < data.length) return existing;
+        const row = new Array(cols).fill("");
+        data.push(row);
+        const idx = data.length - 1;
+        sheet.rows = data.length;
+        auditRowIndexRef.current.set(currentActiveSheet, idx);
+        sheet._auditRowIndex = idx;
+        return idx;
+      };
+
+      const countFilledInRow = (rIdx) => {
+        let cnt = 0;
+        for (let c = 0; c < (data[rIdx]?.length || 0); c++) {
+          if (isAuditCol(currentActiveSheet, c, sheet)) continue;
+          if (hasContent(data[rIdx][c])) cnt++;
+        }
+        return cnt;
+      };
+
+      const countFilledInCol = (cIdx) => {
+        let cnt = 0;
+        for (let r = 1; r < data.length; r++) {
+          if (isAuditRow(currentActiveSheet, r, sheet)) continue;
+          if (hasContent(data[r]?.[cIdx])) cnt++;
+        }
+        return cnt;
+      };
+
+      let mode = auditModeRef.current.get(currentActiveSheet);
+      const rowFilled = rowIndex >= 1 ? countFilledInRow(rowIndex) : 0;
+      const colFilled = countFilledInCol(colIndex);
+
+      if (!mode) {
+        if (rowFilled >= 2) mode = "row";
+        else if (colFilled >= 3) mode = "col";
+        if (mode) auditModeRef.current.set(currentActiveSheet, mode);
       }
-      
-      currentSheet.cols = currentSheet.data[0].length;
-      
-      // Remove from added columns tracking
-      setAddedColumns(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(colIndex);
-        // Adjust indices for columns after the deleted one
-        const adjustedSet = new Set();
-        newSet.forEach(index => {
-          if (index > colIndex) {
-            adjustedSet.add(index - 1);
-          } else {
-            adjustedSet.add(index);
-          }
-        });
-        return adjustedSet;
-      });
-      
-      // Update the field data
-      const updatedField = {
-        ...field,
-        sheets: updatedSheets
-      };
-      
+
+      if (mode === "row") {
+        if (rowIndex >= 1 && rowFilled >= 2) {
+          const aCol = ensureAuditColumn();
+          data[rowIndex][aCol] = stamp;
+        }
+      } else if (mode === "col") {
+        const stKey = `${currentActiveSheet}:${colIndex}`;
+        if (colFilled >= 3 && !stampedColumnsRef.current.has(stKey)) {
+          const aRow = ensureAuditRow();
+          if (!hasContent(data[aRow][colIndex])) data[aRow][colIndex] = stamp;
+          stampedColumnsRef.current.add(stKey);
+        }
+      }
+    } catch { /* ignore audit errors */ }
+
+    // commit + debounce
+    sheet.data = data;
+    updatedSheets[currentActiveSheet] = sheet;
+    const updatedField = { ...field, sheets: updatedSheets };
+
+    if (debouncedOnChange.current) clearTimeout(debouncedOnChange.current);
+    debouncedOnChange.current = setTimeout(() => {
       onChange(updatedField);
-      
-      // Re-initialize editable data
-      setTimeout(() => {
-        const newEditableData = {};
-        const editableCells = new Set();
-        
-        currentSheet.data.forEach((row, rowIndex) => {
-          row.forEach((cell, colIndex) => {
-            const cellKey = `${rowIndex}-${colIndex}`;
-            let content = '';
-            if (typeof cell === 'object' && cell !== null) {
-              content = cell.content || '';
-            } else {
-              content = cell || '';
-            }
-            if (!content || content.trim() === '') {
-              newEditableData[cellKey] = '';
-              editableCells.add(cellKey);
-            }
-          });
-        });
-        setEditableData(newEditableData);
-        setEditableCells(editableCells);
-      }, 100);
+      // ensure keys exist for audit cells in editableData (do NOT add to editableCells)
+      setEditableData(prev => {
+        const next = { ...prev };
+        const aCol = auditColIndexRef.current.get(currentActiveSheet) ?? sheet._auditColIndex ?? -1;
+        const aRow = auditRowIndexRef.current.get(currentActiveSheet) ?? sheet._auditRowIndex ?? -1;
+
+        if (aCol >= 0 && sheet.data?.[0]) {
+          for (let r = 0; r < sheet.data.length; r++) {
+            const k = `${r}-${aCol}`;
+            if (!(k in next)) next[k] = getCellDisplay(sheet.data[r][aCol]).content || "";
+          }
+        }
+        if (aRow >= 0 && sheet.data?.[aRow]) {
+          for (let c = 0; c < (sheet.data[0]?.length || 0); c++) {
+            const k = `${aRow}-${c}`;
+            if (!(k in next)) next[k] = getCellDisplay(sheet.data[aRow][c]).content || "";
+          }
+        }
+        return next;
+      });
+    }, 450);
+  };
+
+  const handleAutofillTime = (r, c, e) => {
+    e.preventDefault(); e.stopPropagation();
+    const now = new Date().toLocaleTimeString("en-US", { hour12: false, hour: "2-digit", minute: "2-digit" });
+    handleCellChange(r, c, now);
+  };
+
+  const handleCellKeyDown = (e, r, c) => {
+    const sheets = field.sheets || [];
+    const sheet  = sheets[currentActiveSheet] || { data: [], headers: [], rows: 0, cols: 0, mergedCells: [] };
+
+    // detect time column for shortcut
+    let header = "";
+    const maxCheck = Math.min(3, sheet.data?.length || 0);
+    for (let i = 0; i < maxCheck; i++) {
+      const cell = sheet.data?.[i]?.[c];
+      if (cell) {
+        const t = typeof cell === "object" ? (cell.content || "") : String(cell || "");
+        if (t.trim()) { header = t; break; }
+      }
+    }
+    const isTimeCol = header.toLowerCase().includes("time");
+    if (isTimeCol && r === 1 && e.ctrlKey && e.key.toLowerCase() === "t") {
+      e.preventDefault();
+      handleAutofillTime(r, c, e);
     }
   };
 
-  // Helper function to get cell display content and styles
-  const getCellDisplay = (cell) => {
-    if (typeof cell === 'object' && cell !== null) {
-      return {
-        content: cell.content || '',
-        styles: cell.formatting || {}
-      };
-    }
-    return {
-      content: cell || '',
-      styles: {}
-    };
-  };
-
-  // Helper function to check if cell is merged
-  const isCellMerged = (rowIndex, colIndex, mergedCells) => {
-    return mergedCells?.some(merge => 
-      merge.startRow <= rowIndex && 
-      merge.endRow >= rowIndex && 
-      merge.startCol <= colIndex && 
-      merge.endCol >= colIndex
-    ) || false;
-  };
-
-  // Helper function to get merge info
-  const getMergeInfo = (rowIndex, colIndex, mergedCells) => {
-    const merge = mergedCells?.find(merge => 
-      merge.startRow <= rowIndex && 
-      merge.endRow >= rowIndex && 
-      merge.startCol <= colIndex && 
-      merge.endCol >= colIndex
-    );
-    
-    if (!merge) {
-      return { isContinuation: false, rowSpan: 1, colSpan: 1 };
-    }
-    
-    const isContinuation = rowIndex > merge.startRow || colIndex > merge.startCol;
-    const rowSpan = merge.endRow - merge.startRow + 1;
-    const colSpan = merge.endCol - merge.startCol + 1;
-    
-    return { isContinuation, rowSpan, colSpan };
-  };
-
-  // Use updated sheets that include audit columns and rows
+  // ---------- render ----------
   const sheets = value?.sheets || field.sheets || [];
-  const currentSheet = sheets[currentActiveSheet] || { data: [], headers: [], rows: 0, cols: 0, mergedCells: [] };
-  
-  // Debug: Log current sheet data to see if audit columns/rows are present
-  console.log('Current sheet data:', currentSheet.data);
-  console.log('Current sheet dimensions:', { rows: currentSheet.rows, cols: currentSheet.cols });
+  const sheet  = sheets[currentActiveSheet] || { data: [], headers: [], rows: 0, cols: 0, mergedCells: [] };
 
-  // Expose sync function to parent component
-  useEffect(() => {
-    if (onChange && typeof onChange === 'function') {
-      // Add sync function to the onChange callback for immediate sync when needed
-      onChange.syncDataImmediately = syncDataImmediately;
-    }
-  }, [onChange, syncDataImmediately]);
-
-  if (sheets.length === 0) {
+  if (!sheets.length) {
     return (
-      <div style={{ 
-        padding: "20px", 
-        border: "1px solid #ddd", 
-        borderRadius: "8px", 
-        backgroundColor: "#f8f9fa",
-        textAlign: "center",
-        color: "#6c757d"
-      }}>
+      <div style={{ padding: 20, border: "1px solid #ddd", borderRadius: 8, background: "#f8f9fa", color: "#6c757d", textAlign: "center" }}>
         <p>No spreadsheet data available</p>
       </div>
     );
   }
 
+  const attachFocusBlur = (r, c) => ({
+    onFocus: () => {
+      const key = `${r}-${c}`;
+      activeEditRef.current = key;
+      setEditableCells(prev => {
+        const next = new Set(prev);
+        next.add(key);
+        return next;
+      });
+    },
+    onBlur: () => {
+      // Don't lock on blur; newly filled cells stay editable because we add them to userEditedCellsRef on change.
+      activeEditRef.current = null;
+    }
+  });
+
   return (
     <div style={{ marginBottom: "1rem" }}>
-      {/* Sheet Tabs */}
       {sheets.length > 1 && (
-        <div style={{ 
-          display: "flex", 
-          borderBottom: "1px solid #e5e7eb", 
-          marginBottom: "10px" 
-        }}>
-          {sheets.map((sheet, index) => (
-            <button
-              key={index}
-              type="button"
-              onClick={() => setCurrentActiveSheet(index)}
+        <div style={{ display: "flex", borderBottom: "1px solid #e5e7eb", marginBottom: 10 }}>
+          {sheets.map((s, i) => (
+            <button key={i} type="button" onClick={() => setCurrentActiveSheet(i)}
               style={{
-                padding: "8px 16px",
-                border: "none",
-                background: currentActiveSheet === index ? "#667eea" : "transparent",
-                color: currentActiveSheet === index ? "white" : "#374151",
-                cursor: "pointer",
-                borderTopLeftRadius: "6px",
-                borderTopRightRadius: "6px",
-                fontSize: "14px",
-                fontWeight: currentActiveSheet === index ? "600" : "400"
-              }}
-            >
-              {sheet.name || `Sheet ${index + 1}`}
+                padding: "8px 16px", border: "none",
+                background: currentActiveSheet === i ? "#667eea" : "transparent",
+                color: currentActiveSheet === i ? "white" : "#374151",
+                cursor: "pointer", borderTopLeftRadius: 6, borderTopRightRadius: 6,
+                fontSize: 14, fontWeight: currentActiveSheet === i ? 600 : 400
+              }}>
+              {s.name || `Sheet ${i + 1}`}
             </button>
           ))}
         </div>
       )}
 
-
-
-      {/* Add Row/Column Buttons - COMMENTED OUT FOR FORM FILL */}
-      {/* 
-      <div style={{
-        display: "flex", 
-        gap: "8px", 
-        marginBottom: "10px",
-        justifyContent: "flex-end"
-      }}>
-        <button
-          type="button"
-          onClick={addRow}
-          className="form-fill-spreadsheet-btn"
-          style={{
-            padding: "6px 12px",
-            border: "1px solid #667eea",
-            background: "#667eea",
-            color: "white",
-            borderRadius: "4px",
-            fontSize: "12px",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            gap: "4px"
-          }}
-        >
-          <span style={{ fontSize: "14px" }}>+</span>
-          Add Row
-        </button>
-        <button
-          type="button"
-          onClick={addColumn}
-          className="form-fill-spreadsheet-btn"
-          style={{
-            padding: "6px 12px",
-            border: "1px solid #667eea",
-            background: "#667eea",
-            color: "white",
-            borderRadius: "4px",
-            fontSize: "12px",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            gap: "4px"
-          }}
-        >
-          <span style={{ fontSize: "14px" }}>+</span>
-          Add Column
-        </button>
-      </div>
-      */}
-
-      {/* Spreadsheet Table */}
       <div className="form-fill-spreadsheet-scroll-container">
         <table className="form-fill-spreadsheet-table">
-          {/* Headers - HIDDEN FOR FORM FILL */}
-          {/* 
-          <thead>
-            <tr style={{ backgroundColor: "#f9fafb" }}>
-              <th>
-                #
-              </th>
-              {(currentSheet.headers || []).map((header, index) => (
-                <th key={index}>
-                                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <span>{header || `Column ${index + 1}`}</span>
-                      {addedColumns.has(index) && (
-                        <button
-                          type="button"
-                          onClick={() => deleteColumn(index)}
-                          className="form-fill-spreadsheet-delete-btn"
-                          style={{
-                            background: "none",
-                            border: "none",
-                            color: "#ef4444",
-                            cursor: "pointer",
-                            fontSize: "12px",
-                            padding: "2px 4px",
-                            borderRadius: "2px",
-                            marginLeft: "4px"
-                          }}
-                          title="Delete Column"
-                        >
-                          ×
-                        </button>
-                      )}
-                    </div>
-                </th>
-              ))}
-            </tr>
-          </thead>
-          */}
-          
-          {/* Data Rows */}
           <tbody>
-            {console.log('Rendering table with data:', currentSheet.data)}
-            {(currentSheet.data || []).map((row, rowIndex) => (
-              <tr key={rowIndex}>
-                {/* Row Number - HIDDEN FOR FORM FILL */}
-                {/* 
-                <td>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <span>{rowIndex + 1}</span>
-                      {addedRows.has(rowIndex) && (
-                        <button
-                          type="button"
-                          onClick={() => deleteRow(rowIndex)}
-                          className="form-fill-spreadsheet-delete-btn"
-                          style={{
-                            background: "none",
-                            border: "none",
-                            color: "#ef4444",
-                            cursor: "pointer",
-                            fontSize: "12px",
-                            padding: "2px 4px",
-                            borderRadius: "2px",
-                            marginLeft: "4px"
-                          }}
-                          title="Delete Row"
-                        >
-                          ×
-                        </button>
-                      )}
-                    </div>
-                </td>
-                */}
-                {(row || []).map((cell, colIndex) => {
-                  const mergeInfo = getMergeInfo(rowIndex, colIndex, currentSheet.mergedCells);
-                  
-                  // Skip rendering continuation cells in merged ranges
-                  if (mergeInfo.isContinuation) {
-                    return null;
-                  }
-                  
+            {(sheet.data || []).map((row, r) => (
+              <tr key={r}>
+                {(row || []).map((cell, c) => {
+                  const m = getMergeInfo(r, c, sheet.mergedCells);
+                  if (m.isContinuation) return null;
+
                   const { content, styles } = getCellDisplay(cell);
-                  const isMerged = isCellMerged(rowIndex, colIndex, currentSheet.mergedCells);
-                  const cellKey = `${rowIndex}-${colIndex}`;
-                  
-                  // Check if this column contains "Time" in the header (check multiple rows for headers)
-                  // Use the updated sheets that include audit columns and rows
-                  const activeSheet = sheets[currentActiveSheet] || { data: [], headers: [], rows: 0, cols: 0, mergedCells: [] };
-                  
-                  let headerContent = '';
-                  const maxRowsToCheck = Math.min(3, activeSheet.data?.length || 0); // Check first 3 rows
-                  
-                  for (let checkRow = 0; checkRow < maxRowsToCheck; checkRow++) {
-                    const checkCell = activeSheet.data && activeSheet.data[checkRow] && activeSheet.data[checkRow][colIndex];
-                    if (checkCell) {
-                      const cellContent = typeof checkCell === 'object' ? (checkCell.content || '') : checkCell;
-                      if (cellContent && cellContent.trim() !== '') {
-                        headerContent = cellContent;
-                        break; // Found non-empty content, use it as header
-                      }
+                  const merged = isCellMerged(r, c, sheet.mergedCells);
+
+                  // header sampling (for time button)
+                  let header = "";
+                  const maxCheck = Math.min(3, sheet.data?.length || 0);
+                  for (let i = 0; i < maxCheck; i++) {
+                    const hcell = sheet.data?.[i]?.[c];
+                    if (hcell) {
+                      const t = typeof hcell === "object" ? (hcell.content || "") : String(hcell || "");
+                      if (t.trim()) { header = t; break; }
                     }
                   }
-                  const hasTime = headerContent.toLowerCase().includes('time');
-                  const hasTimedot = headerContent.toLowerCase().includes('time.');
+                  const lc = header.toLowerCase();
+                  const isTimeCol = lc.includes("time") || lc.includes("time.");
+                  const isFirstDataRow = r === 1;
 
-                  // const hasStart = headerContent.toLowerCase().includes('start');
-                  // const hasEnd = headerContent.toLowerCase().includes('end');
-                  const isTimeColumn = hasTime ||hasTimedot;
-                  const isFirstDataRow = rowIndex === 1; // Only show for row immediately below header
-                  
-                  // For "time" only columns: restrict to first data row
-                  // For "start"/"end" columns: allow entire column
-                  // Exclude audit columns and rows from showing time button
-                  // Check for audit columns: header contains "audit" OR it's the last column
-                  const isAuditColumn = headerContent.toLowerCase().includes('audit') || colIndex === (activeSheet.data[0]?.length - 1);
-                  
-                  // Check for audit rows: last row OR row contains audit content
-                  const isAuditRow = rowIndex === (activeSheet.data?.length - 1);
-                  
-                  // Audit cells are NEVER editable, regardless of editableCells
-                  const isEditable = editableCells.has(cellKey) && !isAuditColumn && !isAuditRow;
+                  const auditC = isAuditCol(currentActiveSheet, c, sheet);
+                  const auditR = isAuditRow(currentActiveSheet, r, sheet);
 
-                  const displayValue = editableData[cellKey] || content || '';
-                  const isReadOnly = !isEditable && (content && content.trim() !== '');
-                  
-                  const shouldShowTimeButton = isTimeColumn && (isFirstDataRow || hasTimedot) && !isAuditColumn && !isAuditRow;
-                  
+                  const key = `${r}-${c}`;
+                  const editable = editableCells.has(key) && !auditC && !auditR;
+
+                  // For read-only cells, show sheet content; for editable, show live buffer
+                  const displayValue = editable
+                    ? (editableData[key] ?? content ?? "")
+                    : (content ?? editableData[key] ?? "");
+
+                  const showTimeButton = editable && isTimeCol && (isFirstDataRow || lc.includes("time."));
+
                   return (
-                    <td 
-                      key={colIndex} 
-                      rowSpan={mergeInfo.rowSpan || 1}
-                      colSpan={mergeInfo.colSpan || 1}
-                      style={{
-                        backgroundColor: isMerged ? "rgba(102, 126, 234, 0.1)" : styles.backgroundColor || "transparent",
-                        ...styles
-                      }}
-                    >
-                      {isEditable ? (
-                        shouldShowTimeButton ? (
+                    <td key={c} rowSpan={m.rowSpan} colSpan={m.colSpan}
+                        style={{ backgroundColor: merged ? "rgba(102,126,234,0.1)" : styles.backgroundColor || "transparent", ...styles }}>
+                      {editable ? (
+                        showTimeButton ? (
                           <div style={{ position: "relative", width: "100%", height: "100%" }}>
-                        <input
-                          type="text"
-                          value={displayValue}
-                          onChange={(e) => handleCellChange(rowIndex, colIndex, e.target.value)}
-                              onKeyDown={(e) => handleCellKeyDown(e, rowIndex, colIndex)}
-                              onClick={handleCellClick}
-                              data-cell={`${rowIndex}-${colIndex}`}
-                          style={{
-                            width: "100%",
-                            height: "100%",
-                            border: "none",
-                            background: "transparent",
-                            outline: "none",
-                            fontSize: styles.fontSize || "14px",
-                            fontFamily: styles.fontFamily || "inherit",
-                            fontWeight: styles.fontWeight || "normal",
-                            fontStyle: styles.fontStyle || "normal",
-                            color: styles.color || "inherit",
-                            textAlign: styles.textAlign || "left",
-                                padding: "8px 28px 8px 8px",
-                            margin: "0",
-                            position: "absolute",
-                            top: "0",
-                            left: "0",
-                            right: "0",
-                            bottom: "0",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            zIndex: 10,
-                                boxSizing: "border-box"
-                          }}
-                          className="form-fill-spreadsheet-input"
-                            />
-                            <button
-                              type="button"
-                              onClick={(e) => handleAutofillTime(rowIndex, colIndex, e)}
-                              title="Insert current time"
+                            <input
+                              type="text"
+                              value={displayValue}
+                              onChange={(e) => handleCellChange(r, c, e.target.value)}
+                              onKeyDown={(e) => handleCellKeyDown(e, r, c)}
+                              data-cell={`${r}-${c}`}
+                              {...attachFocusBlur(r, c)}
                               style={{
-                                position: "absolute",
-                                right: "2px",
-                                top: "50%",
-                                transform: "translateY(-50%)",
-                                width: "20px",
-                                height: "20px",
-                                border: "none",
-                                background: "#6366f1",
-                                color: "white",
-                                borderRadius: "3px",
-                                cursor: "pointer",
-                                fontSize: "10px",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                zIndex: 20,
-                                opacity: "0.8",
-                                transition: "opacity 0.2s"
+                                width: "100%", height: "100%", border: "none", background: "transparent", outline: "none",
+                                fontSize: styles.fontSize || 14, fontFamily: styles.fontFamily || "inherit",
+                                padding: "8px 28px 8px 8px", margin: 0, position: "absolute", inset: 0, zIndex: 10, boxSizing: "border-box"
                               }}
-                              onMouseEnter={(e) => e.target.style.opacity = "1"}
-                              onMouseLeave={(e) => e.target.style.opacity = "0.8"}
-                            >
+                              className="form-fill-spreadsheet-input"
+                            />
+                            <button type="button" title="Insert current time"
+                              onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleAutofillTime(r, c, e); }}
+                              style={{
+                                position: "absolute", right: 2, top: "50%", transform: "translateY(-50%)",
+                                width: 20, height: 20, border: "none", background: "#6366f1", color: "white",
+                                borderRadius: 3, cursor: "pointer", fontSize: 10, display: "flex", alignItems: "center", justifyContent: "center", zIndex: 20
+                              }}>
                               🕐
                             </button>
                           </div>
@@ -1253,45 +478,20 @@ function SpreadsheetFormFillComponent({ field, value, onChange }) {
                           <input
                             type="text"
                             value={displayValue}
-                            onChange={(e) => handleCellChange(rowIndex, colIndex, e.target.value)}
-                            onKeyDown={(e) => handleCellKeyDown(e, rowIndex, colIndex)}
-                            onClick={handleCellClick}
-                            data-cell={`${rowIndex}-${colIndex}`}
+                            onChange={(e) => handleCellChange(r, c, e.target.value)}
+                            onKeyDown={(e) => handleCellKeyDown(e, r, c)}
+                            data-cell={`${r}-${c}`}
+                            {...attachFocusBlur(r, c)}
                             style={{
-                              width: "100%",
-                              height: "100%",
-                              border: "none",
-                              background: "transparent",
-                              outline: "none",
-                              fontSize: styles.fontSize || "14px",
-                              fontFamily: styles.fontFamily || "inherit",
-                              fontWeight: styles.fontWeight || "normal",
-                              fontStyle: styles.fontStyle || "normal",
-                              color: styles.color || "inherit",
-                              textAlign: styles.textAlign || "left",
-                              padding: "8px",
-                              margin: "0",
-                              position: "absolute",
-                              top: "0",
-                              left: "0",
-                              right: "0",
-                              bottom: "0",
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                              zIndex: 10,
-                              boxSizing: "border-box"
+                              width: "100%", height: "100%", border: "none", background: "transparent", outline: "none",
+                              fontSize: styles.fontSize || 14, fontFamily: styles.fontFamily || "inherit",
+                              padding: "8px", margin: 0, position: "absolute", inset: 0, zIndex: 10, boxSizing: "border-box"
                             }}
                             className="form-fill-spreadsheet-input"
                           />
                         )
                       ) : (
-                        <span style={{ 
-                          ...styles,
-                          display: "block",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap"
-                        }}>
+                        <span style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", ...styles }}>
                           {displayValue}
                         </span>
                       )}

@@ -5,11 +5,12 @@ import "../css/FormFill.css"; //
 import "../css/Livepreview.css";
 import JSpreadsheetComponent from "../components/JSpreadsheetComponent";
 import JSpreadsheetCE4Component from "../components/JSpreadsheetCE4Component";
-
+import { useAuth } from "../contexts/AuthContext";
   
 // Spreadsheet component for form fill
 function SpreadsheetFormFillComponent({ field, value, onChange }) {
   const [editableData, setEditableData] = useState({});
+  const { user } = useAuth();
   const [editableCells, setEditableCells] = useState(new Set());
   const [currentActiveSheet, setCurrentActiveSheet] = useState(0);
   const [addedRows, setAddedRows] = useState(new Set());
@@ -186,7 +187,8 @@ function SpreadsheetFormFillComponent({ field, value, onChange }) {
           return (cell ?? '').toString();
         };
 
-        const stamp = `admin - ${new Date().toLocaleString()}`;
+        const currentUserId = user?.id || user?.username || 'unknown';
+        const stamp = `${currentUserId} - ${new Date().toLocaleString()}`;
 
         // Ensure headers array exists if present
         const headers = Array.isArray(activeSheet.headers) ? activeSheet.headers : null;
