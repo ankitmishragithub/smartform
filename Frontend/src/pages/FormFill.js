@@ -5,11 +5,12 @@ import "../css/FormFill.css"; //
 import "../css/Livepreview.css";
 import JSpreadsheetComponent from "../components/JSpreadsheetComponent";
 import JSpreadsheetCE4Component from "../components/JSpreadsheetCE4Component";
-
+import { useAuth } from "../contexts/AuthContext";
   
 // Spreadsheet component for form fill
 function SpreadsheetFormFillComponent({ field, value, onChange }) {
   const [editableData, setEditableData] = useState({});
+  const { user } = useAuth();
   const [editableCells, setEditableCells] = useState(new Set());
   const [currentActiveSheet, setCurrentActiveSheet] = useState(0);
   const [addedRows, setAddedRows] = useState(new Set());
@@ -186,7 +187,8 @@ function SpreadsheetFormFillComponent({ field, value, onChange }) {
           return (cell ?? '').toString();
         };
 
-        const stamp = `admin - ${new Date().toLocaleString()}`;
+        const currentUserId = user?.id || user?.username || 'unknown';
+        const stamp = `${currentUserId} - ${new Date().toLocaleString()}`;
 
         // Ensure headers array exists if present
         const headers = Array.isArray(activeSheet.headers) ? activeSheet.headers : null;
@@ -312,7 +314,8 @@ function SpreadsheetFormFillComponent({ field, value, onChange }) {
     const currentTime = now.toLocaleTimeString('en-US', { 
       hour12: false, // 24-hour format
       hour: '2-digit', 
-      minute: '2-digit' 
+      minute: '2-digit',
+      second :'2-digit'
     });
     
     handleCellChange(rowIndex, colIndex, currentTime);
@@ -1105,6 +1108,10 @@ export default function FormFillPage(props) {
   const [formName, setFormName] = useState('');
   const [baseInit, setBaseInit] = useState(null);
   const [formLoaded, setFormLoaded] = useState(false);
+    const { user } = useAuth();
+
+     console.log("user:",user.username)
+     console.log("emIL",user.email)
 
 
   useEffect(() => {
@@ -1190,21 +1197,21 @@ export default function FormFillPage(props) {
   const handleSubmit = async () => {
     try {
       // Validate mandatory fields
-      if (!submitterName.trim()) {
+      if (!user.username) {
         alert("Please enter your name");
         return;
       }
-      
-      if (!submitterEmail.trim()) {
+     
+      if (!user.email) {
         alert("Please enter your email");
         return;
       }
       
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(submitterEmail)) {
-        alert("Please enter a valid email address");
-        return;
-      }
+      // if (!emailRegex.test(submitterEmail)) {
+      //   alert("Please enter a valid email address");
+      //   return;
+      // }
 
       // Validate required form fields
       const missingFields = fields
@@ -1276,18 +1283,19 @@ export default function FormFillPage(props) {
       if (responseId) {
         // Update existing response
         resp = await api.put(`/responses/${responseId}`, {
-          submitterName: submitterName.trim(),
-          submitterEmail: submitterEmail.trim(),
+          submitterName: user.username,
+          submitterEmail: user.email,
           answers: values,
         });
       } else {
         // New submission
         resp = await api.post("/responses", { 
           form: id, 
-          submitterName: submitterName.trim(),
-          submitterEmail: submitterEmail.trim(),
+          submitterName: user.username,
+          submitterEmail: user.email,
           answers: values 
         });
+        console.log(resp);
       }
       
       console.log('Submit response:', resp);
@@ -2003,7 +2011,7 @@ export default function FormFillPage(props) {
 
             {/* Action Buttons and Submitter Info */}
             <div className="form-fill-submitter-section">
-              <h6>Personal Information</h6>
+              {/* <h6>Personal Information</h6>
               <FormGroup className="form-group mb-3">
                 <Label>Name *</Label>
                 <Input
@@ -2025,7 +2033,7 @@ export default function FormFillPage(props) {
                   placeholder="Enter your email address"
                   required
                 />
-              </FormGroup>
+              </FormGroup> */}
               <div className="button-group"> 
                 <button className="save-btn" onClick={handleSubmit} disabled={loading}>
                   Submit Form

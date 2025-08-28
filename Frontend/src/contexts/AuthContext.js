@@ -72,6 +72,8 @@ export const AuthProvider = ({ children }) => {
     return user?.role === 'admin';
   };
 
+  
+
   const value = {
     user,
     token,

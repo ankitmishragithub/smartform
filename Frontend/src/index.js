@@ -5,6 +5,7 @@ import App from "./App";
 
 import "./assets/scss/dashlite.scss";
 import "./assets/scss/style-email.scss";
+import "./css/SyncfusionSpreadsheet.css";
 
 import reportWebVitals from "./reportWebVitals";
 
