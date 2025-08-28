@@ -5,6 +5,7 @@ import "../css/FormFill.css";
 import "../css/Livepreview.css";
 import JSpreadsheetComponent from "../components/JSpreadsheetComponent";
 import JSpreadsheetCE4Component from "../components/JSpreadsheetCE4Component";
+import SyncfusionSpreadsheetComponent from "../components/SyncfusionSpreadsheetComponent";
 import { useAuth } from "../contexts/AuthContext";
 
   
@@ -826,6 +827,21 @@ export default function ReeditForm(props) {
             );
             return !hasContent;
           }
+          if (f.type === 'syncfusion-spreadsheet') {
+            // For Syncfusion spreadsheet, check if any editable cells have been filled
+            if (!val || !val.sheets) return true;
+            const hasContent = val.sheets.some(sheet => 
+              sheet.data && sheet.data.some(row => 
+                row && row.some(cell => {
+                  if (typeof cell === 'object' && cell !== null) {
+                    return cell.content && cell.content.trim() !== '';
+                  }
+                  return cell && cell.toString().trim() !== '';
+                })
+              )
+            );
+            return !hasContent;
+          }
           return val === undefined || val === null || val === '';
         });
       if (missingFields.length > 0) {
@@ -1367,6 +1383,17 @@ export default function ReeditForm(props) {
             isFormFill={true}
           />
         );
+      case "syncfusion-spreadsheet":
+        return (
+          <SyncfusionSpreadsheetComponent 
+            field={f} 
+            value={val}
+            onChange={(updatedField) => handleChange(f.id, updatedField)}
+            readOnly={false}
+            rows={f.defaultRows || 15}
+            cols={f.defaultCols || 8}
+          />
+        );
       case "hidden":
         return (
           <Input
@@ -1581,6 +1608,27 @@ export default function ReeditForm(props) {
         <div key={node.id} className="form-group mb-3">
           {renderInput(node)}
 
+        </div>
+      );
+    }
+    if (node.type === "syncfusion-spreadsheet") {
+      return (
+        <div key={node.id} className="form-group mb-3">
+          <label htmlFor={`field-${node.id}`} className="form-label">
+            {node.label}
+            {node.required && <span className="text-danger"> *</span>}
+          </label>
+          <SyncfusionSpreadsheetComponent 
+            field={node} 
+            value={node.value || { sheets: [{ data: [], headers: [], rows: node.defaultRows || 15, cols: node.defaultCols || 8 }] }}
+            onChange={(updatedField) => {
+              // Handle field updates if needed
+              console.log('Syncfusion spreadsheet updated:', updatedField);
+            }}
+            readOnly={false}
+            rows={node.defaultRows || 15}
+            cols={node.defaultCols || 8}
+          />
         </div>
       );
     }
