@@ -1,3 +1,6 @@
+
+import { registerLicense } from '@syncfusion/ej2-base';
+registerLicense(process.env.REACT_APP_SYNCFUSION_LICENSE_KEY);
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   SpreadsheetComponent,
@@ -18,9 +21,9 @@ import '@syncfusion/ej2-navigations/styles/material.css';
 import '@syncfusion/ej2-dropdowns/styles/material.css';
 import '@syncfusion/ej2-calendars/styles/material.css';
 
-// Import newly installed packages for enhanced features (removed problematic ej2-grids)
 import '@syncfusion/ej2-splitbuttons/styles/material.css';
 import '@syncfusion/ej2-treegrid/styles/material.css';
+
 
 
 // Debug CSS loading
