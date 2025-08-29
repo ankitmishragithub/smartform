@@ -7,6 +7,7 @@ import AgGridSheet from "./AgGridSheet";
 import SpreadsheetComponent from "../../components/SpreadsheetComponent";
 import JSpreadsheetComponent from "../../components/JSpreadsheetComponent";
 import JSpreadsheetCE4Component from "../../components/JSpreadsheetCE4Component";
+import SyncfusionSpreadsheetComponent from "../../components/SyncfusionSpreadsheetComponent";
 
 export default function CanvasNode({
   node,
@@ -158,6 +159,21 @@ export default function CanvasNode({
               onUpdateField(node.id, updatedField);
             }}
             isFormFill={false}
+          />
+        </div>
+      );
+    case "syncfusion-spreadsheet":
+      return (
+        <div className="canvas-field syncfusion-spreadsheet-field">
+          <SyncfusionSpreadsheetComponent 
+            field={node} 
+            value={node.value || { sheets: [{ data: [], headers: [], rows: node.defaultRows || 15, cols: node.defaultCols || 8 }] }}
+            onChange={(updatedField) => {
+              onUpdateField(node.id, updatedField);
+            }}
+            readOnly={false}
+            rows={node.defaultRows || 15}
+            cols={node.defaultCols || 8}
           />
         </div>
       );

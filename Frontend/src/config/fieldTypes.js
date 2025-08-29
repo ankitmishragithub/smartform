@@ -196,6 +196,15 @@ export const fieldTypes = {
     component: "jspreadsheetCE4",
     category: "layout"
   },
+  syncfusionSpreadsheet: {
+    type: "syncfusion-spreadsheet",
+    label: "Syncfusion Spreadsheet",
+    icon: "📈",
+    defaultRows: 15,
+    defaultCols: 8,
+    component: "syncfusionSpreadsheet",
+    category: "layout"
+  },
   well: {
     type: "well",
     label: "Well Container",
@@ -236,7 +245,7 @@ export const fieldCategories = {
   layout: {
     label: "Layout Components", 
     description: "Structural components",
-    fields: ["columns", "table", "tabs", "spreadsheet", "jspreadsheetCE4", "well", "content"]
+    fields: ["columns", "table", "tabs", "spreadsheet", "jspreadsheetCE4", "syncfusionSpreadsheet", "well", "content"]
   },
   advanced: {
     label: "Advanced Fields",
@@ -377,6 +386,20 @@ export const getDefaultFieldProps = (type) => {
     defaults.data = Array.from({ length: fieldType.defaultRows }, () =>
       Array.from({ length: fieldType.defaultCols }, () => '')
     );
+  } else if (type === "syncfusion-spreadsheet") {
+    defaults.rows = fieldType.defaultRows;
+    defaults.cols = fieldType.defaultCols;
+    defaults.sheets = Array.from({ length: 1 }, (_, i) => ({
+      name: `Sheet ${i + 1}`,
+      rows: fieldType.defaultRows,
+      cols: fieldType.defaultCols,
+      headers: Array.from({ length: fieldType.defaultCols }, (_, j) => `Column ${j + 1}`),
+      data: Array.from({ length: fieldType.defaultRows }, () =>
+        Array.from({ length: fieldType.defaultCols }, () => '')
+      ),
+      mergedCells: [],
+      activeSheet: 0
+    }));
   }
 
   return defaults;

@@ -6,6 +6,7 @@ import "../../css/Livepreview.css";
 import api from '../../api/api';
 import JSpreadsheetComponent from "../../components/JSpreadsheetComponent";
 import JSpreadsheetCE4Component from "../../components/JSpreadsheetCE4Component";
+import SyncfusionSpreadsheetComponent from "../../components/SyncfusionSpreadsheetComponent";
 
 
 // Separate component to handle tabs to avoid hooks issues
@@ -2527,6 +2528,48 @@ export default function LivePreview({ fields, values, folderName }) {
                 })}
             </tbody>
           </table>
+        </div>
+      </div>
+    );
+  }
+
+  // Syncfusion Spreadsheet layout
+  if (node.type === "syncfusion-spreadsheet") {
+    const syncfusionData = previewValues[node.id] || values[node.id];
+    
+    return (
+      <div key={node.id} style={{ marginBottom: "1rem" }}>
+        <div style={{
+          border: "1px solid #e5e7eb",
+          borderRadius: "8px",
+          overflow: "auto",
+          backgroundColor: "white"
+        }}>
+          <div style={{
+            padding: "12px",
+            backgroundColor: "#f8f9fa",
+            borderBottom: "1px solid #e5e7eb",
+            fontWeight: "600",
+            color: "#374151"
+          }}>
+            📈 Syncfusion Spreadsheet - {node.label || 'Spreadsheet'}
+          </div>
+          <div style={{ padding: "20px" }}>
+            <SyncfusionSpreadsheetComponent
+              field={node}
+              value={syncfusionData || { sheets: [{ data: [], headers: [], rows: node.defaultRows || 15, cols: node.defaultCols || 8 }] }}
+              onChange={(updatedField) => {
+                // Update preview values for live editing
+                setPreviewValues(prev => ({
+                  ...prev,
+                  [node.id]: updatedField
+                }));
+              }}
+              readOnly={false}
+              rows={node.defaultRows || 15}
+              cols={node.defaultCols || 8}
+            />
+          </div>
         </div>
       </div>
     );

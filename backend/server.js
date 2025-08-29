@@ -39,6 +39,8 @@ app.use(cors());
 //const PUBLIC_DIR = path.join(__dirname, 'public');
 //app.use(express.static(PUBLIC_DIR));
 
+
+
 // 4) Mount your API routes
 console.log('Mounting health routes...');
 app.use('/api/health',   healthRoutes);
@@ -49,12 +51,15 @@ app.use('/api/forms',    formRoutes);
 console.log('Mounting response routes...');
 app.use('/api/responses', responseRoutes);
 
+
+// --- SPA fallback (Express 5-safe) ---
 // 5) **True** catch‑all for client‑side routes
 //    This will match ANY path under “/” (except the ones above),
 //    and serve index.html so React Router can render the correct page.
-/*app.get('#', (req, res) => {
-  res.sendFile(path.join(PUBLIC_DIR, 'index.html'));
-});*/
+// Serve index.html for all non-API, non-file requests so React Router can handle them.
+// app.get(/^\/(?!api)(?!.*\.\w+$).*/, (req, res) => {
+//   res.sendFile(path.join(PUBLIC_DIR, "index.html"));
+// });
 
 // 6) Global error handler
 app.use((err, req, res, next) => {
