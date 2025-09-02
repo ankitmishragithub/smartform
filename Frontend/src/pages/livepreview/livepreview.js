@@ -873,8 +873,174 @@ export default function LivePreview({ fields, values, folderName }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [previewValues, setPreviewValues] = useState({});
   const [editableCells, setEditableCells] = useState(new Set());
+  const [apiData, setApiData] = useState({}); // Store data fetched from API
   
   const toggleModal = () => setIsModalOpen((open) => !open);
+  
+  // Function to fetch Syncfusion data from API
+  const fetchSyncfusionDataFromAPI = async (fieldId) => {
+    try {
+      console.log('🔄 Fetching Syncfusion data from API for field:', fieldId);
+      const response = await api.get(`/syncfusion-data/${fieldId}`);
+      
+      if (response.data && response.data.spreadsheetData) {
+        console.log('✅ Fetched data from API:', response.data);
+        setApiData(prev => ({
+          ...prev,
+          [fieldId]: response.data.spreadsheetData
+        }));
+        return response.data.spreadsheetData;
+      }
+    } catch (error) {
+      console.warn('⚠️ No API data found for field:', fieldId, error.message);
+      return null;
+    }
+  };
+
+  // Function to save Syncfusion data to API (same as Canvas)
+  const saveSyncfusionDataToAPI = async (fieldId) => {
+    try {
+      console.log('💾 LivePreview: Saving Syncfusion data to API for field:', fieldId);
+      
+      // Get current data (either from previewValues or existing data)
+      const currentData = previewValues[fieldId] || apiData[fieldId] || values[fieldId];
+      
+      if (!currentData) {
+        alert('⚠️ No data to save!');
+        return;
+      }
+      
+      let ej2Json, internalData;
+      
+      // If we have full EJ2 format, use it directly
+      if (currentData.Workbook) {
+        ej2Json = currentData;
+        internalData = convertEJ2ToInternalFormat(ej2Json);
+      } else {
+        // If we have internal format, use it and create minimal EJ2
+        internalData = currentData;
+        ej2Json = createMinimalEJ2Format(internalData);
+      }
+      
+      // Prepare API payload
+      const payload = {
+        fieldId: fieldId,
+        spreadsheetData: {
+          ej2Format: ej2Json,
+          internalFormat: internalData,
+          timestamp: new Date().toISOString(),
+          version: "1.0",
+          source: "LivePreview"
+        }
+      };
+      
+      console.log('📤 LivePreview: Sending to API:', payload);
+      
+      // Save to API endpoint
+      const response = await api.post('/syncfusion-data', payload);
+      
+      console.log('✅ LivePreview: Saved to API successfully:', response.data);
+      alert('✅ Spreadsheet data saved to API successfully!');
+      
+      // Update local API data cache
+      setApiData(prev => ({
+        ...prev,
+        [fieldId]: payload.spreadsheetData
+      }));
+      
+      // Clear preview values since data is now saved
+      setPreviewValues(prev => {
+        const updated = { ...prev };
+        delete updated[fieldId];
+        return updated;
+      });
+      
+    } catch (error) {
+      console.error('❌ LivePreview: Error saving to API:', error);
+      alert('❌ Failed to save to API: ' + (error.response?.data?.message || error.message));
+    }
+  };
+
+  // Helper function to convert EJ2 to internal format (same as Canvas)
+  const convertEJ2ToInternalFormat = (ej2Json) => {
+    try {
+      if (!ej2Json?.Workbook?.sheets?.[0]) {
+        return { sheets: [{ data: [], rows: 15, cols: 8 }] };
+      }
+      
+      const sheet = ej2Json.Workbook.sheets[0];
+      const data = [];
+      
+      // Initialize empty grid
+      for (let r = 0; r < (sheet.rowCount || 100); r++) {
+        data[r] = new Array(sheet.colCount || 100).fill('');
+      }
+      
+      // Fill with actual data from EJ2 format
+      if (sheet.rows) {
+        sheet.rows.forEach((row, rowIndex) => {
+          if (row.cells) {
+            row.cells.forEach((cell, cellIndex) => {
+              if (cell.value !== undefined && data[rowIndex]) {
+                data[rowIndex][cellIndex] = String(cell.value);
+              }
+            });
+          }
+        });
+      }
+      
+      // Extract merged cells
+      const mergedCells = [];
+      if (sheet.rows) {
+        sheet.rows.forEach((row, rowIndex) => {
+          if (row.cells) {
+            row.cells.forEach((cell, cellIndex) => {
+              if (cell.colSpan > 1 || cell.rowSpan > 1) {
+                mergedCells.push({
+                  row: rowIndex,
+                  col: cellIndex,
+                  rowspan: cell.rowSpan || 1,
+                  colspan: cell.colSpan || 1
+                });
+              }
+            });
+          }
+        });
+      }
+      
+      return {
+        sheets: [{
+          data: data,
+          rows: data.length,
+          cols: data[0]?.length || 8
+        }],
+        mergedCells: mergedCells
+      };
+    } catch (error) {
+      console.error('Error converting EJ2 to internal format:', error);
+      return { sheets: [{ data: [], rows: 15, cols: 8 }] };
+    }
+  };
+
+  // Helper function to create minimal EJ2 format from internal data
+  const createMinimalEJ2Format = (internalData) => {
+    const sheetData = internalData.sheets?.[0]?.data || [];
+    
+    return {
+      Workbook: {
+        sheets: [{
+          name: "Sheet1",
+          rowCount: sheetData.length || 15,
+          colCount: sheetData[0]?.length || 8,
+          rows: sheetData.map((row, rowIndex) => ({
+            cells: row.map((cell, cellIndex) => ({
+              value: cell || ""
+            }))
+          }))
+        }]
+      }
+    };
+  };
   
   // IMPORTANT: Live preview is completely isolated from the main form
   // Changes made here do NOT affect the canvas/form builder
@@ -1118,6 +1284,27 @@ export default function LivePreview({ fields, values, folderName }) {
       return;
     }
     try {
+      // Merge preview values (including Syncfusion spreadsheet data) back into fields
+      const updatedFields = fields.map(field => {
+        if (previewValues[field.id]) {
+          // Update field with the edited preview values
+          if (field.type === 'syncfusion-spreadsheet') {
+            console.log(`🔄 SaveForm: Updating Syncfusion field ${field.id} with preview data:`, previewValues[field.id]);
+            return {
+              ...field,
+              value: previewValues[field.id]
+            };
+          } else {
+            // Handle other field types if needed
+            return {
+              ...field,
+              value: previewValues[field.id]
+            };
+          }
+        }
+        return field;
+      });
+      
       // Add folderName to schema just like heading
       const schemaWithFolder = [
         {
@@ -1125,7 +1312,7 @@ export default function LivePreview({ fields, values, folderName }) {
           type: "folderName",
           label: folderName.trim()
         },
-        ...fields
+        ...updatedFields
       ];
       
       const payload = {
@@ -1135,7 +1322,13 @@ export default function LivePreview({ fields, values, folderName }) {
       console.log("📤 SENDING TO API:", {
         schemaJson: payload.schemaJson,
         fieldsLength: schemaWithFolder.length,
-        folderName: folderName.trim()
+        folderName: folderName.trim(),
+        previewValues: previewValues,
+        syncfusionFields: updatedFields.filter(f => f.type === 'syncfusion-spreadsheet').map(f => ({
+          id: f.id,
+          hasValue: !!f.value,
+          valueStructure: f.value
+        }))
       });
       
       const { data } = await api.post('/forms', payload);
@@ -2535,7 +2728,37 @@ export default function LivePreview({ fields, values, folderName }) {
 
   // Syncfusion Spreadsheet layout
   if (node.type === "syncfusion-spreadsheet") {
-    const syncfusionData = previewValues[node.id] || values[node.id];
+    // Priority: API data (saved from Canvas) > previewValues (live edits) > node.value > values
+    const apiFieldData = apiData[node.id];
+    let syncfusionData;
+    
+    if (apiFieldData) {
+      // Use full EJ2 format from API if available for complete restoration
+      syncfusionData = apiFieldData.ej2Format || apiFieldData.internalFormat;
+      console.log('📡 Using API data for field:', node.id);
+    } else {
+      // Fallback to local data
+      syncfusionData = previewValues[node.id] || node.value || values[node.id];
+      console.log('💾 Using local data for field:', node.id);
+      
+      // Try to fetch from API on component mount
+      useEffect(() => {
+        fetchSyncfusionDataFromAPI(node.id);
+      }, [node.id]);
+    }
+    
+    // Debug: Log the data being passed to the component
+    console.log('🔍 LivePreview: Syncfusion spreadsheet data for node', node.id, {
+      nodeValue: node.value,
+      valuesData: values[node.id],
+      previewValuesData: previewValues[node.id],
+      apiData: apiFieldData,
+      finalSyncfusionData: syncfusionData,
+      hasData: syncfusionData?.sheets?.[0]?.data?.length > 0 || syncfusionData?.Workbook?.sheets?.length > 0,
+      dataType: syncfusionData?.Workbook ? 'EJ2 Format' : 'Internal Format'
+    });
+    
+    const hasApiData = !!apiFieldData;
     
     return (
       <div key={node.id} style={{ marginBottom: "1rem" }}>
@@ -2550,16 +2773,37 @@ export default function LivePreview({ fields, values, folderName }) {
             backgroundColor: "#f8f9fa",
             borderBottom: "1px solid #e5e7eb",
             fontWeight: "600",
-            color: "#374151"
+            color: "#374151",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center"
           }}>
-            📈 Syncfusion Spreadsheet - {node.label || 'Spreadsheet'}
+            <span>📈 {node.label || 'Syncfusion Spreadsheet'}</span>
+            <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+              {hasApiData && (
+                <span style={{ 
+                  fontSize: "10px", 
+                  backgroundColor: "#10b981", 
+                  color: "white", 
+                  padding: "2px 6px", 
+                  borderRadius: "4px" 
+                }}>
+                  API
+                </span>
+              )}
+
+              <span style={{ fontSize: "12px", color: "#6b7280" }}>
+                (Editable)
+              </span>
+            </div>
           </div>
           <div style={{ padding: "20px" }}>
             <SyncfusionSpreadsheetComponent
               field={node}
               value={syncfusionData || { sheets: [{ data: [], headers: [], rows: node.defaultRows || 15, cols: node.defaultCols || 8 }] }}
               onChange={(updatedField) => {
-                // Update preview values for live editing
+                // Update preview values when user makes changes
+                console.log('✅ LivePreview: Syncfusion spreadsheet updated:', updatedField);
                 setPreviewValues(prev => ({
                   ...prev,
                   [node.id]: updatedField
@@ -2643,6 +2887,21 @@ export default function LivePreview({ fields, values, folderName }) {
               >
                 {isModalOpen ? "Close Preview" : "Show Preview"}
               </Button>
+              <button 
+                className="save-btn" 
+                onClick={SaveForm}
+                style={{
+                  marginLeft: "10px",
+                  padding: "8px 16px",
+                  backgroundColor: "#dc2626",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "4px",
+                  cursor: "pointer"
+                }}
+              >
+                💾 Save Form
+              </button>
             </div>
           </div>
           {/* <form>{fields.map(f=>renderFormNode(f))}</form> */}

@@ -357,6 +357,18 @@ function UnifiedFormBuilder() {
     setFields((list) => {
       const updated = updateById(list, fid, props);
       console.log('✅ UnifiedFormBuilder - Fields state updated successfully');
+      
+      // Debug: Log the specific field that was updated for Syncfusion
+      const updatedField = findFieldById(updated, fid);
+      if (updatedField && updatedField.type === 'syncfusion-spreadsheet') {
+        console.log('🔍 UnifiedFormBuilder - Updated Syncfusion field:', {
+          fieldId: fid,
+          nodeValue: updatedField.value,
+          hasSheets: updatedField.value?.sheets?.length > 0,
+          dataLength: updatedField.value?.sheets?.[0]?.data?.length
+        });
+      }
+      
       return updated;
     });
     
@@ -372,6 +384,34 @@ function UnifiedFormBuilder() {
       });
     }
   };
+
+  // Helper function to find a field by ID in nested structure
+  function findFieldById(nodes, fid) {
+    for (const node of nodes) {
+      if (node.id === fid) return node;
+      if (node.children) {
+        const found = findFieldById(node.children, fid);
+        if (found) return found;
+      }
+      if (node.tabs) {
+        for (const tab of node.tabs) {
+          if (tab.children) {
+            const found = findFieldById(tab.children, fid);
+            if (found) return found;
+          }
+        }
+      }
+      if (node.rows) {
+        for (const row of node.rows) {
+          if (row.children) {
+            const found = findFieldById(row.children, fid);
+            if (found) return found;
+          }
+        }
+      }
+    }
+    return null;
+  }
 
   function updateById(nodes, fid, props) {
     if (!Array.isArray(nodes)) return nodes;

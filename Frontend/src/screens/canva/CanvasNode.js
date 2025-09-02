@@ -169,7 +169,9 @@ export default function CanvasNode({
             field={node} 
             value={node.value || { sheets: [{ data: [], headers: [], rows: node.defaultRows || 15, cols: node.defaultCols || 8 }] }}
             onChange={(updatedField) => {
-              onUpdateField(node.id, updatedField);
+              console.log('🔄 Canvas: Syncfusion onChange called with:', updatedField);
+              // Set the updatedField as the 'value' property on the node
+              onUpdateField(node.id, { value: updatedField });
             }}
             readOnly={false}
             rows={node.defaultRows || 15}

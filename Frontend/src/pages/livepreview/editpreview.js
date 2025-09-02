@@ -1055,6 +1055,21 @@ case "radio":
               <Button onClick={toggleModal}>
                 {isModalOpen ? "Close Preview" : "Edited Preview"}
               </Button>
+              <button 
+                className="save-btn" 
+                onClick={saveForm}
+                style={{
+                  marginLeft: "10px",
+                  padding: "8px 16px",
+                  backgroundColor: "#dc2626",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "4px",
+                  cursor: "pointer"
+                }}
+              >
+                💾 {formId ? "Save Changes" : "Save New Form"}
+              </button>
             </div>
           </div>
         </div>
