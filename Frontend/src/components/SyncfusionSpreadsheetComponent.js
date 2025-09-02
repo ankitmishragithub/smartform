@@ -187,6 +187,10 @@ const SyncfusionSpreadsheetComponent = ({
     const { row, col } = parseAddress(address);
     setGrid((prev) => {
       const next = ensureSize2D(prev, row, col);
+      console.log("Updated grid snapshot:", next);
+      if (ssRef.current) {
+    console.log("EJ2 internal sheets model:", ssRef.current.sheets);
+  }
       next[row][col] = newVal ?? "";
       return next;
     });

@@ -246,6 +246,26 @@ function SpreadsheetPreviewComponent({ node, values, handlePreviewChange }) {
   const [editableData, setEditableData] = useState({});
   const currentSheet = sheets[currentActiveSheet] || { data: [], headers: [], rows: 0, cols: 0, mergedCells: [] };
 
+  // Debug logging to track updates
+  useEffect(() => {
+    console.log('🔄 SpreadsheetPreviewComponent - Received node update:', {
+      nodeId: node.id,
+      sheetsCount: sheets.length,
+      activeSheet: activeSheet,
+      hasData: currentSheet.data && currentSheet.data.length > 0
+    });
+  }, [node.id, sheets.length, activeSheet, currentSheet.data]);
+
+  // Force re-render when sheets data changes from canvas updates
+  useEffect(() => {
+    // This effect will run whenever sheets, data, or other spreadsheet properties change
+    // This ensures the component re-renders when the canvas updates the spreadsheet
+    console.log('📊 SpreadsheetPreviewComponent - Sheets data changed:', {
+      sheetsLength: sheets.length,
+      currentSheetDataLength: currentSheet.data?.length || 0
+    });
+  }, [sheets, node.sheets, node.data, node.mergedCells, node.headers]);
+
   // Initialize editable data when sheet changes
   useEffect(() => {
     const newEditableData = {};

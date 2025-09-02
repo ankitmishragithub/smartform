@@ -353,6 +353,18 @@ function UnifiedFormBuilder() {
   const updateField = (fid, props) => {
     console.log('🔄 UnifiedFormBuilder - Updating field:', fid, 'with props:', props);
     
+    // Special handling for spreadsheet fields
+    if (props.sheets || props.data || props.mergedCells || props.headers) {
+      console.log('📊 UnifiedFormBuilder - Spreadsheet field update detected:', {
+        fieldId: fid,
+        hasSheets: !!props.sheets,
+        sheetsCount: props.sheets?.length || 0,
+        hasData: !!props.data,
+        hasMergedCells: !!props.mergedCells,
+        hasHeaders: !!props.headers
+      });
+    }
+    
     // Update fields state
     setFields((list) => {
       const updated = updateById(list, fid, props);
