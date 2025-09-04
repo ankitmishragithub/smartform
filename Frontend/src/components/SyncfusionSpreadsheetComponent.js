@@ -57,7 +57,27 @@ const SyncfusionSpreadsheetComponent = ({
   className = "",
   livePreview = false,
 }) => {
-  console.log('🔄 SyncfusionSpreadsheetComponent: Rendered');
+  console.log('🔄 SyncfusionSpreadsheetComponent: Rendered', {
+    fieldId: field?.id,
+    hasValue: !!value,
+    valueType: typeof value,
+    hasWorkbook: !!(value?.Workbook),
+    hasSheets: !!(value?.sheets),
+    livePreview: livePreview
+  });
+  
+  // Debug: Log detailed value structure
+  if (value && typeof value === 'object') {
+    console.log('📊 Value structure details:', {
+      keys: Object.keys(value),
+      hasWorkbook: !!value.Workbook,
+      workbookKeys: value.Workbook ? Object.keys(value.Workbook) : 'N/A',
+      hasSheets: !!(value.Workbook?.sheets),
+      sheetsCount: value.Workbook?.sheets?.length || 0,
+      firstSheetRows: value.Workbook?.sheets?.[0]?.rows?.length || 0,
+      firstSheetCols: value.Workbook?.sheets?.[0]?.rows?.[0]?.cells?.length || 0
+    });
+  }
 
   const ssRef = useRef(null);
   const changeTimer = useRef(null);
@@ -106,6 +126,78 @@ const SyncfusionSpreadsheetComponent = ({
       livePreviewBridge.unsubscribe(id, 'canvas');
     };
   }, [id, livePreview]);
+
+  // **CRITICAL: Handle value changes and ensure data persistence**
+  useEffect(() => {
+    if (!value || !value.Workbook || isLoadingState.current) return;
+    
+    const ss = ssRef.current;
+    if (!ss) return;
+    
+    console.log('🔄 Value changed, ensuring data is loaded:', {
+      hasWorkbook: !!(value?.Workbook),
+      livePreview: livePreview,
+      id: id
+    });
+    
+    const loadData = async () => {
+      try {
+        isLoadingState.current = true;
+        console.log('🎨 Loading value data into spreadsheet...');
+        
+        await ss.openFromJson({ file: value });
+        
+        console.log('✅ Value data loaded successfully');
+      } catch (error) {
+        console.error('❌ Error loading value data:', error);
+      } finally {
+        setTimeout(() => {
+          isLoadingState.current = false;
+        }, 300);
+      }
+    };
+    
+    // Load data immediately if spreadsheet is ready, otherwise wait
+    if (ss.openFromJson) {
+      loadData();
+    } else {
+      setTimeout(loadData, 100);
+    }
+  }, [value, livePreview, id]);
+
+  // **CRITICAL: Ensure data is loaded when component mounts with existing data**
+  useEffect(() => {
+    if (!value || !value.Workbook) return;
+    
+    const ss = ssRef.current;
+    if (!ss) return;
+    
+    // Check if data is already loaded by looking at the first cell
+    const checkAndLoadData = async () => {
+      try {
+        const activeSheet = ss.activeSheet || ss.getActiveSheet?.();
+        if (activeSheet && activeSheet.rows && activeSheet.rows.length > 0) {
+          const firstRow = activeSheet.rows[0];
+          const hasData = firstRow && firstRow.cells && firstRow.cells.some(cell => 
+            cell && cell.value && cell.value.toString().trim() !== ''
+          );
+          
+          if (!hasData) {
+            console.log('🔄 No data found in spreadsheet, loading from value...');
+            await ss.openFromJson({ file: value });
+            console.log('✅ Data loaded from value successfully');
+          } else {
+            console.log('✅ Data already present in spreadsheet');
+          }
+        }
+      } catch (error) {
+        console.error('❌ Error checking/loading data:', error);
+      }
+    };
+    
+    // Wait a bit for the spreadsheet to be fully initialized
+    setTimeout(checkAndLoadData, 1000);
+  }, [value]);
 
   // **CRITICAL: Capture complete Workbook state including all styles**
   const captureCompleteWorkbookState = async () => {
@@ -261,7 +353,7 @@ const extractPlainSheetData = async () => {
           }
         }
       }
-    }, 300);
+    }, 500); // Increased timeout to ensure spreadsheet is fully ready
   };
 
   // Handle any spreadsheet changes and sync complete state
