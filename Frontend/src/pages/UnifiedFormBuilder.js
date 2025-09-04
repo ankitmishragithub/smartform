@@ -353,22 +353,22 @@ function UnifiedFormBuilder() {
   const updateField = (fid, props) => {
     console.log('🔄 UnifiedFormBuilder - Updating field:', fid, 'with props:', props);
     
-    // Special handling for spreadsheet fields
-    if (props.sheets || props.data || props.mergedCells || props.headers) {
-      console.log('📊 UnifiedFormBuilder - Spreadsheet field update detected:', {
-        fieldId: fid,
-        hasSheets: !!props.sheets,
-        sheetsCount: props.sheets?.length || 0,
-        hasData: !!props.data,
-        hasMergedCells: !!props.mergedCells,
-        hasHeaders: !!props.headers
-      });
-    }
-    
     // Update fields state
     setFields((list) => {
       const updated = updateById(list, fid, props);
       console.log('✅ UnifiedFormBuilder - Fields state updated successfully');
+      
+      // Debug: Log the specific field that was updated for Syncfusion
+      const updatedField = findFieldById(updated, fid);
+      if (updatedField && updatedField.type === 'syncfusion-spreadsheet') {
+        console.log('🔍 UnifiedFormBuilder - Updated Syncfusion field:', {
+          fieldId: fid,
+          nodeValue: updatedField.value,
+          hasSheets: updatedField.value?.sheets?.length > 0,
+          dataLength: updatedField.value?.sheets?.[0]?.data?.length
+        });
+      }
+      
       return updated;
     });
     
@@ -384,6 +384,34 @@ function UnifiedFormBuilder() {
       });
     }
   };
+
+  // Helper function to find a field by ID in nested structure
+  function findFieldById(nodes, fid) {
+    for (const node of nodes) {
+      if (node.id === fid) return node;
+      if (node.children) {
+        const found = findFieldById(node.children, fid);
+        if (found) return found;
+      }
+      if (node.tabs) {
+        for (const tab of node.tabs) {
+          if (tab.children) {
+            const found = findFieldById(tab.children, fid);
+            if (found) return found;
+          }
+        }
+      }
+      if (node.rows) {
+        for (const row of node.rows) {
+          if (row.children) {
+            const found = findFieldById(row.children, fid);
+            if (found) return found;
+          }
+        }
+      }
+    }
+    return null;
+  }
 
   function updateById(nodes, fid, props) {
     if (!Array.isArray(nodes)) return nodes;
@@ -746,14 +774,17 @@ function UnifiedFormBuilder() {
     <DndProvider backend={HTML5Backend}>
       <div>
         {/* Form Config Header */}
-        <div className="form-config-header">
+        <div className="form-config-header" style={{marginTop:-30}}>
           <div className="form-config-container">
-            <div className="form-config-title">
+
+          <div className="form-config-title">
               <h2>{isEditMode ? '✏️ Edit Form' : '🎨 Smartfactory Form Builder'}</h2>
-              <p>{isEditMode ? 'Modify your existing form' : 'Create forms with drag & drop'}</p>
-            </div>
+              
+             </div>
+            
             
             <div className="form-config-fields">
+
               <div className="form-field">
                 <label>Form Name *</label>
                 <input
@@ -775,6 +806,8 @@ function UnifiedFormBuilder() {
                   />
                 </div>
               </div>
+
+              
             </div>
           </div>
           

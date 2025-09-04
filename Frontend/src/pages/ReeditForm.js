@@ -739,7 +739,9 @@ export default function ReeditForm(props) {
             type: field.type,
             label: field.label,
             hasOptions: !!field.options,
-            optionsCount: field.options?.length || 0
+            optionsCount: field.options?.length || 0,
+            hasValue: !!field.value,
+            valueType: typeof field.value
           });
         });
         
@@ -749,7 +751,7 @@ export default function ReeditForm(props) {
         schema.forEach((f) => {
           if (f.type === "checkbox") {
             init[f.id] = false;
-          } else if (f.type === "spreadsheet") {
+          } else if (f.type === "spreadsheet" || f.type === "syncfusion-spreadsheet") {
             init[f.id] = f; // original structure as default
           } else {
             init[f.id] = "";
@@ -774,8 +776,15 @@ export default function ReeditForm(props) {
         setSubmitterEmail(resp.submitterEmail || "");
         const merged = { ...baseInit };
         Object.keys(resp.answers || {}).forEach((key) => {
+          console.log(`📥 Loading answer for field ${key}:`, {
+            type: typeof resp.answers[key],
+            hasWorkbook: !!(resp.answers[key]?.Workbook),
+            hasSheets: !!(resp.answers[key]?.sheets),
+            isObject: typeof resp.answers[key] === 'object'
+          });
           merged[key] = resp.answers[key];
         });
+        console.log('📥 Final merged values:', merged);
         setValues(merged);
       })
       .catch((err) => {
@@ -1384,14 +1393,30 @@ export default function ReeditForm(props) {
           />
         );
       case "syncfusion-spreadsheet":
+        console.log('📊 Rendering Syncfusion field:', {
+          fieldId: f.id,
+          hasValue: !!val,
+          valueType: typeof val,
+          hasWorkbook: !!(val?.Workbook),
+          hasSheets: !!(val?.sheets)
+        });
         return (
           <SyncfusionSpreadsheetComponent 
             field={f} 
             value={val}
-            onChange={(updatedField) => handleChange(f.id, updatedField)}
+            onChange={(updatedField) => {
+              console.log('📝 Syncfusion renderInput onChange:', {
+                fieldId: f.id,
+                hasWorkbook: !!(updatedField?.Workbook),
+                hasSheets: !!(updatedField?.sheets),
+                valueType: typeof updatedField
+              });
+              handleChange(f.id, updatedField);
+            }}
             readOnly={false}
             rows={f.defaultRows || 15}
             cols={f.defaultCols || 8}
+            livePreview={true}
           />
         );
       case "hidden":
@@ -1611,27 +1636,7 @@ export default function ReeditForm(props) {
         </div>
       );
     }
-    if (node.type === "syncfusion-spreadsheet") {
-      return (
-        <div key={node.id} className="form-group mb-3">
-          <label htmlFor={`field-${node.id}`} className="form-label">
-            {node.label}
-            {node.required && <span className="text-danger"> *</span>}
-          </label>
-          <SyncfusionSpreadsheetComponent 
-            field={node} 
-            value={node.value || { sheets: [{ data: [], headers: [], rows: node.defaultRows || 15, cols: node.defaultCols || 8 }] }}
-            onChange={(updatedField) => {
-              // Handle field updates if needed
-              console.log('Syncfusion spreadsheet updated:', updatedField);
-            }}
-            readOnly={false}
-            rows={node.defaultRows || 15}
-            cols={node.defaultCols || 8}
-          />
-        </div>
-      );
-    }
+    // Syncfusion spreadsheet is handled in renderInput function
     return (
       <div key={node.id} className="form-group mb-3">
         <label htmlFor={fid} className="form-label">

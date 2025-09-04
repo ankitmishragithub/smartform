@@ -141,6 +141,28 @@
   }
 }
 
+/* Live Preview Mode - Hide headers and toolbar */
+.syncfusion-live-preview .e-spreadsheet .e-rowheader,
+.syncfusion-live-preview .e-spreadsheet .e-colheader {
+  display: none !important;
+}
+
+.syncfusion-live-preview .e-spreadsheet .e-toolbar {
+  display: none !important;
+}
+
+.syncfusion-live-preview .e-spreadsheet .e-formula-bar {
+  display: none !important;
+}
+
+.syncfusion-live-preview .e-spreadsheet .e-sheet-tab {
+  display: none !important;
+}
+
+.syncfusion-live-preview .e-spreadsheet .e-sheet-tab-container {
+  display: none !important;
+}
+
 /* Responsive design */
 @media (max-width: 768px) {
   .ej2-spreadsheet-field {
