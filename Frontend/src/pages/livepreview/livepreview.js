@@ -7,6 +7,10 @@ import api from '../../api/api';
 import JSpreadsheetComponent from "../../components/JSpreadsheetComponent";
 import JSpreadsheetCE4Component from "../../components/JSpreadsheetCE4Component";
 import SyncfusionSpreadsheetComponent from "../../components/SyncfusionSpreadsheetComponent";
+// Add this import after line with SyncfusionSpreadsheetComponent
+import { livePreviewBridge } from '../../utils/LivePreviewBridge';
+
+
 
 
 // Separate component to handle tabs to avoid hooks issues
@@ -245,6 +249,26 @@ function SpreadsheetPreviewComponent({ node, values, handlePreviewChange }) {
   const [currentActiveSheet, setCurrentActiveSheet] = useState(activeSheet);
   const [editableData, setEditableData] = useState({});
   const currentSheet = sheets[currentActiveSheet] || { data: [], headers: [], rows: 0, cols: 0, mergedCells: [] };
+
+  // Debug logging to track updates
+  useEffect(() => {
+    console.log('🔄 SpreadsheetPreviewComponent - Received node update:', {
+      nodeId: node.id,
+      sheetsCount: sheets.length,
+      activeSheet: activeSheet,
+      hasData: currentSheet.data && currentSheet.data.length > 0
+    });
+  }, [node.id, sheets.length, activeSheet, currentSheet.data]);
+
+  // Force re-render when sheets data changes from canvas updates
+  useEffect(() => {
+    // This effect will run whenever sheets, data, or other spreadsheet properties change
+    // This ensures the component re-renders when the canvas updates the spreadsheet
+    console.log('📊 SpreadsheetPreviewComponent - Sheets data changed:', {
+      sheetsLength: sheets.length,
+      currentSheetDataLength: currentSheet.data?.length || 0
+    });
+  }, [sheets, node.sheets, node.data, node.mergedCells, node.headers]);
 
   // Initialize editable data when sheet changes
   useEffect(() => {
@@ -873,8 +897,44 @@ export default function LivePreview({ fields, values, folderName }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [previewValues, setPreviewValues] = useState({});
   const [editableCells, setEditableCells] = useState(new Set());
+  const [syncfusionData, setSyncfusionData] = useState({});
   
   const toggleModal = () => setIsModalOpen((open) => !open);
+
+    // **NEW: Subscribe to canvas updates for Syncfusion**
+  useEffect(() => {
+    const subscriptions = [];
+    
+    fields.forEach(field => {
+      if (field.type === 'syncfusion-spreadsheet') {
+        const handleCanvasUpdate = (fullWorkbookData, source) => {
+          if (source === 'canvas') {
+            console.log('📡 Preview: Received Workbook from canvas', { 
+              fieldId: field.id, 
+              hasWorkbook: !!(fullWorkbookData?.Workbook) 
+            });
+            setPreviewValues(prev => ({
+              ...prev,
+              [field.id]: fullWorkbookData
+            }));
+            setSyncfusionData(prev => ({
+              ...prev,
+              [field.id]: fullWorkbookData
+            }));
+          }
+        };
+
+        livePreviewBridge.subscribe(field.id, handleCanvasUpdate, 'preview');
+        subscriptions.push({ fieldId: field.id, source: 'preview' });
+      }
+    });
+
+    return () => {
+      subscriptions.forEach(({ fieldId, source }) => {
+        livePreviewBridge.unsubscribe(fieldId, source);
+      });
+    };
+  }, [fields]);
   
   // IMPORTANT: Live preview is completely isolated from the main form
   // Changes made here do NOT affect the canvas/form builder
@@ -977,34 +1037,28 @@ export default function LivePreview({ fields, values, folderName }) {
     setEditableCells(newEditableCells);
   };
   
-  // Handle preview changes (only update local preview values, don't pass back to form)
+    // **UPDATED: Handle preview changes with live sync**
   const handlePreviewChange = (id, val) => {
-    console.log('🔍 LivePreview: handlePreviewChange called', { id, val });
+    console.log('🔄 LivePreview: handlePreviewChange called', { id, val });
+    
     setPreviewValues(prev => {
-      const currentField = prev[id] || {};
-      const newField = { ...currentField, ...val };
+      const updatedField = typeof val === 'object' && val !== null ? val : val;
       
-      // Ensure all essential properties are preserved
-      const updatedField = {
-        ...currentField,
-        ...newField,
-        // Preserve these properties if they exist in the current field
-        cellStyles: newField.cellStyles || currentField.cellStyles || {},
-        mergedCells: newField.mergedCells || currentField.mergedCells || {},
-        cellTypes: newField.cellTypes || currentField.cellTypes || {},
-        cellDropdowns: newField.cellDropdowns || currentField.cellDropdowns || {},
-        rowTypes: newField.rowTypes || currentField.rowTypes || {},
-        rowDropdowns: newField.rowDropdowns || currentField.rowDropdowns || {},
-        columnTypes: newField.columnTypes || currentField.columnTypes || {},
-        columnDropdowns: newField.columnDropdowns || currentField.columnDropdowns || {},
-        columnWidths: newField.columnWidths || currentField.columnWidths || {},
-        rowHeights: newField.rowHeights || currentField.rowHeights || {}
-      };
+      // **LIVE SYNC: Update bridge**
+      livePreviewBridge.updateFromPreview(id, updatedField);
       
       return { ...prev, [id]: updatedField };
     });
-    // Don't call onChange - keep live preview isolated from main form
+
+    // Also update Syncfusion-specific data
+    if (fields.find(f => f.id === id && f.type === 'syncfusion-spreadsheet')) {
+      setSyncfusionData(prev => ({
+        ...prev,
+        [id]: val
+      }));
+    }
   };
+
   
   // Handle column type changes (only update local preview values, don't affect main form)
   const handleColumnTypeChange = (fieldId, colIndex, newValue) => {
@@ -1109,42 +1163,39 @@ export default function LivePreview({ fields, values, folderName }) {
   };
 
   const SaveForm = async () => {
-    if(!fields || fields.length === 0) {
+    if (!fields || fields.length === 0) {
       alert("No fields to save");
       return;
     }
-    if(!folderName || !folderName.trim()) {
+    if (!folderName || !folderName.trim()) {
       alert("Please enter a folder name before saving");
       return;
     }
+    
     try {
-      // Add folderName to schema just like heading
+      const updatedFields = fields.map(field => {
+        if (previewValues[field.id]) {
+          if (field.type === 'syncfusion-spreadsheet') {
+            return { ...field, value: previewValues[field.id] };
+          } else {
+            return { ...field, value: previewValues[field.id] };
+          }
+        }
+        return field;
+      });
+      
       const schemaWithFolder = [
-        {
-          id: "form-folder",
-          type: "folderName",
-          label: folderName.trim()
-        },
-        ...fields
+        { id: "form-folder", type: "folderName", label: folderName.trim() },
+        ...updatedFields
       ];
       
-      const payload = {
-        schemaJson: schemaWithFolder
-      };
-      
-      console.log("📤 SENDING TO API:", {
-        schemaJson: payload.schemaJson,
-        fieldsLength: schemaWithFolder.length,
-        folderName: folderName.trim()
-      });
+      const payload = { schemaJson: schemaWithFolder };
       
       const { data } = await api.post('/forms', payload);
       console.log("✅ Form saved:", data);
       alert(`Saved! New form ID is ${data._id}`);
-      //history.push('/admin/forms');
     } catch (err) {
       console.error("❌ Save error:", err);
-      console.error("❌ Error response:", err.response?.data);
       alert('Save failed: ' + (err.response?.data?.error || err.message));
     }
   };
@@ -1610,6 +1661,67 @@ export default function LivePreview({ fields, values, folderName }) {
         return <input id={id} type="text" className="form-control form-control-sm" disabled />;
     }
   }
+
+
+    // **NEW: Syncfusion Spreadsheet rendering with live sync**
+  function renderSyncfusionSpreadsheet(node) {
+    const bridgeData = livePreviewBridge.getCurrentData(node.id);
+    const syncData = syncfusionData[node.id] || bridgeData || previewValues[node.id] || node.value || values[node.id];
+
+    const hasBridgeData = !!bridgeData;
+    const hasWorkbook = !!(syncData?.Workbook);
+
+    return (
+      <div key={node.id} style={{ marginBottom: "1rem", position: 'relative' }}>
+        {/* Live Sync Status Indicator */}
+        <div style={{
+          position: 'absolute',
+          top: '10px',
+          right: '10px',
+          fontSize: '10px',
+          backgroundColor: hasBridgeData ? '#10b981' : '#6b7280',
+          color: 'white',
+          padding: '2px 6px',
+          borderRadius: '4px',
+          zIndex: 1000,
+          opacity: 0.8
+        }}>
+          {hasBridgeData ? '🔄 LIVE' : '📝 LOCAL'} {hasWorkbook ? '+STYLES' : ''}
+        </div>
+
+        <div style={{
+          border: "1px solid #e5e7eb",
+          borderRadius: "8px",
+          overflow: "auto",
+          backgroundColor: "white"
+        }}>
+          {/* Labels hidden for clean live preview */}
+          <div style={{ padding: "20px" }}>
+            <SyncfusionSpreadsheetComponent
+              field={node}
+              value={syncData || { 
+                sheets: [{ 
+                  data: [], 
+                  headers: [], 
+                  rows: node.defaultRows || 15, 
+                  cols: node.defaultCols || 8 
+                }] 
+              }}
+              onChange={(updatedWorkbook) => {
+                console.log('✅ LivePreview: Syncfusion updated:', updatedWorkbook);
+                handlePreviewChange(node.id, updatedWorkbook);
+              }}
+              readOnly={false}
+              rows={node.defaultRows || 15}
+              cols={node.defaultCols || 8}
+              livePreview={true}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
 
   // Recursively render columns / tables / leaf fields
   function renderFormNode(node) {
@@ -2535,45 +2647,8 @@ export default function LivePreview({ fields, values, folderName }) {
 
   // Syncfusion Spreadsheet layout
   if (node.type === "syncfusion-spreadsheet") {
-    const syncfusionData = previewValues[node.id] || values[node.id];
-    
-    return (
-      <div key={node.id} style={{ marginBottom: "1rem" }}>
-        <div style={{
-          border: "1px solid #e5e7eb",
-          borderRadius: "8px",
-          overflow: "auto",
-          backgroundColor: "white"
-        }}>
-          <div style={{
-            padding: "12px",
-            backgroundColor: "#f8f9fa",
-            borderBottom: "1px solid #e5e7eb",
-            fontWeight: "600",
-            color: "#374151"
-          }}>
-            📈 Syncfusion Spreadsheet - {node.label || 'Spreadsheet'}
-          </div>
-          <div style={{ padding: "20px" }}>
-            <SyncfusionSpreadsheetComponent
-              field={node}
-              value={syncfusionData || { sheets: [{ data: [], headers: [], rows: node.defaultRows || 15, cols: node.defaultCols || 8 }] }}
-              onChange={(updatedField) => {
-                // Update preview values for live editing
-                setPreviewValues(prev => ({
-                  ...prev,
-                  [node.id]: updatedField
-                }));
-              }}
-              readOnly={false}
-              rows={node.defaultRows || 15}
-              cols={node.defaultCols || 8}
-            />
-          </div>
-        </div>
-      </div>
-    );
-  }
+      return renderSyncfusionSpreadsheet(node);
+    }
 
   // Well / highlighted container
   if (node.type === "well") {

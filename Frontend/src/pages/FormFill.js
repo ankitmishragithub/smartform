@@ -5,6 +5,7 @@ import "../css/FormFill.css"; //
 import "../css/Livepreview.css";
 import JSpreadsheetComponent from "../components/JSpreadsheetComponent";
 import JSpreadsheetCE4Component from "../components/JSpreadsheetCE4Component";
+import SyncfusionSpreadsheetComponent from "../components/SyncfusionSpreadsheetComponent";
 import { useAuth } from "../contexts/AuthContext";
   
 // Spreadsheet component for form fill
@@ -1146,7 +1147,9 @@ export default function FormFillPage(props) {
             type: field.type,
             label: field.label,
             hasOptions: !!field.options,
-            optionsCount: field.options?.length || 0
+            optionsCount: field.options?.length || 0,
+            hasValue: !!field.value,
+            valueType: typeof field.value
           });
         });
         
@@ -1156,7 +1159,7 @@ export default function FormFillPage(props) {
         schema.forEach((f) => {
           if (f.type === "checkbox") {
             init[f.id] = false;
-          } else if (f.type === "spreadsheet") {
+          } else if (f.type === "spreadsheet" || f.type === "syncfusion-spreadsheet") {
             init[f.id] = f; // original structure as default
           } else {
             init[f.id] = "";
@@ -1766,6 +1769,33 @@ export default function FormFillPage(props) {
             isFormFill={true}
           />
         );
+      case "syncfusion-spreadsheet":
+        console.log('📊 FormFill: Rendering Syncfusion field:', {
+          fieldId: f.id,
+          hasValue: !!val,
+          valueType: typeof val,
+          hasWorkbook: !!(val?.Workbook),
+          hasSheets: !!(val?.sheets)
+        });
+        return (
+          <SyncfusionSpreadsheetComponent 
+            field={f} 
+            value={val}
+            onChange={(updatedField) => {
+              console.log('📝 FormFill: Syncfusion onChange:', {
+                fieldId: f.id,
+                hasWorkbook: !!(updatedField?.Workbook),
+                hasSheets: !!(updatedField?.sheets),
+                valueType: typeof updatedField
+              });
+              handleChange(f.id, updatedField);
+            }}
+            readOnly={false}
+            rows={f.defaultRows || 15}
+            cols={f.defaultCols || 8}
+            livePreview={true}
+          />
+        );
       case "hidden":
         return (
           <Input
@@ -1975,6 +2005,7 @@ export default function FormFillPage(props) {
         </div>
       );
     }
+    
     if (node.type === "spreadsheet") {
       return (
         <div key={node.id} className="form-group mb-3">

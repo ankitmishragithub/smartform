@@ -74,7 +74,7 @@ h1 {
 
 .form-config-header {
   background: 
-    linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%),
+    linear-gradient(135deg, #667eea 0%, #334155 50%, #334155 100%),
     linear-gradient(45deg, rgba(255, 255, 255, 0.1) 0%, transparent 100%);
   border-radius: 16px;
   padding: 0;
@@ -102,9 +102,10 @@ h1 {
 }
 
 .form-config-container {
-  padding: 32px;
+  padding: 3px;
   position: relative;
   z-index: 1;
+  display: flex;
 }
 
 /* Responsive improvements for form config header */
@@ -133,8 +134,8 @@ h1 {
 }
 
 .form-config-title {
-  text-align: center;
-  margin-bottom: 24px;
+  text-align: left;
+  margin: 24px;
 }
 
 .form-config-title h2 {
@@ -157,7 +158,7 @@ h1 {
 }
 
 .form-config-fields {
-  display: grid;
+  display: flex;
   grid-template-columns: 1fr 1fr;
   gap: 24px;
   max-width: 900px;
@@ -225,7 +226,7 @@ h1 {
 }
 
 .form-input {
-  padding: 16px 18px;
+  padding: 2px 3px;
   border: 2px solid rgba(255, 255, 255, 0.3);
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.2);
@@ -266,7 +267,7 @@ h1 {
 }
 
 .folder-input-wrapper .form-control {
-  padding: 16px 18px;
+  padding: 2px 3px;
   border: 2px solid rgba(255, 255, 255, 0.3);
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.2);
@@ -426,7 +427,7 @@ h1 {
 
 .builder-container {
   display: grid;
-  grid-template-columns: 380px 1fr; /* Palette takes wider fixed width, Canvas takes remaining space */
+  grid-template-columns: 250px 1fr; /* Palette takes wider fixed width, Canvas takes remaining space */
   gap: var(--spacing);
   height: calc(100vh - 140px); /* Further increased height for better palette visibility */
 }
