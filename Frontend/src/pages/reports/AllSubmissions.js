@@ -10,6 +10,7 @@ import {
 } from 'reactstrap';
 import api from '../../api/api';
 import './response-reports.css';
+import SyncfusionSpreadsheetComponent from '../../components/SyncfusionSpreadsheetComponent';
 
 // Form Display Component (Read-only version of FormFill)
 const FormDisplayComponent = ({ form, response, hideTitles = false }) => {
@@ -266,6 +267,49 @@ const FormDisplayComponent = ({ form, response, hideTitles = false }) => {
       return (
         <div key={node.id} className="form-group mb-3">
           {renderReadOnlyJSpreadsheetCE4(node, response.answers[node.id])}
+        </div>
+      );
+    }
+
+    if (node.type === "syncfusion-spreadsheet") {
+      const syncfusionData = response.answers[node.id];
+      
+      if (!syncfusionData || !syncfusionData.Workbook) {
+        return (
+          <div key={node.id} className="form-group mb-3">
+            <Label className="form-label fw-bold text-dark mb-2">
+              {node.label}
+            </Label>
+            <div className="form-control-plaintext" style={{
+              padding: "0.75rem",
+              backgroundColor: "#f8f9fa",
+              borderRadius: "6px",
+              border: "1px solid #e9ecef",
+              minHeight: "2.5rem",
+              display: "flex",
+              alignItems: "center"
+            }}>
+              <span style={{ color: "#6c757d", fontStyle: "italic" }}>No Syncfusion spreadsheet data</span>
+            </div>
+          </div>
+        );
+      }
+
+      return (
+        <div key={node.id} className="form-group mb-3">
+          <Label className="form-label fw-bold text-dark mb-2">
+            {node.label}
+          </Label>
+          <SyncfusionSpreadsheetComponent 
+            field={node}
+            value={syncfusionData}
+            onChange={() => {}} // Read-only mode
+            readOnly={true}
+            rows={node.defaultRows || 15}
+            cols={node.defaultCols || 8}
+            livePreview={true}
+            height={300}
+          />
         </div>
       );
     }

@@ -237,6 +237,32 @@ router.get('/:responseId', async (req, res) => {
     console.log('Fetching response:', responseId);
     console.log('Response fields:', Object.keys(response.toObject ? response.toObject() : response));
     
+    // Debug: Log answers structure for Syncfusion data
+    if (response.answers) {
+      console.log('Answers structure:');
+      Object.keys(response.answers).forEach(key => {
+        const answer = response.answers[key];
+        console.log(`  ${key}:`, {
+          type: typeof answer,
+          hasWorkbook: !!(answer?.Workbook),
+          hasSheets: !!(answer?.sheets),
+          isObject: typeof answer === 'object',
+          keys: typeof answer === 'object' ? Object.keys(answer) : 'N/A'
+        });
+        
+        // If it's a Syncfusion spreadsheet, log more details
+        if (answer && typeof answer === 'object' && answer.Workbook) {
+          console.log(`    Syncfusion data for ${key}:`, {
+            hasWorkbook: !!answer.Workbook,
+            hasSheets: !!(answer.Workbook?.sheets),
+            sheetsCount: answer.Workbook?.sheets?.length || 0,
+            firstSheetRows: answer.Workbook?.sheets?.[0]?.rows?.length || 0,
+            firstSheetCols: answer.Workbook?.sheets?.[0]?.rows?.[0]?.cells?.length || 0
+          });
+        }
+      });
+    }
+    
     res.json(response);
   } catch (error) {
     console.error('Error fetching response:', error);

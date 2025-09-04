@@ -776,13 +776,28 @@ export default function ReeditForm(props) {
         setSubmitterEmail(resp.submitterEmail || "");
         const merged = { ...baseInit };
         Object.keys(resp.answers || {}).forEach((key) => {
+          const answer = resp.answers[key];
           console.log(`📥 Loading answer for field ${key}:`, {
-            type: typeof resp.answers[key],
-            hasWorkbook: !!(resp.answers[key]?.Workbook),
-            hasSheets: !!(resp.answers[key]?.sheets),
-            isObject: typeof resp.answers[key] === 'object'
+            type: typeof answer,
+            hasWorkbook: !!(answer?.Workbook),
+            hasSheets: !!(answer?.sheets),
+            isObject: typeof answer === 'object',
+            keys: typeof answer === 'object' ? Object.keys(answer) : 'N/A'
           });
-          merged[key] = resp.answers[key];
+          
+          // If it's a Syncfusion spreadsheet, log more details
+          if (answer && typeof answer === 'object' && answer.Workbook) {
+            console.log(`    🔍 Syncfusion data details for ${key}:`, {
+              hasWorkbook: !!answer.Workbook,
+              hasSheets: !!(answer.Workbook?.sheets),
+              sheetsCount: answer.Workbook?.sheets?.length || 0,
+              firstSheetRows: answer.Workbook?.sheets?.[0]?.rows?.length || 0,
+              firstSheetCols: answer.Workbook?.sheets?.[0]?.rows?.[0]?.cells?.length || 0,
+              sampleData: answer.Workbook?.sheets?.[0]?.rows?.[0]?.cells?.slice(0, 3) || []
+            });
+          }
+          
+          merged[key] = answer;
         });
         console.log('📥 Final merged values:', merged);
         setValues(merged);

@@ -19,6 +19,7 @@ import {
 } from 'reactstrap';
 import api from '../api/api';
 import { logResponseData, logFormData, validateResponseData, validateFormData } from '../utils/debugUtils';
+import SyncfusionSpreadsheetComponent from '../components/SyncfusionSpreadsheetComponent';
 
 export default function ResponseDetails() {
   const location = useLocation();
@@ -648,6 +649,62 @@ export default function ResponseDetails() {
         );
       }
 
+      if (node.type === "syncfusion-spreadsheet") {
+        // Handle Syncfusion spreadsheet data structure
+        const syncfusionData = answers[node.id];
+        
+        console.log('🔍 Syncfusion data in ResponseDetails:', {
+          fieldId: node.id,
+          hasData: !!syncfusionData,
+          hasWorkbook: !!(syncfusionData?.Workbook),
+          hasSheets: !!(syncfusionData?.Workbook?.sheets),
+          dataType: typeof syncfusionData
+        });
+        
+        if (!syncfusionData || !syncfusionData.Workbook) {
+          return (
+            <div style={{ 
+              padding: "2rem", 
+              textAlign: "center", 
+              backgroundColor: "#f8f9fa", 
+              border: "2px dashed #dee2e6",
+              borderRadius: "8px",
+              marginBottom: "1rem"
+            }}>
+              <i className="ni ni-grid-3x3-gap" style={{ fontSize: "2rem", color: "#6b7280", marginBottom: "0.5rem" }}></i>
+              <div style={{ color: "#6b7280" }}>
+                <strong>📊 Syncfusion Spreadsheet</strong>
+                <br />
+                <small>No spreadsheet data</small>
+              </div>
+            </div>
+          );
+        }
+
+        return (
+          <div style={{ marginBottom: "1rem" }}>
+            <div style={{ 
+              fontWeight: "600", 
+              color: "#495057", 
+              marginBottom: "0.5rem",
+              fontSize: "14px"
+            }}>
+              {node.label}
+            </div>
+            <SyncfusionSpreadsheetComponent 
+              field={node}
+              value={syncfusionData}
+              onChange={() => {}} // Read-only mode
+              readOnly={true}
+              rows={node.defaultRows || 15}
+              cols={node.defaultCols || 8}
+              livePreview={true}
+              height={300}
+            />
+          </div>
+        );
+      }
+
       // For regular form fields
       if (node.type && node.type !== 'folderName' && node.type !== 'heading') {
         const value = answers[node.id];
@@ -835,68 +892,9 @@ export default function ResponseDetails() {
           <Col>
             <Card>
               <CardBody>
-                <div className="d-flex justify-content-between align-items-center mb-3">
-                  <h5 className="mb-0">Response Data</h5>
-                  <div className="d-flex gap-2">
-                    {isEditMode ? (
-                      <>
-                        <Button 
-                          color="success" 
-                          size="sm"
-                          onClick={handleSaveResponse}
-                          disabled={saving}
-                        >
-                          {saving ? (
-                            <>
-                              <Spinner size="sm" className="me-1" />
-                              Saving...
-                            </>
-                          ) : (
-                            <>
-                              <i className="ni ni-check me-1"></i>
-                              Save Changes
-                            </>
-                          )}
-                        </Button>
-                        <Button 
-                          color="secondary" 
-                          size="sm"
-                          onClick={handleCancelEdit}
-                        >
-                          <i className="ni ni-cross me-1"></i>
-                          Cancel
-                        </Button>
-                      </>
-                    ) : (
-                      <>
-                        <Button 
-                          color="info" 
-                          size="sm"
-                          onClick={() => { setShowReport(true); fetchAllResponses(); }}
-                        >
-                          <i className="ni ni-chart-bar-32 me-1"></i>
-                          All Responses
-                        </Button>
-                        <Button 
-                          color="warning" 
-                          size="sm"
-                          onClick={handleEditResponse}
-                        >
-                          <i className="ni ni-edit me-1"></i>
-                          Edit Response
-                        </Button>
-                        <Button 
-                          color="danger" 
-                          size="sm"
-                          onClick={() => setShowDeleteModal(true)}
-                        >
-                          <i className="ni ni-trash me-1"></i>
-                          Delete
-                        </Button>
-                      </>
-                    )}
-                  </div>
-                </div>
+                                 <div className="d-flex justify-content-between align-items-center mb-3">
+                   <h5 className="mb-0">Response Data</h5>
+                 </div>
 
                 {/* Filter Section - Only show in view mode */}
                 {!isEditMode && (
