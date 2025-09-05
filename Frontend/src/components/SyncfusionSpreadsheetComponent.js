@@ -127,6 +127,9 @@ const SyncfusionSpreadsheetComponent = ({
     };
   }, [id, livePreview]);
 
+
+ // or [] to only run once, or adapt according to your data flow
+
   // **CRITICAL: Handle value changes and ensure data persistence**
   useEffect(() => {
     if (!value || !value.Workbook || isLoadingState.current) return;
