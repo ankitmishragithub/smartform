@@ -87,6 +87,49 @@ const SyncfusionSpreadsheetComponent = ({
   const initiallyFilledCells = useRef(new Set()); // Track cells that were filled when component loaded
 
   // **CRITICAL: Subscribe to live sync updates**
+
+  async function fetchDropdownData() {
+  const base = process.env.REACT_APP_API_BASE || 'http://localhost:4000';
+  const url = `${base}/api/options/sample`;
+  const response = await fetch(url);
+  const ct = response.headers.get('content-type') || '';
+  if (!response.ok) {
+    const text = await response.text().catch(() => '');
+    throw new Error(`HTTP ${response.status} fetching ${url}: ${text.slice(0,200)}`);
+  }
+  if (!ct.includes('application/json')) {
+    const text = await response.text().catch(() => '');
+    throw new Error(`Non-JSON response from ${url}: ${text.slice(0,200)}`);
+  }
+  const data = await response.json();
+  return Array.isArray(data?.options) ? data.options : [];
+}
+
+  // Apply list validation with provided options to a range
+  const applyDropdown = (ss, options, sheetIndex = 0, range = 'A1:A10') => {
+    if (!ss || !Array.isArray(options) || options.length === 0) {
+      console.warn('applyDropdown: missing ss or options');
+      return;
+    }
+    try {
+      const activeSheet = ss.getActiveSheet ? ss.getActiveSheet() : (ss.sheets ? ss.sheets[sheetIndex] : null);
+      const sheetName = activeSheet?.name || 'Sheet1';
+      const hasBang = range.includes('!');
+      const qualifiedRange = hasBang ? range : `${sheetName}!${range}`;
+      const rule = {
+        type: 'List',
+        operator: 'Between',
+        value1: options.join(','),
+        ignoreBlank: true,
+        inCellDropDown: true
+      };
+      ss.addDataValidation(rule, qualifiedRange);
+      console.log('✅ Applied dropdown to', qualifiedRange, 'with', options.length, 'options');
+    } catch (e) {
+      console.warn('addDataValidation error:', e);
+    }
+  };
+
   useEffect(() => {
     const handlePreviewUpdate = async (fullWorkbookData, source) => {
       if (source === 'preview' && fullWorkbookData && !isLoadingState.current) {
@@ -440,6 +483,14 @@ const extractPlainSheetData = async () => {
           await makeInitiallyFilledCellsReadOnly();
         }, 1000);
       }
+
+      // After initialization, fetch dropdown options and apply validation
+      try {
+        const options = await fetchDropdownData();
+        applyDropdown(ss, options, 0, 'B2:B20');
+      } catch (e) {
+        console.warn('Dropdown setup failed:', e);
+      }
     }, 500); // Increased timeout to ensure spreadsheet is fully ready
   };
 
@@ -527,7 +578,6 @@ const extractPlainSheetData = async () => {
           allowSave={true}
           allowCellFormatting={true}
           allowNumberFormatting={true}
-          allowFontFormatting={true}
           created={handleCreated}
           actionComplete={handleActionComplete}
         >
