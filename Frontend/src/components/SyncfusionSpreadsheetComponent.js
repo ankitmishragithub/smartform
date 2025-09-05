@@ -84,6 +84,7 @@ const SyncfusionSpreadsheetComponent = ({
   const isLoadingState = useRef(false);
   const id = field?.id || 'spreadsheet';
   const [isUpdatingFromBridge, setIsUpdatingFromBridge] = useState(false);
+  const initiallyFilledCells = useRef(new Set()); // Track cells that were filled when component loaded
 
   // **CRITICAL: Subscribe to live sync updates**
   useEffect(() => {
@@ -308,13 +309,13 @@ const extractPlainSheetData = async () => {
   }
 };
 
-  // Function to detect filled cells and make them read-only (for form fill mode)
-  const makeFilledCellsReadOnly = async () => {
+  // Function to record initially filled cells (for tracking what was pre-filled)
+  const recordInitiallyFilledCells = async () => {
     const ss = ssRef.current;
     if (!ss || !livePreview) return; // Only apply in form fill mode (livePreview=true)
     
     try {
-      console.log('🔒 Making filled cells read-only for form fill mode...');
+      console.log('📝 Recording initially filled cells...');
       
       // Get active sheet
       let activeSheet = null;
@@ -326,7 +327,10 @@ const extractPlainSheetData = async () => {
       
       if (!activeSheet || !activeSheet.rows) return;
       
-      // Iterate through all rows and cells to find filled ones
+      // Clear previous records
+      initiallyFilledCells.current.clear();
+      
+      // Iterate through all rows and cells to find initially filled ones
       for (let rowIndex = 0; rowIndex < activeSheet.rows.length; rowIndex++) {
         const row = activeSheet.rows[rowIndex];
         if (!row || !row.cells) continue;
@@ -334,21 +338,41 @@ const extractPlainSheetData = async () => {
         for (let colIndex = 0; colIndex < row.cells.length; colIndex++) {
           const cell = row.cells[colIndex];
           if (cell && cell.value && cell.value.toString().trim() !== '') {
-            // Cell has content, make it read-only
+            // Cell has content, record it as initially filled
             const cellAddress = `${numToCol(colIndex)}${rowIndex + 1}`;
-            try {
-              ss.setRangeReadOnly(true, cellAddress, 0);
-              console.log(`🔒 Made cell ${cellAddress} read-only`);
-            } catch (error) {
-              console.warn(`Error making cell ${cellAddress} read-only:`, error);
-            }
+            initiallyFilledCells.current.add(cellAddress);
+            console.log(`📝 Recorded initially filled cell: ${cellAddress}`);
           }
         }
       }
       
-      console.log('✅ Filled cells have been made read-only');
+      console.log(`✅ Recorded ${initiallyFilledCells.current.size} initially filled cells`);
     } catch (error) {
-      console.error('❌ Error making filled cells read-only:', error);
+      console.error('❌ Error recording initially filled cells:', error);
+    }
+  };
+
+  // Function to make only initially filled cells read-only (for form fill mode)
+  const makeInitiallyFilledCellsReadOnly = async () => {
+    const ss = ssRef.current;
+    if (!ss || !livePreview) return; // Only apply in form fill mode (livePreview=true)
+    
+    try {
+      console.log('🔒 Making initially filled cells read-only for form fill mode...');
+      
+      // Make only initially filled cells read-only
+      for (const cellAddress of initiallyFilledCells.current) {
+        try {
+          ss.setRangeReadOnly(true, cellAddress, 0);
+          console.log(`🔒 Made initially filled cell ${cellAddress} read-only`);
+        } catch (error) {
+          console.warn(`Error making cell ${cellAddress} read-only:`, error);
+        }
+      }
+      
+      console.log(`✅ Made ${initiallyFilledCells.current.size} initially filled cells read-only`);
+    } catch (error) {
+      console.error('❌ Error making initially filled cells read-only:', error);
     }
   };
 
@@ -371,9 +395,10 @@ const extractPlainSheetData = async () => {
           
           console.log('✅ Initial Workbook state loaded successfully');
           
-          // After loading data, make filled cells read-only for form fill mode
-          setTimeout(() => {
-            makeFilledCellsReadOnly();
+          // After loading data, record initially filled cells and make them read-only for form fill mode
+          setTimeout(async () => {
+            await recordInitiallyFilledCells();
+            await makeInitiallyFilledCellsReadOnly();
             isLoadingState.current = false;
           }, 500);
         } catch (error) {
@@ -400,14 +425,16 @@ const extractPlainSheetData = async () => {
           }
         }
         
-        // After loading data, make filled cells read-only for form fill mode
-        setTimeout(() => {
-          makeFilledCellsReadOnly();
+        // After loading data, record initially filled cells and make them read-only for form fill mode
+        setTimeout(async () => {
+          await recordInitiallyFilledCells();
+          await makeInitiallyFilledCellsReadOnly();
         }, 500);
       } else if (livePreview) {
-        // Even if no initial data, still apply read-only logic after a delay
-        setTimeout(() => {
-          makeFilledCellsReadOnly();
+        // Even if no initial data, still record any existing cells and apply read-only logic after a delay
+        setTimeout(async () => {
+          await recordInitiallyFilledCells();
+          await makeInitiallyFilledCellsReadOnly();
         }, 1000);
       }
     }, 500); // Increased timeout to ensure spreadsheet is fully ready
@@ -423,13 +450,7 @@ const extractPlainSheetData = async () => {
       id: id
     });
     
-    // For form fill mode, make newly filled cells read-only
-    if (livePreview && args?.action && ['cellSave', 'edit'].includes(args.action)) {
-      // Small delay to ensure cell value is committed
-      setTimeout(() => {
-        makeFilledCellsReadOnly();
-      }, 100);
-    }
+    // Note: We don't make newly filled cells read-only - only initially filled cells are protected
     
     // Debounce to avoid too frequent captures
     if (changeTimer.current) clearTimeout(changeTimer.current);
