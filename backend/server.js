@@ -42,14 +42,23 @@ app.use(cors());
 
 
 // 4) Mount your API routes
-console.log('Mounting health routes...');
 app.use('/api/health',   healthRoutes);
-console.log('Mounting auth routes...');
 app.use('/api/auth',     authRoutes);
-console.log('Mounting form routes...');
 app.use('/api/forms',    formRoutes);
-console.log('Mounting response routes...');
 app.use('/api/responses', responseRoutes);
+
+// Simple sample options endpoint for dropdowns
+app.get('/api/options/sample', (req, res) => {
+  // In real usage, fetch from DB or external API
+  res.json({
+    options: [
+      'it',
+      'account',
+      'cs',
+      'finance'
+    ]
+  });
+});
 
 
 // --- SPA fallback (Express 5-safe) ---
