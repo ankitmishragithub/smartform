@@ -1793,7 +1793,7 @@ export default function FormFillPage(props) {
             readOnly={false}
             rows={f.defaultRows || 15}
             cols={f.defaultCols || 8}
-            livePreview={true}
+            livePreview={true} // This enables the read-only functionality for filled cells
           />
         );
       case "hidden":

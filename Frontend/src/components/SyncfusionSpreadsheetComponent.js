@@ -311,6 +311,50 @@ const extractPlainSheetData = async () => {
   }
 };
 
+  // Function to detect filled cells and make them read-only (for form fill mode)
+  const makeFilledCellsReadOnly = async () => {
+    const ss = ssRef.current;
+    if (!ss || !livePreview) return; // Only apply in form fill mode (livePreview=true)
+    
+    try {
+      console.log('🔒 Making filled cells read-only for form fill mode...');
+      
+      // Get active sheet
+      let activeSheet = null;
+      if (ss.activeSheet) {
+        activeSheet = ss.activeSheet;
+      } else if (ss.getActiveSheet && typeof ss.getActiveSheet === 'function') {
+        activeSheet = ss.getActiveSheet();
+      }
+      
+      if (!activeSheet || !activeSheet.rows) return;
+      
+      // Iterate through all rows and cells to find filled ones
+      for (let rowIndex = 0; rowIndex < activeSheet.rows.length; rowIndex++) {
+        const row = activeSheet.rows[rowIndex];
+        if (!row || !row.cells) continue;
+        
+        for (let colIndex = 0; colIndex < row.cells.length; colIndex++) {
+          const cell = row.cells[colIndex];
+          if (cell && cell.value && cell.value.toString().trim() !== '') {
+            // Cell has content, make it read-only
+            const cellAddress = `${numToCol(colIndex)}${rowIndex + 1}`;
+            try {
+              ss.setRangeReadOnly(true, cellAddress, 0);
+              console.log(`🔒 Made cell ${cellAddress} read-only`);
+            } catch (error) {
+              console.warn(`Error making cell ${cellAddress} read-only:`, error);
+            }
+          }
+        }
+      }
+      
+      console.log('✅ Filled cells have been made read-only');
+    } catch (error) {
+      console.error('❌ Error making filled cells read-only:', error);
+    }
+  };
+
   // **CRITICAL: Apply initial complete state on creation**
   const handleCreated = async () => {
     console.log('🔄 Syncfusion Spreadsheet created');
@@ -329,9 +373,12 @@ const extractPlainSheetData = async () => {
           await ss.openFromJson({ file: value });
           
           console.log('✅ Initial Workbook state loaded successfully');
+          
+          // After loading data, make filled cells read-only for form fill mode
           setTimeout(() => {
+            makeFilledCellsReadOnly();
             isLoadingState.current = false;
-          }, 300);
+          }, 500);
         } catch (error) {
           console.error('❌ Error loading initial Workbook:', error);
           isLoadingState.current = false;
@@ -355,6 +402,16 @@ const extractPlainSheetData = async () => {
             }
           }
         }
+        
+        // After loading data, make filled cells read-only for form fill mode
+        setTimeout(() => {
+          makeFilledCellsReadOnly();
+        }, 500);
+      } else if (livePreview) {
+        // Even if no initial data, still apply read-only logic after a delay
+        setTimeout(() => {
+          makeFilledCellsReadOnly();
+        }, 1000);
       }
     }, 500); // Increased timeout to ensure spreadsheet is fully ready
   };
@@ -368,6 +425,14 @@ const extractPlainSheetData = async () => {
       livePreview: livePreview,
       id: id
     });
+    
+    // For form fill mode, make newly filled cells read-only
+    if (livePreview && args?.action && ['cellSave', 'edit'].includes(args.action)) {
+      // Small delay to ensure cell value is committed
+      setTimeout(() => {
+        makeFilledCellsReadOnly();
+      }, 100);
+    }
     
     // Debounce to avoid too frequent captures
     if (changeTimer.current) clearTimeout(changeTimer.current);
