@@ -1086,6 +1086,7 @@ import {
   Card,
   CardBody
 } from "reactstrap";
+import { NonceProvider } from "react-select";
 
 export default function FormFillPage(props) {
   // Accept id as a prop (for Tabs view)
@@ -1105,8 +1106,10 @@ export default function FormFillPage(props) {
   const [values, setValues] = useState({});
   const [submitterName, setSubmitterName] = useState('');
   const [submitterEmail, setSubmitterEmail] = useState('');
+  const [batchNo, setBatchNo] = useState('');
   const [loading, setLoading] = useState(true);
   const [formName, setFormName] = useState('');
+  const [formTitle, setFormTitle] = useState('');
   const [baseInit, setBaseInit] = useState(null);
   const [formLoaded, setFormLoaded] = useState(false);
     const { user } = useAuth();
@@ -1139,6 +1142,8 @@ export default function FormFillPage(props) {
         };
         
         setFormName(getFolderNameFromSchema(schema));
+        const title = (schema.find((e) => e.type === 'heading')?.label) || '';
+        setFormTitle(title);
         
         // Debug: Log field types to see what we're working with
         schema.forEach((field, index) => {
@@ -1182,6 +1187,7 @@ export default function FormFillPage(props) {
         const resp = r.data || {};
         setSubmitterName(resp.submitterName || "");
         setSubmitterEmail(resp.submitterEmail || "");
+        setBatchNo(resp.batchNo || '');
         const merged = { ...baseInit };
         Object.keys(resp.answers || {}).forEach((key) => {
           merged[key] = resp.answers[key];
@@ -1197,7 +1203,8 @@ export default function FormFillPage(props) {
     setValues((v) => ({ ...v, [fid]: val }));
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e) => {
+    if (e && typeof e.preventDefault === 'function') e.preventDefault();
     try {
       // Validate mandatory fields
       if (!user.username) {
@@ -1207,6 +1214,11 @@ export default function FormFillPage(props) {
      
       if (!user.email) {
         alert("Please enter your email");
+        return;
+      }
+
+      if (!batchNo || String(batchNo).trim() === '') {
+        alert("Please enter the Batch Number");
         return;
       }
       
@@ -1282,12 +1294,23 @@ export default function FormFillPage(props) {
       
       console.log(responseId ? 'Updating submission:' : 'Submitting form:', { form: id, submitterName, submitterEmail });
 
+      // Debug: log payload to verify batch number and answers
+      console.log('Submitting payload', {
+        mode: responseId ? 'update' : 'create',
+        form: id,
+        submitterName: user.username,
+        submitterEmail: user.email,
+        batchNo: String(batchNo).trim(),
+        answersKeys: Object.keys(values || {})
+      });
+
       let resp;
       if (responseId) {
         // Update existing response
         resp = await api.put(`/responses/${responseId}`, {
           submitterName: user.username,
           submitterEmail: user.email,
+          batchNo: String(batchNo).trim(),
           answers: values,
         });
       } else {
@@ -1296,6 +1319,7 @@ export default function FormFillPage(props) {
           form: id, 
           submitterName: user.username,
           submitterEmail: user.email,
+          batchNo: String(batchNo).trim(),
           answers: values 
         });
         console.log(resp);
@@ -1830,7 +1854,8 @@ export default function FormFillPage(props) {
             textAlign: "center",
             marginBottom: "1.5rem",
             fontWeight: "700",
-            color: "#2c3e50"
+            color: "#2c3e50",
+            display: "none"
           }}
         >
           {node.label || "Untitled Form"}
@@ -2033,7 +2058,28 @@ export default function FormFillPage(props) {
         </div>
       ) : (
         <div className="modal-content">
-          <h5>{formName}</h5>
+          {/* Compact header: folder, form title, batch no */}
+          <div style={{ display: 'flex', alignItems: 'center',justifyContent: "center", flexWrap: 'wrap', marginBottom: 10 }}>
+            <div style={{ fontSize: 12, color: '#6b7280' }}></div>
+            <div style={{ fontSize: 13, fontWeight: 600, marginRight: 16 }}>{formName || 'Untitled'}</div>
+            {formTitle ? (
+              <>
+                <div style={{ fontSize: 12, color: '#6b7280' }}>Form:</div>
+                <div style={{ fontSize: 13, fontWeight: 600, marginRight: 16 }}>{formTitle}</div>
+              </>
+            ) : null}
+            <div style={{ fontSize: 12, color: '#6b7280' }}>Batch No:</div>
+            <Input
+              id="batch-no"
+              type="text"
+              bsSize="sm"
+              style={{ maxWidth: 180, paddingTop: 4, paddingBottom: 4 }}
+              placeholder="Batch no"
+              value={batchNo}
+              onChange={(e) => setBatchNo(e.target.value)}
+              required
+            />
+          </div>
           <form>
             {/* Form Fields */}
             <div style={{ marginBottom: "20px" }}>
@@ -2066,7 +2112,7 @@ export default function FormFillPage(props) {
                 />
               </FormGroup> */}
               <div className="button-group"> 
-                <button className="save-btn" onClick={handleSubmit} disabled={loading}>
+                <button type="button" className="save-btn" onClick={handleSubmit} disabled={loading}>
                   Submit Form
                 </button>
               </div>

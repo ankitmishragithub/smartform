@@ -110,7 +110,10 @@ export const useFormAPI = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await api.delete(`/forms/${formId}`);
+      const token = localStorage.getItem('token');
+      const response = await api.delete(`/forms/${formId}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined
+      });
       return response.data;
     } catch (err) {
       let errorMessage = 'Failed to delete form';

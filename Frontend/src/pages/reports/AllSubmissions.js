@@ -644,8 +644,9 @@ export default function AllSubmissions() {
   const [forms, setForms] = useState([]);
   const [filteredResponses, setFilteredResponses] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [batchNo, setBatchNo] = useState('');
   const [selectedForms, setSelectedForms] = useState([]);
-  const [selectedFolders, setSelectedFolders] = useState(['Brindavan Bottlers Private Limited, UNNAO']);
+  const [selectedFolders, setSelectedFolders] = useState([]);
   const [statusFilter, setStatusFilter] = useState('all');
   
   // Modal state for spreadsheet viewer
@@ -664,7 +665,7 @@ export default function AllSubmissions() {
   const [endDate, setEndDate] = useState(() => getCurrentMonthRange().endDate);
 
   useEffect(() => { loadData(); }, []);
-  useEffect(() => { filterResponses(); }, [responses, searchTerm, selectedForms, selectedFolders, statusFilter, forms, startDate, endDate]);
+  useEffect(() => { filterResponses(); }, [responses, searchTerm, selectedForms, selectedFolders, statusFilter, forms, startDate, endDate, batchNo]);
 
   const loadData = async () => {
     setLoading(true);
@@ -961,9 +962,15 @@ export default function AllSubmissions() {
           folder.toLowerCase().includes(s) ||
           heading.toLowerCase().includes(s) ||
           (r.submitterName || '').toLowerCase().includes(s) ||
-          (r.submitterEmail || '').toLowerCase().includes(s)
+          (r.submitterEmail || '').toLowerCase().includes(s) ||
+          String(r.batchNo || '').toLowerCase().includes(s)
         );
       });
+    }
+
+    if (batchNo.trim()) {
+      const b = batchNo.toLowerCase();
+      filtered = filtered.filter(r => String(r.batchNo || '').toLowerCase().includes(b));
     }
 
     setFilteredResponses(filtered);
@@ -1284,6 +1291,18 @@ export default function AllSubmissions() {
 
               <Col lg={3} md={6} className="mb-3">
                 <div className="rr-filter-group">
+                  <label className="rr-filter-label">Batch Number</label>
+                  <Input
+                    placeholder="Filter by batch no…"
+                    value={batchNo}
+                    onChange={e => setBatchNo(e.target.value)}
+                    className="rr-search-input"
+                  />
+                </div>
+              </Col>
+
+              <Col lg={3} md={6} className="mb-3">
+                <div className="rr-filter-group">
                   <label className="rr-filter-label">Folder</label>
                   <div className="rr-multi-select-container">
                     <Input
@@ -1500,6 +1519,11 @@ export default function AllSubmissions() {
                                    <i className="ni ni-file-docs text-primary"></i>
                                    {getFormLabel(response.form)}
                                  </h6>
+                                 {response.batchNo && (
+                                  <div style={{ marginTop: 4 }}>
+                                    <Badge color="secondary">Batch: {response.batchNo}</Badge>
+                                  </div>
+                                )}
                                  {/* <div className="rr-submission-meta">
                                    <div className="d-flex flex-wrap gap-3">
                                      <div className="rr-submitter-info">
