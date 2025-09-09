@@ -703,6 +703,8 @@ export default function ReeditForm(props) {
   const [submitterEmail, setSubmitterEmail] = useState('');
   const [loading, setLoading] = useState(true);
   const [formName, setFormName] = useState('');
+  const [formTitle, setFormTitle] = useState('');
+  const [batchNo, setBatchNo] = useState('');
   const [baseInit, setBaseInit] = useState(null);
   const [formLoaded, setFormLoaded] = useState(false);
   const {user}=useAuth();
@@ -731,6 +733,8 @@ export default function ReeditForm(props) {
         };
         
         setFormName(getFolderNameFromSchema(schema));
+        const title = (schema.find((e) => e.type === 'heading')?.label) || '';
+        setFormTitle(title);
         
         // Debug: Log field types to see what we're working with
         schema.forEach((field, index) => {
@@ -774,6 +778,7 @@ export default function ReeditForm(props) {
         const resp = r.data || {};
         setSubmitterName(resp.submitterName || "");
         setSubmitterEmail(resp.submitterEmail || "");
+        setBatchNo(resp.batchNo || '');
         const merged = { ...baseInit };
         Object.keys(resp.answers || {}).forEach((key) => {
           const answer = resp.answers[key];
@@ -927,6 +932,7 @@ export default function ReeditForm(props) {
         resp = await api.put(`/responses/${responseId}`, { 
           submitterName: submitterName.trim(),
           submitterEmail: submitterEmail.trim(),
+          batchNo: String(batchNo).trim(),
           answers: values 
         });
       } else {
@@ -935,6 +941,7 @@ export default function ReeditForm(props) {
           form: id, 
           submitterName: submitterName.trim(),
           submitterEmail: submitterEmail.trim(),
+          batchNo: String(batchNo).trim(),
           answers: values 
         });
       }
@@ -1468,7 +1475,8 @@ export default function ReeditForm(props) {
             textAlign: "center",
             marginBottom: "1.5rem",
             fontWeight: "700",
-            color: "#2c3e50"
+            color: "#2c3e50",
+            display: "none"
           }}
         >
           {node.label || "Untitled Form"}
@@ -1671,7 +1679,28 @@ export default function ReeditForm(props) {
         </div>
       ) : (
         <div className="modal-content">
-          <h5>{formName}</h5>
+          {/* Compact header: folder, form title, batch no */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent:"center", gap: 12, flexWrap: 'wrap', marginBottom: 10 }}>
+            <div style={{ fontSize: 12, color: '#6b7280' }}></div>
+            <div style={{ fontSize: 13, fontWeight: 600, marginRight: 16 }}>{formName || 'Untitled'}</div>
+            {formTitle ? (
+              <>
+                <div style={{ fontSize: 12, color: '#6b7280' }}>Form:</div>
+                <div style={{ fontSize: 13, fontWeight: 600, marginRight: 16 }}>{formTitle}</div>
+              </>
+            ) : null}
+            <div style={{ fontSize: 12, color: '#6b7280' }}>Batch No:</div>
+            <Input
+              id="batch-no"
+              type="text"
+              bsSize="sm"
+              style={{ maxWidth: 180, paddingTop: 4, paddingBottom: 4 }}
+              placeholder="Batch no"
+              value={batchNo}
+              onChange={(e) => setBatchNo(e.target.value)}
+              required
+            />
+          </div>
           <form>
             {/* Form Fields */}
             <div style={{ marginBottom: "20px" }}>
